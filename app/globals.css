@@ -1518,16 +1518,17 @@ textarea {
   }
 
   .pals-section {
-    padding: 0 16px 20px 16px;
+    padding: 0;
   }
 
   .pals-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+    padding: 0 16px 20px 16px;
   }
 
   .pals-header {
-    padding: 16px 0 8px 0;
+    padding: 16px 16px 8px 16px;
     margin-bottom: 16px;
   }
 }
@@ -2153,7 +2154,7 @@ textarea {
 
 /* Pals Section Styles */
 .pals-section {
-  padding: 0 20px 20px 20px;
+  padding: 0;
   max-width: 800px;
   margin: 0 auto;
   height: 100%;
@@ -2166,7 +2167,7 @@ textarea {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  padding: 20px 0 10px 0;
+  padding: 20px 20px 10px 20px;
   position: sticky;
   top: 0;
   background: var(--background);
@@ -2190,7 +2191,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  padding-bottom: 20px;
+  padding: 0 20px 20px 20px;
 }
 
 .pal-card {
