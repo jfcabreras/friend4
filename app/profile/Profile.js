@@ -13,6 +13,8 @@ const Profile = ({ user, userProfile }) => {
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [profileType, setProfileType] = useState('public');
+  const [activityPreferences, setActivityPreferences] = useState([]);
+  const [newActivity, setNewActivity] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
@@ -36,6 +38,7 @@ const Profile = ({ user, userProfile }) => {
       setCity(userProfile.city || '');
       setProfileType(userProfile.profileType || 'public');
       setProfilePicture(userProfile.profilePicture || null);
+      setActivityPreferences(userProfile.activityPreferences || []);
       
       loadUserStats();
       loadUserMedia();
@@ -47,6 +50,7 @@ const Profile = ({ user, userProfile }) => {
       setProfileType('public');
       setProfilePicture(null);
       setMediaFiles([]);
+      setActivityPreferences([]);
       setUserStats({
         sentInvites: 0,
         receivedInvites: 0,
@@ -261,6 +265,17 @@ const Profile = ({ user, userProfile }) => {
     }
   };
 
+  const addActivity = () => {
+    if (newActivity.trim() && !activityPreferences.includes(newActivity.trim())) {
+      setActivityPreferences(prev => [...prev, newActivity.trim()]);
+      setNewActivity('');
+    }
+  };
+
+  const removeActivity = (activity) => {
+    setActivityPreferences(prev => prev.filter(pref => pref !== activity));
+  };
+
   
 
   const handleUpdateProfile = async (e) => {
@@ -296,6 +311,7 @@ const Profile = ({ user, userProfile }) => {
         country: country.trim(),
         city: city.trim(),
         profileType: profileType,
+        activityPreferences: activityPreferences,
         updatedAt: new Date()
       };
 
@@ -397,6 +413,36 @@ const Profile = ({ user, userProfile }) => {
                 )}
                 {uploadingPicture && <p>Uploading profile picture...</p>}
               </div>
+
+              <div className="activity-preferences-section">
+                <label>Activity Preferences:</label>
+                <div className="activity-input">
+                  <input
+                    type="text"
+                    value={newActivity}
+                    onChange={(e) => setNewActivity(e.target.value)}
+                    placeholder="Add an activity (e.g., hiking, coffee, movies)"
+                    onKeyPress={(e) => e.key === 'Enter' && addActivity()}
+                  />
+                  <button type="button" onClick={addActivity} className="add-activity-btn">
+                    Add
+                  </button>
+                </div>
+                <div className="activity-tags">
+                  {activityPreferences.map((activity, index) => (
+                    <span key={index} className="activity-tag">
+                      {activity}
+                      <button 
+                        type="button" 
+                        onClick={() => removeActivity(activity)}
+                        className="remove-activity"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
               
               <div className="edit-actions">
                 <button onClick={handleUpdateProfile} disabled={loading}>
@@ -411,6 +457,7 @@ const Profile = ({ user, userProfile }) => {
                   setCountry(userProfile.country || '');
                   setCity(userProfile.city || '');
                   setProfileType(userProfile.profileType || 'public');
+                  setActivityPreferences(userProfile.activityPreferences || []);
                 }}>
                   Cancel
                 </button>
@@ -433,6 +480,23 @@ const Profile = ({ user, userProfile }) => {
           )}
         </div>
       </div>
+
+      {!isEditing && (
+        <div className="activity-preferences-display">
+          <h3>Activity Preferences</h3>
+          {activityPreferences.length > 0 ? (
+            <div className="activity-tags-display">
+              {activityPreferences.map((activity, index) => (
+                <span key={index} className="activity-tag-display">
+                  {activity}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="no-activities">No activity preferences set.</p>
+          )}
+        </div>
+      )}
 
       {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
       {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}

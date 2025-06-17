@@ -384,6 +384,19 @@ const Pals = ({ user, userProfile }) => {
               </div>
             </div>
 
+            {selectedPal.activityPreferences && selectedPal.activityPreferences.length > 0 && (
+              <div className="profile-modal-activities">
+                <h3>Activity Preferences</h3>
+                <div className="modal-activity-tags">
+                  {selectedPal.activityPreferences.map((activity, index) => (
+                    <span key={index} className="modal-activity-tag">
+                      {activity}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="profile-modal-media">
               <h3>Media Gallery</h3>
               {loadingPalMedia ? (
