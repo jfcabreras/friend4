@@ -10,6 +10,7 @@ const Pals = ({ user, userProfile }) => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedPal, setSelectedPal] = useState(null);
   const [inviteData, setInviteData] = useState({
     title: '',
@@ -176,30 +177,40 @@ const Pals = ({ user, userProfile }) => {
           </div>
         ) : (
           filteredPals.map(pal => (
-            <div key={pal.id} className="pal-card">
-              <div className="pal-avatar">
-                {pal.username?.charAt(0).toUpperCase()}
-              </div>
-              <div className="pal-info">
-                <h3>{pal.username}</h3>
-                <p className="pal-location">{pal.city}, {pal.country}</p>
-                <div className="pal-actions">
-                  <button 
-                    onClick={() => toggleFavorite(pal.id)}
-                    className={`favorite-btn ${favorites.includes(pal.id) ? 'favorited' : ''}`}
-                  >
-                    {favorites.includes(pal.id) ? '⭐' : '☆'}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setSelectedPal(pal);
-                      setShowInviteModal(true);
-                    }}
-                    className="invite-btn"
-                  >
-                    Send Invite
-                  </button>
+            <div 
+              key={pal.id} 
+              className="pal-card"
+              onClick={() => {
+                setSelectedPal(pal);
+                setShowProfileModal(true);
+              }}
+            >
+              <div className="pal-card-header">
+                <div className="pal-avatar">
+                  {pal.username?.charAt(0).toUpperCase()}
                 </div>
+                <div className="pal-info">
+                  <h3>{pal.username}</h3>
+                  <p className="pal-location">{pal.city}, {pal.country}</p>
+                </div>
+              </div>
+              <div className="pal-actions" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  onClick={() => toggleFavorite(pal.id)}
+                  className={`favorite-btn ${favorites.includes(pal.id) ? 'favorited' : ''}`}
+                  title={favorites.includes(pal.id) ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  {favorites.includes(pal.id) ? '⭐' : '☆'}
+                </button>
+                <button 
+                  onClick={() => {
+                    setSelectedPal(pal);
+                    setShowInviteModal(true);
+                  }}
+                  className="invite-btn"
+                >
+                  Send Invite
+                </button>
               </div>
             </div>
           ))
@@ -242,6 +253,57 @@ const Pals = ({ user, userProfile }) => {
                 onChange={(e) => setInviteData(prev => ({ ...prev, price: e.target.value }))}
               />
               <button onClick={sendInvite} className="send-invite-btn">
+                Send Invite
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {showProfileModal && selectedPal && (
+        <div className="modal-overlay" onClick={() => setShowProfileModal(false)}>
+          <div className="modal-content profile-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowProfileModal(false)}>×</button>
+            
+            <div className="profile-modal-header">
+              <div className="profile-avatar-large">
+                {selectedPal.username?.charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-info-large">
+                <h2>{selectedPal.username}</h2>
+                <p className="profile-location-large">📍 {selectedPal.city}, {selectedPal.country}</p>
+                <span className="profile-type-badge">🌍 Public Profile</span>
+              </div>
+            </div>
+
+            <div className="profile-modal-stats">
+              <div className="stat-item">
+                <span className="stat-label">Member Since</span>
+                <span className="stat-value">
+                  {selectedPal.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Profile Type</span>
+                <span className="stat-value">Public</span>
+              </div>
+            </div>
+
+            <div className="profile-modal-actions">
+              <button 
+                onClick={() => toggleFavorite(selectedPal.id)}
+                className={`modal-favorite-btn ${favorites.includes(selectedPal.id) ? 'favorited' : ''}`}
+              >
+                {favorites.includes(selectedPal.id) ? '⭐ Remove from Favorites' : '☆ Add to Favorites'}
+              </button>
+              <button 
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setShowInviteModal(true);
+                }}
+                className="modal-invite-btn"
+              >
                 Send Invite
               </button>
             </div>
