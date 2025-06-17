@@ -27,7 +27,8 @@ const Pals = ({ user, userProfile }) => {
   }, [user, userProfile]);
 
   const loadPals = async () => {
-    if (!user?.uid) return; // Don't fetch if user or uid is not available
+    if (!user?.uid || !userProfile) return; // Don't fetch if user.uid or userProfile is not available
+
     try {
       setLoading(true);
       const palsQuery = query(
@@ -50,7 +51,7 @@ const Pals = ({ user, userProfile }) => {
   };
 
   const toggleFavorite = async (palId) => {
-    if (!user) return;
+    if (!user?.uid) return;
 
     try {
       const isFavorite = favorites.includes(palId);

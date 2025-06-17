@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -51,12 +50,12 @@ const Messages = ({ user }) => {
 
         // Group messages by conversation partner
         const conversationMap = new Map();
-        
+
         allMessages.forEach(message => {
           const partnerId = message.senderId === currentUserUid ? message.receiverId : message.senderId;
           const partnerName = message.senderId === currentUserUid ? message.receiverName : message.senderName;
           const partnerEmail = message.senderId === currentUserUid ? message.receiverEmail : message.senderEmail;
-          
+
           if (!conversationMap.has(partnerId)) {
             conversationMap.set(partnerId, {
               partnerId,
@@ -67,15 +66,15 @@ const Messages = ({ user }) => {
               messages: []
             });
           }
-          
+
           const conversation = conversationMap.get(partnerId);
           conversation.messages.push(message);
-          
+
           // Update last message if this one is newer
           if (message.timestamp?.toDate?.() > conversation.lastMessage.timestamp?.toDate?.()) {
             conversation.lastMessage = message;
           }
-          
+
           // Count unread messages
           if (message.receiverId === currentUserUid && !message.read) {
             conversation.unreadCount++;
@@ -114,14 +113,14 @@ const Messages = ({ user }) => {
 
   const selectConversation = async (conversation) => {
     setSelectedConversation(conversation);
-    
+
     // Sort messages by timestamp
     const sortedMessages = conversation.messages.sort((a, b) => {
       const aTime = a.timestamp?.toDate?.() || new Date(0);
       const bTime = b.timestamp?.toDate?.() || new Date(0);
       return aTime - bTime;
     });
-    
+
     setMessages(sortedMessages);
 
     // Mark messages as read
@@ -129,11 +128,11 @@ const Messages = ({ user }) => {
       const unreadMessages = conversation.messages.filter(
         msg => msg.receiverId === currentUserUid && !msg.read
       );
-      
+
       for (const message of unreadMessages) {
         await updateDoc(doc(db, "messages", message.id), { read: true });
       }
-      
+
       // Update local state
       setConversations(prev => prev.map(conv => 
         conv.partnerId === conversation.partnerId 
@@ -232,7 +231,7 @@ const Messages = ({ user }) => {
               <h3>{selectedConversation.partnerName}</h3>
               <span>{selectedConversation.partnerEmail}</span>
             </div>
-            
+
             <div className="messages-container">
               {messages.map(message => (
                 <div 
