@@ -112,7 +112,7 @@ body {
 .filter-controls {
   display: flex;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 8px 20px;
   /* background: var(--surface); */
   background: transparent;
   /* border-bottom: 0px solid var(--border); */
@@ -1463,6 +1463,7 @@ textarea {
 
   .filter-controls {
     gap: 6px;
+    padding: 8px 16px;
   }
 
   .filter-controls button {
