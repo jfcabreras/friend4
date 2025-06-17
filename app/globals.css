@@ -1451,6 +1451,20 @@ textarea {
     padding: 14px 16px;
     font-size: 16px;
   }
+  
+  .pals-section {
+    padding: 0 16px 20px 16px;
+  }
+  
+  .pals-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .pals-header {
+    padding: 16px 0 8px 0;
+    margin-bottom: 16px;
+  }
 }
 
 /* Optimize for medium mobile screens */
@@ -2073,16 +2087,24 @@ textarea {
 
 /* Pals Section Styles */
 .pals-section {
-  padding: 20px;
-  max-width: 1200px;
+  padding: 0 20px 20px 20px;
+  max-width: 800px;
   margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pals-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  padding: 20px 0 10px 0;
+  position: sticky;
+  top: 0;
+  background: var(--background);
+  z-index: 10;
 }
 
 .filter-controls button {
@@ -2100,8 +2122,9 @@ textarea {
 
 .pals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding-bottom: 20px;
 }
 
 .pal-card {
