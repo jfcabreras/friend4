@@ -6,8 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import Main from './main/Main';
-import Leaders from './leaders/Leaders';
-import Contribute from './contribute/page';
+import Pals from './pals/Pals';
 import Profile from './profile/Profile';
 import Messages from './messages/Messages';
 
@@ -165,8 +164,8 @@ export default function Home() {
       switch (selectedSection) {
         case 'main':
           return <Main router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
-        case 'leaders':
-          return <Leaders router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
+        case 'pals':
+          return <Pals router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
         case 'contribute':
           return <Contribute setSelectedSection={setSelectedSection} />;
         case 'profile':
@@ -317,8 +316,8 @@ export default function Home() {
             <button onClick={() => setSelectedSection('main')} className="report-btn">
               Home
             </button>
-            <button onClick={() => setSelectedSection('leaders')} className="report-btn">
-              Find Leaders
+            <button onClick={() => setSelectedSection('pals')} className="report-btn">
+              Find Pals
             </button>
             <button onClick={handleOpenModal} className="report-btn">
               New Report
@@ -339,7 +338,7 @@ export default function Home() {
 
       {/* {!user && (
         <footer className="footer">
-          <p>Friend 4 - 2025</p>
+          <p>Ask a Pal - 2025</p>
         </footer>
       )} */}
 

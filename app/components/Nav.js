@@ -11,7 +11,7 @@ const Nav = ({ setSelectedSection, handleLogout, user}) => {
     <nav className="navigation">
       <div className="navigation-logo">
         <button onClick={() => handleSectionChange('main')}>
-          <h1>Friend 4</h1>
+          <h1>Ask a Pal</h1>
         </button>
       </div>
       {user && 

@@ -20,7 +20,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
-const Leaders = ({ router, setSelectedSection, user, setProfileUserId }) => {
+const Pals = ({ router, setSelectedSection, user, setProfileUserId }) => {
 
   return(
     <div className="main-section">
@@ -41,19 +41,19 @@ const Leaders = ({ router, setSelectedSection, user, setProfileUserId }) => {
       </div>
 
       <div className='report-feed'>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
-        <p>Leaders</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
+        <p>Pal</p>
       </div>
 
     </div>
   )
 }
 
-export default Leaders;
+export default Pals;
