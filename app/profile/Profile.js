@@ -14,7 +14,7 @@ const Profile = ({ user, userProfile }) => {
   const [profileType, setProfileType] = useState('public');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+  
   const [userStats, setUserStats] = useState({
     sentInvites: 0,
     receivedInvites: 0,
@@ -29,12 +29,7 @@ const Profile = ({ user, userProfile }) => {
       setCity(userProfile.city || '');
       setProfileType(userProfile.profileType || 'public');
       
-      // Show username setup if user doesn't have a username
-      if (!userProfile.username || !userProfile.usernameSet) {
-        setShowUsernameSetup(true);
-      } else {
-        loadUserStats();
-      }
+      loadUserStats();
     }
   }, [userProfile, user]);
 
@@ -89,41 +84,7 @@ const Profile = ({ user, userProfile }) => {
     }
   };
 
-  const handleUsernameSetup = async (e) => {
-    e.preventDefault();
-    if (!username.trim()) {
-      setErrorMessage('Please enter a username');
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage('');
-
-    try {
-      const isAvailable = await checkUsernameAvailability(username);
-      if (!isAvailable) {
-        setErrorMessage('Username already exists. Please choose a different username.');
-        setLoading(false);
-        return;
-      }
-
-      await updateDoc(doc(db, 'users', user.uid), {
-        username: username.trim(),
-        usernameSet: true
-      });
-
-      setSuccessMessage('Username set successfully!');
-      setShowUsernameSetup(false);
-      
-      // Refresh the page to update userProfile
-      window.location.reload();
-    } catch (error) {
-      console.error('Error setting username:', error);
-      setErrorMessage('Failed to set username. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -182,38 +143,7 @@ const Profile = ({ user, userProfile }) => {
     );
   }
 
-  if (showUsernameSetup) {
-    return (
-      <div className="profile-section">
-        <div className="username-setup">
-          <h2>Complete Your Profile</h2>
-          <p>Please choose a username to complete your profile setup:</p>
-          
-          <form onSubmit={handleUsernameSetup}>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Choose a username"
-              className="form-input"
-              required
-            />
-            
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="form-button"
-            >
-              {loading ? 'Setting Username...' : 'Set Username'}
-            </button>
-          </form>
-          
-          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-          {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-        </div>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="profile-section">

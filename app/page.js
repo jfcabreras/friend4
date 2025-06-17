@@ -13,7 +13,7 @@ import Profile from './profile/Profile';
 import { auth, db } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 export default function App() {
   const router = useRouter();
@@ -32,6 +32,8 @@ export default function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [forgotPassword, setForgotPassword] = useState(false);
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -52,7 +54,13 @@ export default function App() {
     try {
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
-        setUserProfile(userDoc.data());
+        const profileData = userDoc.data();
+        setUserProfile(profileData);
+        
+        // Check if username setup is needed
+        if (!profileData.username || !profileData.usernameSet) {
+          setShowUsernameSetup(true);
+        }
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -104,6 +112,58 @@ export default function App() {
     } catch (error) {
       console.error('Error authenticating:', error.message);
       setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkUsernameAvailability = async (usernameToCheck) => {
+    if (!usernameToCheck.trim()) return false;
+    
+    try {
+      const usernameQuery = query(
+        collection(db, 'users'),
+        where('username', '==', usernameToCheck.trim())
+      );
+      const usernameSnapshot = await getDocs(usernameQuery);
+      return usernameSnapshot.empty;
+    } catch (error) {
+      console.error('Error checking username:', error);
+      return false;
+    }
+  };
+
+  const handleUsernameSetup = async (e) => {
+    e.preventDefault();
+    if (!username.trim()) {
+      setErrorMessage('Please enter a username');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const isAvailable = await checkUsernameAvailability(username);
+      if (!isAvailable) {
+        setErrorMessage('Username already exists. Please choose a different username.');
+        setLoading(false);
+        return;
+      }
+
+      await updateDoc(doc(db, 'users', user.uid), {
+        username: username.trim(),
+        usernameSet: true
+      });
+
+      setShowUsernameSetup(false);
+      setUsername('');
+      
+      // Reload user profile
+      await loadUserProfile(user.uid);
+    } catch (error) {
+      console.error('Error setting username:', error);
+      setErrorMessage('Failed to set username. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -253,6 +313,36 @@ export default function App() {
                   </div>
                 )}
               </form>
+              {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUsernameSetup && user && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className='main-form'>
+              <h2>Complete Your Profile</h2>
+              <p>Please choose a username to complete your profile setup:</p>
+              
+              <form onSubmit={handleUsernameSetup}>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Choose a username"
+                  required
+                />
+                
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                >
+                  {loading ? 'Setting Username...' : 'Set Username'}
+                </button>
+              </form>
+              
               {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
             </div>
           </div>
