@@ -55,12 +55,9 @@ const Pals = ({ user, userProfile }) => {
           };
         });
 
-      // If user has a country, filter by country on the client side
-      if (userProfile?.country) {
-        console.log('Filtering by country:', userProfile.country);
-        allPals = allPals.filter(pal => pal.country === userProfile.country);
-        console.log('Filtered pals:', allPals.length);
-      }
+      // For now, show all public pals regardless of country
+      // You can enable country filtering later if needed
+      console.log('Showing all public pals without country filtering');
 
       setPals(allPals);
       console.log('Final pals set:', allPals);
