@@ -13,7 +13,7 @@ import Profile from './profile/Profile';
 import { auth, db } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 export default function App() {
   const router = useRouter();
@@ -81,6 +81,19 @@ export default function App() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
+        // Check if username already exists before creating account
+        const usernameQuery = query(
+          collection(db, 'users'),
+          where('username', '==', username.trim())
+        );
+        const usernameSnapshot = await getDocs(usernameQuery);
+        
+        if (!usernameSnapshot.empty) {
+          setErrorMessage('Username already exists. Please choose a different username.');
+          setLoading(false);
+          return;
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
 
