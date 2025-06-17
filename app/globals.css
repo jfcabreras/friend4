@@ -2264,6 +2264,23 @@ body {
   cursor: pointer;
 }
 
+.nav-logout-btn {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.nav-logout-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 .verification-banner {
   background: #fbbf24;
   color: #92400e;

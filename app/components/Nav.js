@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-const Nav = ({ selectedSection, setSelectedSection, user }) => {
+const Nav = ({ selectedSection, setSelectedSection, user, onLogout }) => {
   return (
     <nav className="nav">
       <div className="nav-brand">
@@ -11,9 +11,14 @@ const Nav = ({ selectedSection, setSelectedSection, user }) => {
       </div>
       
       <div className="nav-center">
-        {user && (
+        {user && selectedSection !== 'profile' && (
           <span className="nav-user">
             Welcome, {user.email}
+          </span>
+        )}
+        {user && selectedSection === 'profile' && (
+          <span className="nav-user">
+            Profile Settings
           </span>
         )}
       </div>
@@ -25,6 +30,10 @@ const Nav = ({ selectedSection, setSelectedSection, user }) => {
             className="nav-login-btn"
           >
             Login
+          </button>
+        ) : selectedSection === 'profile' ? (
+          <button onClick={onLogout} className="nav-logout-btn">
+            🚪 Logout
           </button>
         ) : (
           <div className="nav-status">

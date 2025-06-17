@@ -160,7 +160,12 @@ export default function App() {
 
   return (
     <div className="page">
-      <Nav selectedSection={selectedSection} setSelectedSection={handleSectionChange} user={user} />
+      <Nav 
+        selectedSection={selectedSection} 
+        setSelectedSection={handleSectionChange} 
+        user={user} 
+        onLogout={handleLogout}
+      />
 
       {showLoginModal && (
         <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
@@ -296,11 +301,6 @@ export default function App() {
         >
           👤 Profile
         </button>
-        {user && (
-          <button onClick={handleLogout} className="logout-btn">
-            🚪 Logout
-          </button>
-        )}
       </div>
     </div>
   );
