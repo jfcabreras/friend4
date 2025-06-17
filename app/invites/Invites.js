@@ -160,6 +160,7 @@ const Invites = ({ user, userProfile }) => {
                     📅 {invite.date?.toDate?.()?.toLocaleDateString()}
                   </span>
                   <span className="invite-time">🕐 {invite.time}</span>
+                  <span className="invite-location">📍 {invite.meetingLocation}</span>
                   <span className="invite-price">💰 ${invite.price}</span>
                 </div>
               </div>

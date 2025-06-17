@@ -19,6 +19,7 @@ const Pals = ({ user, userProfile }) => {
   const [inviteData, setInviteData] = useState({
     title: '',
     description: '',
+    meetingLocation: '',
     date: '',
     time: '',
     price: ''
@@ -139,8 +140,8 @@ const Pals = ({ user, userProfile }) => {
   };
 
   const sendInvite = async () => {
-    if (!user || !selectedPal || !inviteData.title || !inviteData.date || !inviteData.time || !inviteData.price) {
-      alert('Please fill in all fields');
+    if (!user || !selectedPal || !inviteData.title || !inviteData.description || !inviteData.meetingLocation || !inviteData.date || !inviteData.time || !inviteData.price) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -152,6 +153,7 @@ const Pals = ({ user, userProfile }) => {
         toUsername: selectedPal.username,
         title: inviteData.title,
         description: inviteData.description,
+        meetingLocation: inviteData.meetingLocation,
         date: new Date(inviteData.date),
         time: inviteData.time,
         price: parseFloat(inviteData.price),
@@ -162,7 +164,7 @@ const Pals = ({ user, userProfile }) => {
       alert('Invite sent successfully!');
       setShowInviteModal(false);
       setSelectedPal(null);
-      setInviteData({ title: '', description: '', date: '', time: '', price: '' });
+      setInviteData({ title: '', description: '', meetingLocation: '', date: '', time: '', price: '' });
     } catch (error) {
       console.error('Error sending invite:', error);
       alert('Failed to send invite');
@@ -276,30 +278,42 @@ const Pals = ({ user, userProfile }) => {
             <div className="invite-form">
               <input
                 type="text"
-                placeholder="Invite title"
+                placeholder="Invite title *"
                 value={inviteData.title}
                 onChange={(e) => setInviteData(prev => ({ ...prev, title: e.target.value }))}
+                required
               />
               <textarea
-                placeholder="Description (optional)"
+                placeholder="Description *"
                 value={inviteData.description}
                 onChange={(e) => setInviteData(prev => ({ ...prev, description: e.target.value }))}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Meeting location *"
+                value={inviteData.meetingLocation}
+                onChange={(e) => setInviteData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                required
               />
               <input
                 type="date"
                 value={inviteData.date}
                 onChange={(e) => setInviteData(prev => ({ ...prev, date: e.target.value }))}
+                required
               />
               <input
                 type="time"
                 value={inviteData.time}
                 onChange={(e) => setInviteData(prev => ({ ...prev, time: e.target.value }))}
+                required
               />
               <input
                 type="number"
-                placeholder="Price ($)"
+                placeholder="Price ($) *"
                 value={inviteData.price}
                 onChange={(e) => setInviteData(prev => ({ ...prev, price: e.target.value }))}
+                required
               />
               <button onClick={sendInvite} className="send-invite-btn">
                 Send Invite
