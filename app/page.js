@@ -15,7 +15,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, se
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-export default function Home() {
+export default function App() {
   const router = useRouter();
   const currentUserUid = auth.currentUser?.uid;
   const [user, setUser] = useState(null);
