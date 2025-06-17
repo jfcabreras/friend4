@@ -15,7 +15,6 @@ export const metadata = {
   title: "Ask a Pal",
   description: "Community safety and incident reporting app",
   manifest: "/manifest.json",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -24,6 +23,14 @@ export const metadata = {
   icons: {
     apple: "/icon-192.png"
   }
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover'
 };
 
 export default function RootLayout({ children }) {
