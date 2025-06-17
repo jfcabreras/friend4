@@ -17,6 +17,8 @@ const Home = ({ user, userProfile }) => {
   }, [user, userProfile]);
 
   const loadFeed = async () => {
+    if (!user?.uid || !userProfile) return; // Don't fetch if user or userProfile is not available
+    
     try {
       setLoading(true);
 

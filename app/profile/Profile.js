@@ -31,7 +31,7 @@ const Profile = ({ user, userProfile }) => {
   }, [userProfile, user]);
 
   const loadUserStats = async () => {
-    if (!user) return;
+    if (!user?.uid) return; // Don't fetch if user.uid is not available
 
     try {
       // Count sent invites

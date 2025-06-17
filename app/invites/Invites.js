@@ -20,6 +20,8 @@ const Invites = ({ user, userProfile }) => {
   }, [user, userProfile]);
 
   const loadInvites = async () => {
+    if (!user?.uid) return; // Don't fetch if user.uid is not available
+    
     try {
       setLoading(true);
 
