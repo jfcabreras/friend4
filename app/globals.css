@@ -1413,54 +1413,54 @@ textarea {
   .navigation {
     padding: max(12px, env(safe-area-inset-top)) 16px 12px;
   }
-  
+
   .navigation-logo h1 {
     font-size: 20px;
   }
-  
+
   .navigation-options {
     gap: 8px;
   }
-  
+
   .navigation-options button {
     padding: 6px 12px;
     font-size: 13px;
   }
-  
+
   .feed-item {
     height: 85vh;
     margin: 0 2px;
   }
-  
+
   .feed-content {
     padding: 16px 12px 12px;
   }
-  
+
   .feed-message {
     font-size: 13px;
   }
-  
+
   .modal-content {
     padding: 24px 16px;
     margin: 0;
     border-radius: 16px 16px 0 0;
   }
-  
+
   .form-input,
   .formtextarea {
     padding: 14px 16px;
     font-size: 16px;
   }
-  
+
   .pals-section {
     padding: 0 16px 20px 16px;
   }
-  
+
   .pals-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .pals-header {
     padding: 16px 0 8px 0;
     margin-bottom: 16px;
@@ -1477,7 +1477,7 @@ textarea {
     padding: 4px;
     gap: 8px;
   }
-  
+
   .feed-item {
     height: 70vh;
   }
@@ -1518,13 +1518,13 @@ textarea {
     border-radius: 24px;
     height: 60vh;
   }
-  
+
   /* Show hover effects only on desktop */
   .feed-item:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
   }
-  
+
   .feed-action-btn:hover {
     color: white;
     transform: scale(1.05);
@@ -3236,4 +3236,18 @@ textarea {
   background: #ffd700;
   border-color: #ffd700;
   color: #333;
+}
+
+/* Adjust profile display for mobile */
+.profile-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.profile-display h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 20px;
 }
