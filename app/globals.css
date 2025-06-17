@@ -113,8 +113,11 @@ body {
   display: flex;
   gap: 6px;
   padding: 8px 10px;
-  background: var(--background);
-  border-bottom: 1px solid var(--border);
+  /* background: var(--surface); */
+  background: transparent;
+  /* border-bottom: 0px solid var(--border); */
+  border: none;
+  backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
   z-index: 100;
