@@ -1019,8 +1019,7 @@ body {
 }
 
 .modal-close {
-  ```text
-position: absolute;
+  position: absolute;
   top: 20px;
   right: 20px;
   background: var(--surface-elevated);
