@@ -30,7 +30,7 @@ const Profile = ({ user, userProfile }) => {
   });
 
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile && user) {
       setUsername(userProfile.username || '');
       setCountry(userProfile.country || '');
       setCity(userProfile.city || '');
@@ -39,6 +39,20 @@ const Profile = ({ user, userProfile }) => {
       
       loadUserStats();
       loadUserMedia();
+    } else if (!user) {
+      // Clear all data when user logs out
+      setUsername('');
+      setCountry('');
+      setCity('');
+      setProfileType('public');
+      setProfilePicture(null);
+      setMediaFiles([]);
+      setUserStats({
+        sentInvites: 0,
+        receivedInvites: 0,
+        acceptedInvites: 0,
+        favoriteCount: 0
+      });
     }
   }, [userProfile, user]);
 

@@ -18,6 +18,7 @@ const Invites = ({ user, userProfile }) => {
   const [editFormData, setEditFormData] = useState({});
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [messagesUnsubscribe, setMessagesUnsubscribe] = useState(null);
 
   useEffect(() => {
     if (user && userProfile) {
@@ -27,7 +28,7 @@ const Invites = ({ user, userProfile }) => {
 
   const loadInvites = async () => {
     if (!user?.uid) return; // Don't fetch if user.uid is not available
-    
+
     try {
       setLoading(true);
 
@@ -107,7 +108,7 @@ const Invites = ({ user, userProfile }) => {
   const loadInviteMessages = (inviteId) => {
     const messagesRef = collection(db, 'inviteMessages');
     const q = query(messagesRef, where('inviteId', '==', inviteId));
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const messagesList = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -178,7 +179,7 @@ const Invites = ({ user, userProfile }) => {
       alert('Invite updated successfully!');
       closeEditModal();
       loadInvites();
-      
+
       // Update selected invite if detail view is open
       if (showInviteDetail) {
         const updatedInvite = { ...selectedInvite, ...editFormData, date: new Date(editFormData.date), price: parseFloat(editFormData.price) };
@@ -276,7 +277,7 @@ const Invites = ({ user, userProfile }) => {
                 >
                   👁️ View Details
                 </button>
-                
+
                 {invite.type === 'sent' && invite.status === 'pending' && (
                   <button 
                     onClick={() => openEditModal(invite)}
@@ -324,7 +325,7 @@ const Invites = ({ user, userProfile }) => {
         <div className="modal-overlay" onClick={closeInviteDetail}>
           <div className="modal-content invite-detail-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={closeInviteDetail}>×</button>
-            
+
             <div className="invite-detail-header">
               <h2>{selectedInvite.title}</h2>
               <span className={`status-badge ${selectedInvite.status}`}>
@@ -396,7 +397,7 @@ const Invites = ({ user, userProfile }) => {
                     ))
                   )}
                 </div>
-                
+
                 <div className="message-input-section">
                   <input
                     type="text"
@@ -422,7 +423,7 @@ const Invites = ({ user, userProfile }) => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={closeEditModal}>×</button>
             <h3>Edit Invite</h3>
-            
+
             <div className="edit-form">
               <input
                 type="text"
