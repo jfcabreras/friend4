@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -28,6 +27,7 @@ const Pals = ({ user, userProfile }) => {
   }, [user, userProfile]);
 
   const loadPals = async () => {
+    if (!user?.uid) return; // Don't fetch if user or uid is not available
     try {
       setLoading(true);
       const palsQuery = query(
@@ -51,11 +51,11 @@ const Pals = ({ user, userProfile }) => {
 
   const toggleFavorite = async (palId) => {
     if (!user) return;
-    
+
     try {
       const isFavorite = favorites.includes(palId);
       const userRef = doc(db, 'users', user.uid);
-      
+
       if (isFavorite) {
         await updateDoc(userRef, {
           favorites: arrayRemove(palId)
@@ -185,7 +185,7 @@ const Pals = ({ user, userProfile }) => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowInviteModal(false)}>×</button>
             <h3>Send Invite to {selectedPal?.username}</h3>
-            
+
             <div className="invite-form">
               <input
                 type="text"

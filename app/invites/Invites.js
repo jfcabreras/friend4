@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -23,7 +22,7 @@ const Invites = ({ user, userProfile }) => {
   const loadInvites = async () => {
     try {
       setLoading(true);
-      
+
       // Load invites sent by user
       const sentInvitesQuery = query(
         collection(db, 'planInvitations'),
@@ -74,7 +73,7 @@ const Invites = ({ user, userProfile }) => {
         status: response,
         respondedAt: new Date()
       });
-      
+
       // Reload invites
       loadInvites();
     } catch (error) {
@@ -140,7 +139,7 @@ const Invites = ({ user, userProfile }) => {
                   {invite.type === 'sent' ? '📤 Sent' : '📥 Received'}
                 </span>
               </div>
-              
+
               <div className="invite-details">
                 <p className="invite-partner">
                   {invite.type === 'sent' 

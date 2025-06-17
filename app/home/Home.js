@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -20,7 +19,7 @@ const Home = ({ user, userProfile }) => {
   const loadFeed = async () => {
     try {
       setLoading(true);
-      
+
       if (userProfile.profileType === 'private') {
         // Load wish invites from public profiles
         const wishInvitesQuery = query(
@@ -70,6 +69,29 @@ const Home = ({ user, userProfile }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchPublicUsers = async () => {
+      if (!user) return; // Don't fetch if user is not loaded
+
+      try {
+        const q = query(
+          collection(db, 'users'),
+          where('profileType', '==', 'public')
+        );
+        const snapshot = await getDocs(q);
+        const users = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setPublicUsers(users);
+      } catch (error) {
+        console.error('Error loading feed:', error);
+      }
+    };
+
+    fetchPublicUsers();
+  }, [user]);
 
   if (!user) {
     return (
