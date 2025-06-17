@@ -17,7 +17,7 @@ const Home = ({ user, userProfile }) => {
   }, [user, userProfile]);
 
   const loadFeed = async () => {
-    if (!user?.uid || !userProfile) return; // Don't fetch if user or userProfile is not available
+    if (!user?.uid || !userProfile || !userProfile.profileType) return; // Don't fetch if user or userProfile is not available
     
     try {
       setLoading(true);
@@ -43,7 +43,7 @@ const Home = ({ user, userProfile }) => {
         const palsQuery = query(
           collection(db, 'users'),
           where('profileType', '==', 'public'),
-          where('country', '==', userProfile.country)
+          ...(userProfile.country ? [where('country', '==', userProfile.country)] : [])
         );
         const palsSnapshot = await getDocs(palsQuery);
         const pals = palsSnapshot.docs

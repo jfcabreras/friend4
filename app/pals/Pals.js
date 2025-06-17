@@ -20,22 +20,25 @@ const Pals = ({ user, userProfile }) => {
   });
 
   useEffect(() => {
-    if (user && userProfile) {
+    if (user?.uid && userProfile?.country) {
       loadPals();
       setFavorites(userProfile.favorites || []);
     }
-  }, [user, userProfile]);
+  }, [user?.uid, userProfile?.country]);
 
   const loadPals = async () => {
-    if (!user?.uid || !userProfile) return; // Don't fetch if user.uid or userProfile is not available
+    if (!user?.uid || !userProfile?.country) return;
 
     try {
       setLoading(true);
-      const palsQuery = query(
+
+      const q = query(
         collection(db, 'users'),
-        where('profileType', '==', 'public')
+        where('profileType', '==', 'public'),
+        where('country', '==', userProfile.country)
       );
-      const palsSnapshot = await getDocs(palsQuery);
+
+      const palsSnapshot = await getDocs(q);
       const allPals = palsSnapshot.docs
         .filter(doc => doc.id !== user?.uid)
         .map(doc => ({
