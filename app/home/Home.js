@@ -25,15 +25,18 @@ const Home = ({ user, userProfile }) => {
       if (userProfile.profileType === 'private') {
         // Load wish invites from public profiles
         const wishInvitesQuery = query(
-          collection(db, 'wishInvites'),
-          orderBy('createdAt', 'desc')
+          collection(db, 'wishInvites')
         );
         const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
         const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
           id: doc.id,
           type: 'wishInvite',
           ...doc.data()
-        }));
+        })).sort((a, b) => {
+          const aTime = a.createdAt?.toDate?.() || new Date(0);
+          const bTime = b.createdAt?.toDate?.() || new Date(0);
+          return bTime - aTime; // Sort descending by creation date
+        });
         setFeed(wishInvites);
       } else {
         // Load available pals and open invites for public profiles
@@ -53,15 +56,18 @@ const Home = ({ user, userProfile }) => {
 
         const openInvitesQuery = query(
           collection(db, 'openInvites'),
-          where('status', '==', 'open'),
-          orderBy('createdAt', 'desc')
+          where('status', '==', 'open')
         );
         const openInvitesSnapshot = await getDocs(openInvitesQuery);
         const openInvites = openInvitesSnapshot.docs.map(doc => ({
           id: doc.id,
           type: 'openInvite',
           ...doc.data()
-        }));
+        })).sort((a, b) => {
+          const aTime = a.createdAt?.toDate?.() || new Date(0);
+          const bTime = b.createdAt?.toDate?.() || new Date(0);
+          return bTime - aTime; // Sort descending by creation date
+        });
 
         setFeed([...openInvites, ...pals]);
       }

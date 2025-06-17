@@ -28,8 +28,7 @@ const Invites = ({ user, userProfile }) => {
       // Load invites sent by user
       const sentInvitesQuery = query(
         collection(db, 'planInvitations'),
-        where('fromUserId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('fromUserId', '==', user.uid)
       );
       const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
       const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
@@ -41,8 +40,7 @@ const Invites = ({ user, userProfile }) => {
       // Load invites received by user
       const receivedInvitesQuery = query(
         collection(db, 'planInvitations'),
-        where('toUserId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('toUserId', '==', user.uid)
       );
       const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
       const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
@@ -51,7 +49,12 @@ const Invites = ({ user, userProfile }) => {
         ...doc.data()
       }));
 
-      const allInvites = [...sentInvites, ...receivedInvites];
+      const allInvites = [...sentInvites, ...receivedInvites]
+        .sort((a, b) => {
+          const aTime = a.createdAt?.toDate?.() || new Date(0);
+          const bTime = b.createdAt?.toDate?.() || new Date(0);
+          return bTime - aTime; // Sort descending by creation date
+        });
 
       // Group by status
       const groupedInvites = {
