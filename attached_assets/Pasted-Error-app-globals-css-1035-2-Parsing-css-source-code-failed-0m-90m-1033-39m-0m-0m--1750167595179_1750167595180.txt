@@ -1,0 +1,24 @@
+Error: ./app/globals.css:1035:2
+Parsing css source code failed
+[0m [90m 1033 |[39m }[0m
+[0m [90m 1034 |[39m[0m
+[0m[31m[1m>[22m[39m[90m 1035 |[39m [32m``[39m[32m`text[39m[0m
+[0m [90m      |[39m  [31m[1m^[22m[39m[0m
+[0m [90m 1036 |[39m [32m.modal-close:hover {[39m[0m
+[0m [90m 1037 |[39m [32m  background: var(--cyber-purple);[39m[0m
+[0m [90m 1038 |[39m [32m  color: white;[39m[0m
+
+Invalid empty selector at [project]/app/globals.css:1034:1
+    at BuildError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:11144:41)
+    at react-stack-bottom-frame (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:14911:24)
+    at renderWithHooksAgain (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:6256:24)
+    at renderWithHooks (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:6207:28)
+    at updateFunctionComponent (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:7543:21)
+    at beginWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:8142:24)
+    at runWithFiberInDEV (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:3073:74)
+    at performUnitOfWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10243:97)
+    at workLoopSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10135:40)
+    at renderRootSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10118:13)
+    at performWorkOnRoot (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:9853:212)
+    at performWorkOnRootViaSchedulerTask (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10826:9)
+    at MessagePort.performWorkUntilDeadline (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:1982:64)
