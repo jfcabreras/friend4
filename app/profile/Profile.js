@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db, storage } from '../../lib/firebase';
-import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
 
 const Profile = ({ user, userProfile }) => {
@@ -97,11 +97,22 @@ const Profile = ({ user, userProfile }) => {
     if (!user?.uid) return;
     
     try {
+      // Get media metadata from Firestore to check deleted status
+      const userMediaRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userMediaRef);
+      const userData = userDoc.data();
+      const deletedMedia = userData?.deletedMedia || [];
+      
       const mediaRef = ref(storage, `users/${user.uid}/media`);
       const mediaList = await listAll(mediaRef);
       
       const mediaUrls = await Promise.all(
         mediaList.items.map(async (item) => {
+          // Skip deleted media files
+          if (deletedMedia.includes(item.name)) {
+            return null;
+          }
+          
           const url = await getDownloadURL(item);
           return {
             name: item.name,
@@ -111,7 +122,8 @@ const Profile = ({ user, userProfile }) => {
         })
       );
       
-      setMediaFiles(mediaUrls);
+      // Filter out null values (deleted media)
+      setMediaFiles(mediaUrls.filter(media => media !== null));
     } catch (error) {
       console.error('Error loading user media:', error);
     }
@@ -203,6 +215,35 @@ const Profile = ({ user, userProfile }) => {
       setErrorMessage('Failed to upload media file. Please try again.');
     } finally {
       setUploadingMedia(false);
+    }
+  };
+
+  const deleteMediaFile = async (fileName) => {
+    if (!user?.uid || !fileName) return;
+    
+    try {
+      setErrorMessage('');
+      
+      // Mark file as deleted in user document instead of physically deleting
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+      const currentDeletedMedia = userData?.deletedMedia || [];
+      
+      // Add the file to deleted media list
+      const updatedDeletedMedia = [...currentDeletedMedia, fileName];
+      
+      await updateDoc(userRef, {
+        deletedMedia: updatedDeletedMedia
+      });
+      
+      // Remove from UI
+      setMediaFiles(prev => prev.filter(media => media.name !== fileName));
+      setSuccessMessage('Media file deleted successfully!');
+      
+    } catch (error) {
+      console.error('Error deleting media file:', error);
+      setErrorMessage('Failed to delete media file. Please try again.');
     }
   };
 
@@ -470,6 +511,13 @@ const Profile = ({ user, userProfile }) => {
               ) : (
                 <img src={media.url} alt={`Media ${index + 1}`} className="media-preview" />
               )}
+              <button 
+                className="delete-media-btn"
+                onClick={() => deleteMediaFile(media.name)}
+                title="Delete media"
+              >
+                🗑️
+              </button>
             </div>
           ))}
         </div>
