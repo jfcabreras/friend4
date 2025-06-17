@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, orderBy, addDoc, onSnapshot } from 'firebase/firestore';
 
 const Invites = ({ user, userProfile }) => {
   const [invites, setInvites] = useState({
@@ -12,6 +12,12 @@ const Invites = ({ user, userProfile }) => {
   });
   const [activeTab, setActiveTab] = useState('pending');
   const [loading, setLoading] = useState(true);
+  const [selectedInvite, setSelectedInvite] = useState(null);
+  const [showInviteDetail, setShowInviteDetail] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
     if (user && userProfile) {
@@ -83,6 +89,100 @@ const Invites = ({ user, userProfile }) => {
       loadInvites();
     } catch (error) {
       console.error('Error updating invite:', error);
+    }
+  };
+
+  const openInviteDetail = (invite) => {
+    setSelectedInvite(invite);
+    setShowInviteDetail(true);
+    loadInviteMessages(invite.id);
+  };
+
+  const closeInviteDetail = () => {
+    setShowInviteDetail(false);
+    setSelectedInvite(null);
+    setMessages([]);
+  };
+
+  const loadInviteMessages = (inviteId) => {
+    const messagesRef = collection(db, 'inviteMessages');
+    const q = query(messagesRef, where('inviteId', '==', inviteId), orderBy('createdAt', 'asc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const messagesList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setMessages(messagesList);
+    });
+
+    return unsubscribe;
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedInvite) return;
+
+    try {
+      await addDoc(collection(db, 'inviteMessages'), {
+        inviteId: selectedInvite.id,
+        senderId: user.uid,
+        senderUsername: userProfile.username,
+        message: newMessage,
+        createdAt: new Date()
+      });
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const openEditModal = (invite) => {
+    setEditFormData({
+      title: invite.title,
+      description: invite.description,
+      meetingLocation: invite.meetingLocation,
+      date: invite.date?.toDate?.()?.toISOString().split('T')[0] || '',
+      time: invite.time,
+      price: invite.price.toString()
+    });
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditFormData({});
+  };
+
+  const updateInvite = async () => {
+    if (!selectedInvite || !editFormData.title || !editFormData.description || !editFormData.meetingLocation) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const inviteRef = doc(db, 'planInvitations', selectedInvite.id);
+      await updateDoc(inviteRef, {
+        title: editFormData.title,
+        description: editFormData.description,
+        meetingLocation: editFormData.meetingLocation,
+        date: new Date(editFormData.date),
+        time: editFormData.time,
+        price: parseFloat(editFormData.price),
+        updatedAt: new Date()
+      });
+
+      alert('Invite updated successfully!');
+      closeEditModal();
+      loadInvites();
+      
+      // Update selected invite if detail view is open
+      if (showInviteDetail) {
+        const updatedInvite = { ...selectedInvite, ...editFormData, date: new Date(editFormData.date), price: parseFloat(editFormData.price) };
+        setSelectedInvite(updatedInvite);
+      }
+    } catch (error) {
+      console.error('Error updating invite:', error);
+      alert('Failed to update invite');
     }
   };
 
@@ -165,22 +265,40 @@ const Invites = ({ user, userProfile }) => {
                 </div>
               </div>
 
-              {invite.type === 'received' && invite.status === 'pending' && (
-                <div className="invite-actions">
+              <div className="invite-actions">
+                <button 
+                  onClick={() => openInviteDetail(invite)}
+                  className="view-details-btn"
+                >
+                  👁️ View Details
+                </button>
+                
+                {invite.type === 'sent' && invite.status === 'pending' && (
                   <button 
-                    onClick={() => handleInviteResponse(invite.id, 'accepted')}
-                    className="accept-btn"
+                    onClick={() => openEditModal(invite)}
+                    className="edit-btn"
                   >
-                    ✅ Accept
+                    ✏️ Edit
                   </button>
-                  <button 
-                    onClick={() => handleInviteResponse(invite.id, 'declined')}
-                    className="decline-btn"
-                  >
-                    ❌ Decline
-                  </button>
-                </div>
-              )}
+                )}
+
+                {invite.type === 'received' && invite.status === 'pending' && (
+                  <>
+                    <button 
+                      onClick={() => handleInviteResponse(invite.id, 'accepted')}
+                      className="accept-btn"
+                    >
+                      ✅ Accept
+                    </button>
+                    <button 
+                      onClick={() => handleInviteResponse(invite.id, 'declined')}
+                      className="decline-btn"
+                    >
+                      ❌ Decline
+                    </button>
+                  </>
+                )}
+              </div>
 
               <div className="invite-status">
                 <span className={`status-badge ${invite.status}`}>
@@ -196,6 +314,158 @@ const Invites = ({ user, userProfile }) => {
           ))
         )}
       </div>
+
+      {/* Invite Detail Modal */}
+      {showInviteDetail && selectedInvite && (
+        <div className="modal-overlay" onClick={closeInviteDetail}>
+          <div className="modal-content invite-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeInviteDetail}>×</button>
+            
+            <div className="invite-detail-header">
+              <h2>{selectedInvite.title}</h2>
+              <span className={`status-badge ${selectedInvite.status}`}>
+                {selectedInvite.status === 'pending' && '⏳ Pending'}
+                {selectedInvite.status === 'accepted' && '✅ Accepted'}
+                {selectedInvite.status === 'declined' && '❌ Declined'}
+              </span>
+            </div>
+
+            <div className="invite-detail-content">
+              <div className="invite-info-section">
+                <h3>Invite Details</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <strong>{selectedInvite.type === 'sent' ? 'To:' : 'From:'}</strong>
+                    <span>{selectedInvite.type === 'sent' ? selectedInvite.toUsername : selectedInvite.fromUsername}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Description:</strong>
+                    <span>{selectedInvite.description}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Date:</strong>
+                    <span>{selectedInvite.date?.toDate?.()?.toLocaleDateString()}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Time:</strong>
+                    <span>{selectedInvite.time}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Location:</strong>
+                    <span>{selectedInvite.meetingLocation}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Price:</strong>
+                    <span>${selectedInvite.price}</span>
+                  </div>
+                </div>
+
+                {selectedInvite.type === 'sent' && selectedInvite.status === 'pending' && (
+                  <button 
+                    onClick={() => openEditModal(selectedInvite)}
+                    className="edit-invite-btn"
+                  >
+                    ✏️ Edit Invite
+                  </button>
+                )}
+              </div>
+
+              <div className="chat-section">
+                <h3>Messages</h3>
+                <div className="messages-container">
+                  {messages.length === 0 ? (
+                    <p className="no-messages">No messages yet. Start the conversation!</p>
+                  ) : (
+                    messages.map(message => (
+                      <div 
+                        key={message.id} 
+                        className={`message ${message.senderId === user.uid ? 'own-message' : 'other-message'}`}
+                      >
+                        <div className="message-header">
+                          <span className="message-sender">{message.senderUsername}</span>
+                          <span className="message-time">
+                            {message.createdAt?.toDate?.()?.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="message-content">{message.message}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                
+                <div className="message-input-section">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    className="message-input"
+                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  />
+                  <button onClick={sendMessage} className="send-message-btn">
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Invite Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeEditModal}>×</button>
+            <h3>Edit Invite</h3>
+            
+            <div className="edit-form">
+              <input
+                type="text"
+                placeholder="Invite title *"
+                value={editFormData.title || ''}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                required
+              />
+              <textarea
+                placeholder="Description *"
+                value={editFormData.description || ''}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Meeting location *"
+                value={editFormData.meetingLocation || ''}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                required
+              />
+              <input
+                type="date"
+                value={editFormData.date || ''}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
+                required
+              />
+              <input
+                type="time"
+                value={editFormData.time || ''}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, time: e.target.value }))}
+                required
+              />
+              <input
+                type="number"
+                placeholder="Price ($) *"
+                value={editFormData.price || ''}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, price: e.target.value }))}
+                required
+              />
+              <button onClick={updateInvite} className="update-invite-btn">
+                Update Invite
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1032,6 +1032,11 @@ body {
   transition: all 0.2s ease;
 }
 
+.modal-close:hover {
+  background: var(--cyber-purple);
+  color: white;
+}
+
 /* Form Styles */
 .form-group {
   margin-bottom: 20px;
