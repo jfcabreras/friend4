@@ -106,13 +106,17 @@ const Invites = ({ user, userProfile }) => {
 
   const loadInviteMessages = (inviteId) => {
     const messagesRef = collection(db, 'inviteMessages');
-    const q = query(messagesRef, where('inviteId', '==', inviteId), orderBy('createdAt', 'asc'));
+    const q = query(messagesRef, where('inviteId', '==', inviteId));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const messagesList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })).sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.() || new Date(0);
+        const bTime = b.createdAt?.toDate?.() || new Date(0);
+        return aTime - bTime; // Sort ascending by creation date
+      });
       setMessages(messagesList);
     });
 
