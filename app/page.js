@@ -26,7 +26,6 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [profileType, setProfileType] = useState('public');
@@ -65,7 +64,7 @@ export default function App() {
     setLoading(true);
     setErrorMessage('');
 
-    if (!email || !password || (!isLogin && (!username || !country || !city))) {
+    if (!email || !password || (!isLogin && (!country || !city))) {
       setErrorMessage('Please fill in all fields');
       setLoading(false);
       return;
@@ -81,19 +80,6 @@ export default function App() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        // Check if username already exists before creating account
-        const usernameQuery = query(
-          collection(db, 'users'),
-          where('username', '==', username.trim())
-        );
-        const usernameSnapshot = await getDocs(usernameQuery);
-
-        if (!usernameSnapshot.empty) {
-          setErrorMessage('Username already exists. Please choose a different username.');
-          setLoading(false);
-          return;
-        }
-
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
 
@@ -101,14 +87,14 @@ export default function App() {
           await sendEmailVerification(newUser);
 
           const userData = {
-            username: username,
             email: email,
             profileType: profileType,
             country: country,
             city: city,
             favorites: [],
             createdAt: new Date(),
-            emailVerified: false
+            emailVerified: false,
+            usernameSet: false
           };
 
           await setDoc(doc(db, 'users', newUser.uid), userData);
@@ -196,13 +182,6 @@ export default function App() {
 
                 {!isLogin && (
                   <>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Username"
-                      required
-                    />
                     <select
                       value={profileType}
                       onChange={(e) => setProfileType(e.target.value)}

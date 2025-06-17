@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,89 +7,110 @@ import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/fire
 
 const Profile = ({ user, userProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    username: '',
-    country: '',
-    city: ''
-  });
-  const [userStats, setUserStats] = useState({
-    sentInvites: 0,
-    receivedInvites: 0,
-    acceptedInvites: 0,
-    favoriteCount: 0
-  });
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('');
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [profileType, setProfileType] = useState('public');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
 
   useEffect(() => {
     if (userProfile) {
-      setEditData({
-        username: userProfile.username || '',
-        country: userProfile.country || '',
-        city: userProfile.city || ''
-      });
-      loadUserStats();
+      setUsername(userProfile.username || '');
+      setCountry(userProfile.country || '');
+      setCity(userProfile.city || '');
+      setProfileType(userProfile.profileType || 'public');
+      
+      // Show username setup if user doesn't have a username
+      if (!userProfile.username || !userProfile.usernameSet) {
+        setShowUsernameSetup(true);
+      }
     }
-  }, [userProfile, user]);
+  }, [userProfile]);
 
-  const loadUserStats = async () => {
-    if (!user?.uid) return; // Don't fetch if user.uid is not available
-
+  const checkUsernameAvailability = async (usernameToCheck) => {
+    if (!usernameToCheck.trim()) return false;
+    
     try {
-      // Count sent invites
-      const sentQuery = query(
-        collection(db, 'planInvitations'),
-        where('fromUserId', '==', user.uid)
+      const usernameQuery = query(
+        collection(db, 'users'),
+        where('username', '==', usernameToCheck.trim())
       );
-      const sentSnapshot = await getDocs(sentQuery);
-
-      // Count received invites
-      const receivedQuery = query(
-        collection(db, 'planInvitations'),
-        where('toUserId', '==', user.uid)
-      );
-      const receivedSnapshot = await getDocs(receivedQuery);
-
-      // Count accepted invites (both sent and received)
-      const acceptedInvites = [
-        ...sentSnapshot.docs.map(doc => doc.data()),
-        ...receivedSnapshot.docs.map(doc => doc.data())
-      ].filter(invite => invite.status === 'accepted');
-
-      setUserStats({
-        sentInvites: sentSnapshot.size,
-        receivedInvites: receivedSnapshot.size,
-        acceptedInvites: acceptedInvites.length,
-        favoriteCount: userProfile.favorites?.length || 0
-      });
+      const usernameSnapshot = await getDocs(usernameQuery);
+      return usernameSnapshot.empty;
     } catch (error) {
-      console.error('Error loading user stats:', error);
+      console.error('Error checking username:', error);
+      return false;
     }
   };
 
-  const handleSaveProfile = async () => {
-    if (!user || !editData.username || !editData.country || !editData.city) {
-      alert('Please fill in all fields');
+  const handleUsernameSetup = async (e) => {
+    e.preventDefault();
+    if (!username.trim()) {
+      setErrorMessage('Please enter a username');
       return;
     }
 
+    setLoading(true);
+    setErrorMessage('');
+
     try {
-      setLoading(true);
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        username: editData.username,
-        country: editData.country,
-        city: editData.city,
-        updatedAt: new Date()
+      const isAvailable = await checkUsernameAvailability(username);
+      if (!isAvailable) {
+        setErrorMessage('Username already exists. Please choose a different username.');
+        setLoading(false);
+        return;
+      }
+
+      await updateDoc(doc(db, 'users', user.uid), {
+        username: username.trim(),
+        usernameSet: true
       });
 
-      setIsEditing(false);
-      alert('Profile updated successfully!');
-
-      // Reload user profile
+      setSuccessMessage('Username set successfully!');
+      setShowUsernameSetup(false);
+      
+      // Refresh the page to update userProfile
       window.location.reload();
     } catch (error) {
+      console.error('Error setting username:', error);
+      setErrorMessage('Failed to set username. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      // If username is being changed, check availability
+      if (username !== userProfile.username) {
+        const isAvailable = await checkUsernameAvailability(username);
+        if (!isAvailable) {
+          setErrorMessage('Username already exists. Please choose a different username.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      await updateDoc(doc(db, 'users', user.uid), {
+        username: username.trim(),
+        country: country.trim(),
+        city: city.trim(),
+        profileType: profileType
+      });
+
+      setSuccessMessage('Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      setErrorMessage('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -97,15 +119,40 @@ const Profile = ({ user, userProfile }) => {
   if (!user) {
     return (
       <div className="profile-section">
-        <h2>Please login to view profile</h2>
+        <h2>Please log in to view your profile</h2>
       </div>
     );
   }
 
-  if (!userProfile) {
+  if (showUsernameSetup) {
     return (
       <div className="profile-section">
-        <div className="loading">Loading profile...</div>
+        <div className="username-setup">
+          <h2>Complete Your Profile</h2>
+          <p>Please choose a username to complete your profile setup:</p>
+          
+          <form onSubmit={handleUsernameSetup}>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Choose a username"
+              className="form-input"
+              required
+            />
+            
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="form-button"
+            >
+              {loading ? 'Setting Username...' : 'Set Username'}
+            </button>
+          </form>
+          
+          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+          {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+        </div>
       </div>
     );
   }
@@ -113,102 +160,114 @@ const Profile = ({ user, userProfile }) => {
   return (
     <div className="profile-section">
       <div className="profile-header">
-        <div className="profile-avatar">
-          {userProfile.username?.charAt(0).toUpperCase()}
-        </div>
-        <div className="profile-info">
-          {isEditing ? (
-            <div className="edit-form">
-              <input
-                type="text"
-                value={editData.username}
-                onChange={(e) => setEditData(prev => ({ ...prev, username: e.target.value }))}
-                placeholder="Username"
-              />
-              <input
-                type="text"
-                value={editData.country}
-                onChange={(e) => setEditData(prev => ({ ...prev, country: e.target.value }))}
-                placeholder="Country"
-              />
-              <input
-                type="text"
-                value={editData.city}
-                onChange={(e) => setEditData(prev => ({ ...prev, city: e.target.value }))}
-                placeholder="City"
-              />
-              <div className="edit-actions">
-                <button onClick={handleSaveProfile} disabled={loading}>
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-                <button onClick={() => setIsEditing(false)}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <div className="profile-display">
-              <h2>{userProfile.username}</h2>
-              <p className="profile-email">{userProfile.email}</p>
-              <p className="profile-location">📍 {userProfile.city}, {userProfile.country}</p>
-              <div className="profile-type">
-                <span className={`type-badge ${userProfile.profileType}`}>
-                  {userProfile.profileType === 'private' ? '🔒 Private Profile' : '🌍 Public Profile'}
-                </span>
-              </div>
-              <button onClick={() => setIsEditing(true)} className="edit-btn">
-                ✏️ Edit Profile
-              </button>
-            </div>
-          )}
-        </div>
+        <h2>My Profile</h2>
+        {!isEditing && (
+          <button 
+            onClick={() => setIsEditing(true)}
+            className="edit-btn"
+          >
+            Edit Profile
+          </button>
+        )}
       </div>
 
-      <div className="profile-stats">
-        <div className="stat-item">
-          <span className="stat-number">{userStats.sentInvites}</span>
-          <span className="stat-label">Sent Invites</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.receivedInvites}</span>
-          <span className="stat-label">Received Invites</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.acceptedInvites}</span>
-          <span className="stat-label">Accepted</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.favoriteCount}</span>
-          <span className="stat-label">Favorites</span>
-        </div>
-      </div>
-
-      <div className="profile-details">
-        <div className="detail-section">
-          <h3>Account Information</h3>
-          <div className="detail-item">
-            <label>Email:</label>
-            <span>{userProfile.email}</span>
+      {isEditing ? (
+        <form onSubmit={handleUpdateProfile} className="profile-form">
+          <div className="form-group">
+            <label>Username:</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="form-input"
+              required
+            />
           </div>
-          <div className="detail-item">
+
+          <div className="form-group">
             <label>Profile Type:</label>
-            <span>
-              {userProfile.profileType === 'private' 
-                ? 'Private (Not discoverable by others)'
-                : 'Public (Visible for receiving invites)'
-              }
-            </span>
+            <select
+              value={profileType}
+              onChange={(e) => setProfileType(e.target.value)}
+              className="form-input"
+            >
+              <option value="public">Public Profile (Visible for receiving invites)</option>
+              <option value="private">Private Profile (Not discoverable)</option>
+            </select>
           </div>
-          <div className="detail-item">
-            <label>Member Since:</label>
-            <span>{userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}</span>
+
+          <div className="form-group">
+            <label>Country:</label>
+            <input
+              type="text"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="form-input"
+              required
+            />
           </div>
-          <div className="detail-item">
-            <label>Email Verified:</label>
-            <span className={user.emailVerified ? 'verified' : 'unverified'}>
-              {user.emailVerified ? '✅ Verified' : '❌ Not Verified'}
-            </span>
+
+          <div className="form-group">
+            <label>City:</label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="form-input"
+              required
+            />
+          </div>
+
+          <div className="form-actions">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="form-button"
+            >
+              {loading ? 'Updating...' : 'Update Profile'}
+            </button>
+            <button 
+              type="button" 
+              onClick={() => {
+                setIsEditing(false);
+                setErrorMessage('');
+                setSuccessMessage('');
+                // Reset form values
+                setUsername(userProfile.username || '');
+                setCountry(userProfile.country || '');
+                setCity(userProfile.city || '');
+                setProfileType(userProfile.profileType || 'public');
+              }}
+              className="cancel-btn"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+          {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+        </form>
+      ) : (
+        <div className="profile-display">
+          <div className="profile-info">
+            <div className="info-item">
+              <strong>Username:</strong> {userProfile?.username || 'Not set'}
+            </div>
+            <div className="info-item">
+              <strong>Email:</strong> {user.email}
+            </div>
+            <div className="info-item">
+              <strong>Profile Type:</strong> {userProfile?.profileType || 'Not set'}
+            </div>
+            <div className="info-item">
+              <strong>Location:</strong> {userProfile?.city}, {userProfile?.country}
+            </div>
+            <div className="info-item">
+              <strong>Email Verified:</strong> {user.emailVerified ? 'Yes' : 'No'}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
