@@ -1606,8 +1606,8 @@ textarea {
 
 .profile-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 30px;
   padding: 20px;
   background: var(--surface);
@@ -1617,8 +1617,9 @@ textarea {
 
 .profile-info {
   display: flex;
-  gap: 20px;
-  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
 }
 
 .profile-avatar {
@@ -2698,9 +2699,9 @@ textarea {
 /* Profile Section Updates */
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin: 30px 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 20px 0;
 }
 
 .stat-item {
@@ -2870,8 +2871,8 @@ textarea {
 
 .media-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
 }
 
 .media-item {
@@ -3250,4 +3251,115 @@ textarea {
   margin: 0;
   color: var(--text-primary);
   font-size: 20px;
+}
+
+/* Mobile-specific profile adjustments */
+@media (max-width: 480px) {
+  .profile-section {
+    padding: 16px;
+    margin: 0;
+  }
+  
+  .profile-header {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .profile-info {
+    gap: 12px;
+  }
+  
+  .profile-avatar {
+    align-self: center;
+  }
+  
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 16px 0;
+  }
+  
+  .stat-item {
+    padding: 12px;
+  }
+  
+  .stat-number {
+    font-size: 18px;
+  }
+  
+  .edit-form {
+    gap: 8px;
+  }
+  
+  .edit-form input,
+  .edit-form select,
+  .edit-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+  
+  .activity-input {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .activity-input input {
+    width: 100%;
+  }
+  
+  .edit-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .edit-actions button {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .detail-section {
+    padding: 16px;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px 0;
+  }
+  
+  .media-section {
+    padding: 16px;
+    margin-top: 20px;
+  }
+  
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  
+  .media-preview {
+    height: 120px;
+  }
+  
+  .profile-picture-upload input[type="file"] {
+    width: 100%;
+    font-size: 14px;
+  }
+  
+  .activity-preferences-display {
+    padding: 16px;
+  }
+  
+  .activity-tags,
+  .activity-tags-display {
+    gap: 6px;
+  }
+  
+  .activity-tag,
+  .activity-tag-display {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
 }
