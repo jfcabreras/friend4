@@ -1032,7 +1032,6 @@ body {
   transition: all 0.2s ease;
 }
 
-```text
 .modal-close:hover {
   background: var(--cyber-purple);
   color: white;
