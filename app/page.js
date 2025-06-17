@@ -87,7 +87,7 @@ export default function App() {
           where('username', '==', username.trim())
         );
         const usernameSnapshot = await getDocs(usernameQuery);
-        
+
         if (!usernameSnapshot.empty) {
           setErrorMessage('Username already exists. Please choose a different username.');
           setLoading(false);
