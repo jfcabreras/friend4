@@ -2,8 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
+import { db, storage } from '../../lib/firebase';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
 
 const Profile = ({ user, userProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -14,6 +15,12 @@ const Profile = ({ user, userProfile }) => {
   const [profileType, setProfileType] = useState('public');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [newMediaFile, setNewMediaFile] = useState(null);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   
   const [userStats, setUserStats] = useState({
     sentInvites: 0,
@@ -28,8 +35,10 @@ const Profile = ({ user, userProfile }) => {
       setCountry(userProfile.country || '');
       setCity(userProfile.city || '');
       setProfileType(userProfile.profileType || 'public');
+      setProfilePicture(userProfile.profilePicture || null);
       
       loadUserStats();
+      loadUserMedia();
     }
   }, [userProfile, user]);
 
@@ -84,6 +93,119 @@ const Profile = ({ user, userProfile }) => {
     }
   };
 
+  const loadUserMedia = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const mediaRef = ref(storage, `users/${user.uid}/media`);
+      const mediaList = await listAll(mediaRef);
+      
+      const mediaUrls = await Promise.all(
+        mediaList.items.map(async (item) => {
+          const url = await getDownloadURL(item);
+          return {
+            name: item.name,
+            url: url,
+            type: item.name.toLowerCase().includes('.mp4') || item.name.toLowerCase().includes('.mov') ? 'video' : 'image'
+          };
+        })
+      );
+      
+      setMediaFiles(mediaUrls);
+    } catch (error) {
+      console.error('Error loading user media:', error);
+    }
+  };
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setErrorMessage('Profile picture must be less than 5MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage('Profile picture must be an image file');
+        return;
+      }
+      setProfilePictureFile(file);
+    }
+  };
+
+  const handleMediaFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 50 * 1024 * 1024) { // 50MB limit
+        setErrorMessage('Media file must be less than 50MB');
+        return;
+      }
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        setErrorMessage('Media file must be an image or video file');
+        return;
+      }
+      setNewMediaFile(file);
+    }
+  };
+
+  const uploadProfilePicture = async () => {
+    if (!profilePictureFile || !user?.uid) return null;
+    
+    setUploadingPicture(true);
+    try {
+      const timestamp = Date.now();
+      const fileExtension = profilePictureFile.name.split('.').pop();
+      const fileName = `profile_${timestamp}.${fileExtension}`;
+      const profilePicRef = ref(storage, `users/${user.uid}/profile/${fileName}`);
+      
+      await uploadBytes(profilePicRef, profilePictureFile);
+      const downloadURL = await getDownloadURL(profilePicRef);
+      
+      setUploadingPicture(false);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      setUploadingPicture(false);
+      return null;
+    }
+  };
+
+  const uploadMediaFile = async () => {
+    if (!newMediaFile || !user?.uid) return;
+    
+    setUploadingMedia(true);
+    setErrorMessage('');
+    
+    try {
+      const timestamp = Date.now();
+      const fileExtension = newMediaFile.name.split('.').pop();
+      const fileName = `media_${timestamp}.${fileExtension}`;
+      const mediaRef = ref(storage, `users/${user.uid}/media/${fileName}`);
+      
+      await uploadBytes(mediaRef, newMediaFile);
+      const downloadURL = await getDownloadURL(mediaRef);
+      
+      const newMedia = {
+        name: fileName,
+        url: downloadURL,
+        type: newMediaFile.type.startsWith('video/') ? 'video' : 'image'
+      };
+      
+      setMediaFiles(prev => [...prev, newMedia]);
+      setNewMediaFile(null);
+      setSuccessMessage('Media file uploaded successfully!');
+      
+      // Reset file input
+      const fileInput = document.getElementById('media-file-input');
+      if (fileInput) fileInput.value = '';
+      
+    } catch (error) {
+      console.error('Error uploading media file:', error);
+      setErrorMessage('Failed to upload media file. Please try again.');
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
   
 
   const handleUpdateProfile = async (e) => {
@@ -103,16 +225,34 @@ const Profile = ({ user, userProfile }) => {
         }
       }
 
-      await updateDoc(doc(db, 'users', user.uid), {
+      // Upload profile picture if a new one was selected
+      let profilePictureUrl = profilePicture;
+      if (profilePictureFile) {
+        profilePictureUrl = await uploadProfilePicture();
+        if (!profilePictureUrl) {
+          setErrorMessage('Failed to upload profile picture. Please try again.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      const updateData = {
         username: username.trim(),
         country: country.trim(),
         city: city.trim(),
         profileType: profileType,
         updatedAt: new Date()
-      });
+      };
+
+      if (profilePictureUrl) {
+        updateData.profilePicture = profilePictureUrl;
+      }
+
+      await updateDoc(doc(db, 'users', user.uid), updateData);
 
       setSuccessMessage('Profile updated successfully!');
       setIsEditing(false);
+      setProfilePictureFile(null);
       
       // Reload stats after update
       loadUserStats();
@@ -149,9 +289,13 @@ const Profile = ({ user, userProfile }) => {
     <div className="profile-section">
       <div className="profile-header">
         <div className="profile-avatar">
-          <div className="avatar-placeholder">
-            {userProfile.username?.charAt(0).toUpperCase()}
-          </div>
+          {profilePicture ? (
+            <img src={profilePicture} alt="Profile" className="profile-picture" />
+          ) : (
+            <div className="avatar-placeholder">
+              {userProfile.username?.charAt(0).toUpperCase()}
+            </div>
+          )}
         </div>
         <div className="profile-info">
           {isEditing ? (
@@ -184,6 +328,21 @@ const Profile = ({ user, userProfile }) => {
                 <option value="public">Public Profile (Visible for receiving invites)</option>
                 <option value="private">Private Profile (Not discoverable)</option>
               </select>
+              
+              <div className="profile-picture-upload">
+                <label htmlFor="profile-picture-input">Profile Picture:</label>
+                <input
+                  id="profile-picture-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                />
+                {profilePictureFile && (
+                  <p className="file-selected">Selected: {profilePictureFile.name}</p>
+                )}
+                {uploadingPicture && <p>Uploading profile picture...</p>}
+              </div>
+              
               <div className="edit-actions">
                 <button onClick={handleUpdateProfile} disabled={loading}>
                   {loading ? 'Saving...' : 'Save'}
@@ -269,6 +428,55 @@ const Profile = ({ user, userProfile }) => {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="media-section">
+        <h3>Media Gallery</h3>
+        
+        <div className="media-upload">
+          <input
+            id="media-file-input"
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleMediaFileChange}
+            style={{ display: 'none' }}
+          />
+          <label htmlFor="media-file-input" className="upload-btn">
+            📎 Add Photo/Video
+          </label>
+          
+          {newMediaFile && (
+            <div className="media-upload-preview">
+              <p>Selected: {newMediaFile.name}</p>
+              <button 
+                onClick={uploadMediaFile} 
+                disabled={uploadingMedia}
+                className="upload-confirm-btn"
+              >
+                {uploadingMedia ? 'Uploading...' : 'Upload Media'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="media-grid">
+          {mediaFiles.map((media, index) => (
+            <div key={index} className="media-item">
+              {media.type === 'video' ? (
+                <video controls className="media-preview">
+                  <source src={media.url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img src={media.url} alt={`Media ${index + 1}`} className="media-preview" />
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {mediaFiles.length === 0 && (
+          <p className="no-media">No media files uploaded yet.</p>
+        )}
       </div>
     </div>
   );
