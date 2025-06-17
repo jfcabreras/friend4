@@ -108,22 +108,22 @@ const Invites = ({ user, userProfile }) => {
     <div className="invites-section">
       <div className="invites-header">
         <h2>My Invites</h2>
-        <div className="invite-tabs">
+        <div className="filter-controls">
           <button 
             onClick={() => setActiveTab('pending')}
-            className={activeTab === 'pending' ? 'active' : ''}
+            className={`filter-btn ${activeTab === 'pending' ? 'active' : ''}`}
           >
             Pending ({invites.pending.length})
           </button>
           <button 
             onClick={() => setActiveTab('accepted')}
-            className={activeTab === 'accepted' ? 'active' : ''}
+            className={`filter-btn ${activeTab === 'accepted' ? 'active' : ''}`}
           >
             Accepted ({invites.accepted.length})
           </button>
           <button 
             onClick={() => setActiveTab('declined')}
-            className={activeTab === 'declined' ? 'active' : ''}
+            className={`filter-btn ${activeTab === 'declined' ? 'active' : ''}`}
           >
             Declined ({invites.declined.length})
           </button>
