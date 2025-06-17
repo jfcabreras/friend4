@@ -16,6 +16,8 @@ const Pals = ({ user, userProfile }) => {
   const [selectedPal, setSelectedPal] = useState(null);
   const [selectedPalMedia, setSelectedPalMedia] = useState([]);
   const [loadingPalMedia, setLoadingPalMedia] = useState(false);
+  const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [inviteData, setInviteData] = useState({
     title: '',
     description: '',
@@ -168,6 +170,28 @@ const Pals = ({ user, userProfile }) => {
     } catch (error) {
       console.error('Error sending invite:', error);
       alert('Failed to send invite');
+    }
+  };
+
+  const openFullscreenMedia = (index) => {
+    setCurrentMediaIndex(index);
+    setShowFullscreenMedia(true);
+  };
+
+  const closeFullscreenMedia = () => {
+    setShowFullscreenMedia(false);
+    setCurrentMediaIndex(0);
+  };
+
+  const navigateMedia = (direction) => {
+    if (direction === 'next') {
+      setCurrentMediaIndex((prev) => 
+        prev === selectedPalMedia.length - 1 ? 0 : prev + 1
+      );
+    } else {
+      setCurrentMediaIndex((prev) => 
+        prev === 0 ? selectedPalMedia.length - 1 : prev - 1
+      );
     }
   };
 
@@ -367,15 +391,24 @@ const Pals = ({ user, userProfile }) => {
               ) : selectedPalMedia.length > 0 ? (
                 <div className="modal-media-grid">
                   {selectedPalMedia.map((media, index) => (
-                    <div key={index} className="modal-media-item">
+                    <div 
+                      key={index} 
+                      className="modal-media-item"
+                      onClick={() => openFullscreenMedia(index)}
+                    >
                       {media.type === 'video' ? (
-                        <video controls className="modal-media-preview">
+                        <video className="modal-media-preview">
                           <source src={media.url} type="video/mp4" />
                           Your browser does not support the video tag.
                         </video>
                       ) : (
                         <img src={media.url} alt={`Media ${index + 1}`} className="modal-media-preview" />
                       )}
+                      <div className="media-overlay">
+                        <span className="media-icon">
+                          {media.type === 'video' ? '▶️' : '🔍'}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -402,6 +435,67 @@ const Pals = ({ user, userProfile }) => {
                 Send Invite
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Media Modal */}
+      {showFullscreenMedia && selectedPalMedia.length > 0 && (
+        <div className="fullscreen-modal">
+          <div className="fullscreen-content">
+            <button className="fullscreen-close" onClick={closeFullscreenMedia}>
+              ×
+            </button>
+            
+            <div className="fullscreen-nav-indicators">
+              <div className="nav-indicator">
+                {currentMediaIndex + 1} / {selectedPalMedia.length}
+              </div>
+              {selectedPalMedia.length > 1 && (
+                <>
+                  <div className="nav-hint nav-hint-up">← Previous</div>
+                  <div className="nav-hint nav-hint-down">Next →</div>
+                </>
+              )}
+            </div>
+
+            {selectedPalMedia.length > 1 && (
+              <button 
+                className="fullscreen-nav fullscreen-nav-prev" 
+                onClick={() => navigateMedia('prev')}
+              >
+                ‹
+              </button>
+            )}
+
+            <div className="fullscreen-media-container">
+              {selectedPalMedia[currentMediaIndex]?.type === 'video' ? (
+                <video 
+                  controls 
+                  autoPlay 
+                  className="fullscreen-media"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <source src={selectedPalMedia[currentMediaIndex].url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img 
+                  src={selectedPalMedia[currentMediaIndex]?.url} 
+                  alt={`Media ${currentMediaIndex + 1}`} 
+                  className="fullscreen-media"
+                />
+              )}
+            </div>
+
+            {selectedPalMedia.length > 1 && (
+              <button 
+                className="fullscreen-nav fullscreen-nav-next" 
+                onClick={() => navigateMedia('next')}
+              >
+                ›
+              </button>
+            )}
           </div>
         </div>
       )}
