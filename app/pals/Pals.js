@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 
 const Pals = ({ user, userProfile }) => {
   const [pals, setPals] = useState([]);
@@ -31,49 +31,43 @@ const Pals = ({ user, userProfile }) => {
 
     try {
       setLoading(true);
+      console.log('Loading pals for user:', user.uid);
+      console.log('User profile:', userProfile);
 
-      // First query all public users
-      let q = query(
+      // Start with a simple query for all public users
+      const q = query(
         collection(db, 'users'),
         where('profileType', '==', 'public')
       );
 
-      // If user has a country, add country filter
+      console.log('Executing query for public users...');
+      const palsSnapshot = await getDocs(q);
+      console.log('Query results:', palsSnapshot.docs.length, 'documents found');
+
+      let allPals = palsSnapshot.docs
+        .filter(doc => doc.id !== user?.uid)
+        .map(doc => {
+          const data = doc.data();
+          console.log('Pal data:', { id: doc.id, ...data });
+          return {
+            id: doc.id,
+            ...data
+          };
+        });
+
+      // If user has a country, filter by country on the client side
       if (userProfile?.country) {
-        q = query(
-          collection(db, 'users'),
-          where('profileType', '==', 'public'),
-          where('country', '==', userProfile.country)
-        );
+        console.log('Filtering by country:', userProfile.country);
+        allPals = allPals.filter(pal => pal.country === userProfile.country);
+        console.log('Filtered pals:', allPals.length);
       }
 
-      const palsSnapshot = await getDocs(q);
-      const allPals = palsSnapshot.docs
-        .filter(doc => doc.id !== user?.uid)
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
       setPals(allPals);
+      console.log('Final pals set:', allPals);
     } catch (error) {
       console.error('Error loading pals:', error);
-      // Try a simpler query without country filter if the main query fails
-      try {
-        const simpleQuery = query(
-          collection(db, 'users'),
-          where('profileType', '==', 'public')
-        );
-        const palsSnapshot = await getDocs(simpleQuery);
-        const allPals = palsSnapshot.docs
-          .filter(doc => doc.id !== user?.uid)
-          .map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-        setPals(allPals);
-      } catch (fallbackError) {
-        console.error('Error loading pals with fallback query:', fallbackError);
-      }
+      // Set empty array on error to show the empty state
+      setPals([]);
     } finally {
       setLoading(false);
     }
