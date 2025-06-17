@@ -1,0 +1,46 @@
+Replit Project Prompt: Social Task & Event App
+Create a web application that blends features from Uber, TaskRabbit, and TikTok, facilitating interactions between "Private" and "Public" user profiles.
+
+Core User Types & Interactions
+The application will feature two distinct user types:
+
+Private Profiles:
+
+Can create plan invitations for specific Public Profiles (date, time, price, per-invite chat).
+Can create open invites that appear on Public Profiles' feeds. Public Profiles can then make offers to fulfill these invites. Private Profiles cannot see other Private Profiles' open invites.
+Their profiles are not discoverable by other users. They are only visible to Public Profiles when viewing an invite from them.
+Can add Public Profiles to their favorites.
+On the Home feed, they can see "wish invites" created by Public Profiles.
+Public Profiles:
+
+Can accept or decline plan invitations from Private Profiles.
+Can create posts that appear on the main feed for all other users.
+Can see open invites from Private Profiles on their feed and make offers.
+Are visible to Private Profiles for receiving invites.
+On the Home feed, they can see available "Pals" (Public Profiles) or requests (open invites from Private Profiles).
+User Registration & Authentication
+Users must register with a unique username.
+During registration, users must select their profile type: "Private" or "Public." Clearly state that Public profiles will be visible for receiving invites.
+Users must also select their country and city during registration.
+The bottom menu should be always available but require users to log in or register if they try to switch sections without being authenticated.
+Application Sections & Functionality
+The application should have the following main sections, accessible via a bottom menu:
+
+Home (Feed)
+For Public Profiles: Displays a feed of available "Pals" (other Public Profiles) and "Requests" (open invites from Private Profiles).
+For Private Profiles: Displays a feed of "Wish Invites" created by Public Profiles.
+Pals
+Allows users to filter Public Profiles by their favorites.
+Allows users to explore other Public Profiles.
+Invites
+Displays a list of invites categorized by their status:
+Pending: Invites awaiting acceptance or decline.
+Accepted: Invites that have been accepted.
+Declined: Invites that have been declined.
+My Profile & Edit
+Displays the user's own profile information.
+Allows users to edit their profile details.
+Additional Notes:
+Invites: All invites (plan invitations and open invites) should include a date, time, and price. A chat feature should be available for each individual plan invitation.
+Data Storage: Consider how user data, posts, invites, and favorites will be stored (e.g., using a database).
+User Interface (UI): Focus on a clean and intuitive UI that supports the described functionalities.
