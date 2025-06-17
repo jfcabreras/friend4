@@ -1,0 +1,15 @@
+Error: [2025-06-17T16:03:22.822Z]  @firebase/firestore: "Firestore (11.9.0): Uncaught Error in snapshot listener:" "FirebaseError: [code=permission-denied]: Missing or insufficient permissions."
+    at createConsoleError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:882:71)
+    at handleConsoleError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:1058:54)
+    at console.error (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:1223:57)
+    at Logger.defaultLogHandler [as _logHandler] (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_40be33d0._.js:4385:24)
+    at Logger.error (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_40be33d0._.js:4460:14)
+    at __PRIVATE_logError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:240:11)
+    at __PRIVATE_AsyncObserver.error (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:16049:80)
+    at __PRIVATE_QueryListener.onError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:14731:17)
+    at __PRIVATE_eventManagerOnWatchError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:14691:35)
+    at __PRIVATE_removeAndCleanupTarget (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:15496:59)
+    at https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:15422:112
+    at async __PRIVATE_syncEngineRejectListen (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:15422:12)
+    at async __PRIVATE_handleTargetError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:14122:29)
+    at async __PRIVATE_onWatchStreamChange (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_%40firebase_firestore_dist_index_esm2017_c2fcaa2e.js:14119:45)
