@@ -133,10 +133,16 @@ const Pals = ({ user, userProfile }) => {
         <h2>Explore Pals</h2>
         <div className="filter-controls">
           <button 
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={showFavoritesOnly ? 'active' : ''}
+            onClick={() => setShowFavoritesOnly(false)}
+            className={`filter-btn ${!showFavoritesOnly ? 'active' : ''}`}
           >
-            {showFavoritesOnly ? '⭐ Favorites' : '🌍 All Pals'}
+            🌍 All Pals
+          </button>
+          <button 
+            onClick={() => setShowFavoritesOnly(true)}
+            className={`filter-btn ${showFavoritesOnly ? 'active' : ''}`}
+          >
+            ⭐ Favorites
           </button>
         </div>
       </div>
