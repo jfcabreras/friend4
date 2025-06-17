@@ -20,23 +20,32 @@ const Pals = ({ user, userProfile }) => {
   });
 
   useEffect(() => {
-    if (user?.uid && userProfile?.country) {
+    if (user?.uid && userProfile) {
       loadPals();
       setFavorites(userProfile.favorites || []);
     }
-  }, [user?.uid, userProfile?.country]);
+  }, [user?.uid, userProfile]);
 
   const loadPals = async () => {
-    if (!user?.uid || !userProfile?.country) return;
+    if (!user?.uid) return;
 
     try {
       setLoading(true);
 
-      const q = query(
+      // First query all public users
+      let q = query(
         collection(db, 'users'),
-        where('profileType', '==', 'public'),
-        where('country', '==', userProfile.country)
+        where('profileType', '==', 'public')
       );
+
+      // If user has a country, add country filter
+      if (userProfile?.country) {
+        q = query(
+          collection(db, 'users'),
+          where('profileType', '==', 'public'),
+          where('country', '==', userProfile.country)
+        );
+      }
 
       const palsSnapshot = await getDocs(q);
       const allPals = palsSnapshot.docs
@@ -48,6 +57,23 @@ const Pals = ({ user, userProfile }) => {
       setPals(allPals);
     } catch (error) {
       console.error('Error loading pals:', error);
+      // Try a simpler query without country filter if the main query fails
+      try {
+        const simpleQuery = query(
+          collection(db, 'users'),
+          where('profileType', '==', 'public')
+        );
+        const palsSnapshot = await getDocs(simpleQuery);
+        const allPals = palsSnapshot.docs
+          .filter(doc => doc.id !== user?.uid)
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        setPals(allPals);
+      } catch (fallbackError) {
+        console.error('Error loading pals with fallback query:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
