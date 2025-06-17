@@ -1,34 +1,37 @@
-'use client';  // Marks the component as a Client Component
 
-import '../globals.css';
+'use client';
 
-const Nav = ({ setSelectedSection, handleLogout, user}) => {
-  const handleSectionChange = (section) => {
-    setSelectedSection(section);  // Update the selected section state in the parent component
-  };
+import React from 'react';
 
+const Nav = ({ selectedSection, setSelectedSection, user }) => {
   return (
-    <nav className="navigation">
-      <div className="navigation-logo">
-        <button onClick={() => handleSectionChange('main')}>
-          <h1>Ask a Pal</h1>
-        </button>
+    <nav className="nav">
+      <div className="nav-brand">
+        <h1>Social Tasks</h1>
       </div>
-      {user && 
-        <div className="navigation-options">
-          {/* Uncomment and customize the navigation buttons as needed */}
-          {/* 
-          <button onClick={() => handleSectionChange('main')}>Inicio</button>
-          <button onClick={() => handleSectionChange('contribute')}>Apóyanos</button>
-          <button onClick={() => handleSectionChange('login')}>Ingresar</button>
-          <button onClick={() => handleSectionChange('signin')}>Registro</button>
-          <button onClick={() => handleSectionChange('profile')}>Mi Perfíl</button>
-          */}
-          <button>Notifications</button>
-          <button>Messages</button>
-          <button onClick={handleLogout}>Salir</button>
-        </div>
-      }
+      
+      <div className="nav-center">
+        {user && (
+          <span className="nav-user">
+            Welcome, {user.email}
+          </span>
+        )}
+      </div>
+      
+      <div className="nav-actions">
+        {!user ? (
+          <button 
+            onClick={() => setSelectedSection('login')} 
+            className="nav-login-btn"
+          >
+            Login
+          </button>
+        ) : (
+          <div className="nav-status">
+            {user.emailVerified ? '✅' : '⏳'}
+          </div>
+        )}
+      </div>
     </nav>
   );
 };

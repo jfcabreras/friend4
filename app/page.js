@@ -5,30 +5,31 @@ import Nav from './components/Nav';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-import Main from './main/Main';
+import Home from './home/Home';
 import Pals from './pals/Pals';
+import Invites from './invites/Invites';
 import Profile from './profile/Profile';
-import Messages from './messages/Messages';
 
-import { auth, db, storage } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 export default function Home() {
   const router = useRouter();
   const currentUserUid = auth.currentUser?.uid;
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('main');
-  const [profileUserId, setProfileUserId] = useState(null);
+  const [selectedSection, setSelectedSection] = useState('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [profileType, setProfileType] = useState('public');
   const [isLogin, setIsLogin] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [forgotPassword, setForgotPassword] = useState(false);
@@ -37,19 +38,26 @@ export default function Home() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        await checkVerificationStatus(user);
+        await loadUserProfile(user.uid);
         setShowLoginModal(false);
       } else {
         setUser(null);
+        setUserProfile(null);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  const checkVerificationStatus = async (user) => {
-    await user.reload();
-    setUser(auth.currentUser);
+  const loadUserProfile = async (uid) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      if (userDoc.exists()) {
+        setUserProfile(userDoc.data());
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
   };
 
   const handleAuth = async (e) => {
@@ -57,7 +65,7 @@ export default function Home() {
     setLoading(true);
     setErrorMessage('');
 
-    if (!email || !password || (!isLogin && !name)) {
+    if (!email || !password || (!isLogin && (!username || !country || !city))) {
       setErrorMessage('Please fill in all fields');
       setLoading(false);
       return;
@@ -78,21 +86,20 @@ export default function Home() {
 
         if (newUser) {
           await sendEmailVerification(newUser);
-          console.log('Verification email sent!');
 
-          const myCollection = doc(db, 'users', newUser.uid);
-          const myDocumentData = {
-            name: name,
+          const userData = {
+            username: username,
             email: email,
-            lastName: lastName,
+            profileType: profileType,
+            country: country,
+            city: city,
+            favorites: [],
+            createdAt: new Date(),
+            emailVerified: false
           };
 
-          await setDoc(myCollection, myDocumentData);
-          console.log('Document added or updated successfully!');
+          await setDoc(doc(db, 'users', newUser.uid), userData);
           setErrorMessage('Please verify your email before proceeding.');
-        } else {
-          console.error('User authentication failed.');
-          setErrorMessage('User authentication failed.');
         }
       }
     } catch (error) {
@@ -106,22 +113,9 @@ export default function Home() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/');
+      setSelectedSection('home');
     } catch (error) {
       console.error('Error signing out:', error.message);
-      setErrorMessage('Error signing out. Please try again later.');
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (user && !user.emailVerified) {
-      try {
-        await sendEmailVerification(user);
-        setErrorMessage('Verification email has been sent again.');
-      } catch (error) {
-        console.error('Error resending verification email:', error.message);
-        setErrorMessage('Failed to resend the verification email.');
-      }
     }
   };
 
@@ -134,86 +128,39 @@ export default function Home() {
     try {
       await sendPasswordResetEmail(auth, email);
       setErrorMessage('Password reset email sent! Check your inbox.');
-      setForgotPassword(false); // Close forgot password view
+      setForgotPassword(false);
     } catch (error) {
       console.error('Error sending password reset email:', error.message);
       setErrorMessage('Failed to send reset email. Please try again.');
     }
   };
 
-  useEffect(() => {
-    if (selectedSection === 'login') {
+  const handleSectionChange = (section) => {
+    if (!user && section !== 'home') {
       setShowLoginModal(true);
-      setSelectedSection('main');
+      return;
     }
-  }, [selectedSection]);
-
-  const handleOpenModal = () => {
-    // setShowNewReportModal(true);
-  };
-
-  const navigateToProfile = (userId) => {
-    if (setProfileUserId) {
-      setProfileUserId(userId);
-    }
-    setSelectedSection('profile');
+    setSelectedSection(section);
   };
 
   const renderSelectedSection = () => {
-    const renderSection = () => {
-      switch (selectedSection) {
-        case 'main':
-          return <Main router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
-        case 'pals':
-          return <Pals router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
-        case 'contribute':
-          return <Contribute setSelectedSection={setSelectedSection} />;
-        case 'profile':
-          return <Profile userId={profileUserId} setSelectedSection={setSelectedSection} />;
-        case 'messages':
-          return <Messages setSelectedSection={setSelectedSection} />;
-        case 'login':
-          return <Main router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
-        default:
-          return <Main router={router} setSelectedSection={setSelectedSection} user={user} profileUserId={profileUserId} setProfileUserId={setProfileUserId}/>;
-      }
-    };
-
-    return (
-      <>
-        {user && !user.emailVerified && (
-          <div style={{ 
-            padding: '16px', 
-            background: '#fef3c7', 
-            color: '#92400e',
-            textAlign: 'center',
-            fontSize: '14px'
-          }}>
-            <p>📧 Please verify your email to report incidents</p>
-            <button 
-              onClick={handleResendVerification}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#dc2626',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                marginTop: '4px'
-              }}
-            >
-              Resend verification email
-            </button>
-          </div>
-        )}
-        {renderSection()}
-      </>
-    );
+    switch (selectedSection) {
+      case 'home':
+        return <Home user={user} userProfile={userProfile} />;
+      case 'pals':
+        return <Pals user={user} userProfile={userProfile} />;
+      case 'invites':
+        return <Invites user={user} userProfile={userProfile} />;
+      case 'profile':
+        return <Profile user={user} userProfile={userProfile} />;
+      default:
+        return <Home user={user} userProfile={userProfile} />;
+    }
   };
-
 
   return (
     <div className="page">
-      <Nav setSelectedSection={setSelectedSection} handleLogout={handleLogout} user={user} />
+      <Nav selectedSection={selectedSection} setSelectedSection={handleSectionChange} user={user} />
 
       {showLoginModal && (
         <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
@@ -224,28 +171,45 @@ export default function Home() {
               <form onSubmit={handleAuth}>
                 <div className='main-form-head'>
                   <h2>{isLogin ? 'Login or\u00A0' : 'Register or\u00A0'}</h2>
-                  <button onClick={() => setIsLogin(!isLogin)}>
+                  <button type="button" onClick={() => setIsLogin(!isLogin)}>
                     {isLogin ? 'Register' : 'Login'}
                   </button>
                 </div>
+
                 {!isLogin && (
                   <>
                     <input
                       type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="First Name"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Username"
+                      required
+                    />
+                    <select
+                      value={profileType}
+                      onChange={(e) => setProfileType(e.target.value)}
+                      required
+                    >
+                      <option value="public">Public Profile (Visible for receiving invites)</option>
+                      <option value="private">Private Profile (Not discoverable)</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="Country"
                       required
                     />
                     <input
                       type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Last Name"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="City"
                       required
                     />
                   </>
                 )}
+
                 <input
                   type="email"
                   value={email}
@@ -260,6 +224,7 @@ export default function Home() {
                   placeholder="Password"
                   required
                 />
+
                 {!isLogin && (
                   <input
                     type="password"
@@ -269,26 +234,19 @@ export default function Home() {
                     required
                   />
                 )}
-                <div>
-                  <button type="submit" disabled={loading}>
-                    {loading ? 'Loading...' : isLogin ? 'Login' : 'Register'}
-                  </button>
-                </div>
+
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Loading...' : isLogin ? 'Login' : 'Register'}
+                </button>
+
                 {isLogin && !forgotPassword && (
                   <button type="button" onClick={() => setForgotPassword(true)}>
                     Forgot Password?
                   </button>
                 )}
+
                 {forgotPassword && (
                   <div>
-                    <h3>Reset Your Password</h3>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      required
-                    />
                     <button type="button" onClick={handleForgotPassword}>
                       Send Reset Link
                     </button>
@@ -300,48 +258,50 @@ export default function Home() {
               </form>
               {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
             </div>
-
           </div>
         </div>
       )}
 
       <main className="main">
+        {user && !user.emailVerified && (
+          <div className="verification-banner">
+            <p>📧 Please verify your email to access all features</p>
+          </div>
+        )}
         {renderSelectedSection()}
       </main>
 
-            {/* Bottom Action Bar */}
-      <div className="bottom-action-bar">
-        {user?.emailVerified ? (
-          <>
-            <button onClick={() => setSelectedSection('main')} className="report-btn">
-              Home
-            </button>
-            <button onClick={() => setSelectedSection('pals')} className="report-btn">
-              Find Pals
-            </button>
-            <button onClick={handleOpenModal} className="report-btn">
-              New Report
-            </button>
-            <button className="report-btn">
-              Explore
-            </button>
-            <button onClick={() => navigateToProfile(currentUserUid)} className="report-btn">
-              My Profile
-            </button>
-          </>
-        ) : (
-          <button onClick={() => setSelectedSection('login')} className="login-action-btn">
-            Login to Report
+      <div className="bottom-nav">
+        <button 
+          onClick={() => handleSectionChange('home')} 
+          className={selectedSection === 'home' ? 'active' : ''}
+        >
+          🏠 Home
+        </button>
+        <button 
+          onClick={() => handleSectionChange('pals')} 
+          className={selectedSection === 'pals' ? 'active' : ''}
+        >
+          👥 Pals
+        </button>
+        <button 
+          onClick={() => handleSectionChange('invites')} 
+          className={selectedSection === 'invites' ? 'active' : ''}
+        >
+          📨 Invites
+        </button>
+        <button 
+          onClick={() => handleSectionChange('profile')} 
+          className={selectedSection === 'profile' ? 'active' : ''}
+        >
+          👤 Profile
+        </button>
+        {user && (
+          <button onClick={handleLogout} className="logout-btn">
+            🚪 Logout
           </button>
         )}
       </div>
-
-      {/* {!user && (
-        <footer className="footer">
-          <p>Ask a Pal - 2025</p>
-        </footer>
-      )} */}
-
     </div>
   );
 }

@@ -1,109 +1,111 @@
-
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth, db } from '../../lib/firebase';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  addDoc, 
-  serverTimestamp 
-} from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { db } from '../../lib/firebase';
+import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
-const Profile = ({ userId, setSelectedSection, user }) => {
-  const router = useRouter();
-  const currentUserUid = auth.currentUser?.uid;
-  const [profileUser, setProfileUser] = useState(null);
-  const [userReports, setUserReports] = useState([]);
-  const [collaboratedReports, setCollaboratedReports] = useState([]);
-  const [favoriteReports, setFavoriteReports] = useState([]);
-  const [activeTab, setActiveTab] = useState('reports');
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageText, setMessageText] = useState('');
-
-  const targetUserId = userId || currentUserUid;
-  const isOwnProfile = targetUserId === currentUserUid;
+const Profile = ({ user, userProfile }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    username: '',
+    country: '',
+    city: ''
+  });
+  const [userStats, setUserStats] = useState({
+    sentInvites: 0,
+    receivedInvites: 0,
+    acceptedInvites: 0,
+    favoriteCount: 0
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!targetUserId) return;
+    if (userProfile) {
+      setEditData({
+        username: userProfile.username || '',
+        country: userProfile.country || '',
+        city: userProfile.city || ''
+      });
+      loadUserStats();
+    }
+  }, [userProfile, user]);
 
-      try {
-        // Fetch user data
-        const userDoc = await getDoc(doc(db, "users", targetUserId));
-        if (userDoc.exists()) {
-          setProfileUser(userDoc.data());
-          setFavoriteReports(userDoc.data().favoriteReports || []);
-        }
-
-        // Fetch user's reports
-        const reportsQuery = query(
-          collection(db, "reports"), 
-          where("sender", "==", targetUserId)
-        );
-        const reportsSnapshot = await getDocs(reportsQuery);
-        const reports = reportsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setUserReports(reports);
-
-        // Fetch collaborated reports
-        const allReportsSnapshot = await getDocs(collection(db, "reports"));
-        const collaboratedReports = allReportsSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(report => 
-            report.collaborators?.some(collaborator => collaborator.id === targetUserId)
-          );
-        setCollaboratedReports(collaboratedReports);
-
-      } catch (error) {
-        console.error("Error fetching profile data:", error);
-      }
-    };
-
-    fetchProfileData();
-  }, [targetUserId]);
-
-  const sendMessage = async () => {
-    if (!messageText.trim() || !currentUserUid || !profileUser) return;
+  const loadUserStats = async () => {
+    if (!user) return;
 
     try {
-      await addDoc(collection(db, "messages"), {
-        senderId: currentUserUid,
-        receiverId: targetUserId,
-        senderEmail: user.email,
-        senderName: user.displayName || user.email,
-        receiverEmail: profileUser.email,
-        receiverName: profileUser.displayName || profileUser.email,
-        message: messageText.trim(),
-        timestamp: serverTimestamp(),
-        read: false
-      });
+      // Count sent invites
+      const sentQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentSnapshot = await getDocs(sentQuery);
 
-      setMessageText('');
-      setShowMessageModal(false);
-      alert('Message sent successfully!');
+      // Count received invites
+      const receivedQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedSnapshot = await getDocs(receivedQuery);
+
+      // Count accepted invites (both sent and received)
+      const acceptedInvites = [
+        ...sentSnapshot.docs.map(doc => doc.data()),
+        ...receivedSnapshot.docs.map(doc => doc.data())
+      ].filter(invite => invite.status === 'accepted');
+
+      setUserStats({
+        sentInvites: sentSnapshot.size,
+        receivedInvites: receivedSnapshot.size,
+        acceptedInvites: acceptedInvites.length,
+        favoriteCount: userProfile.favorites?.length || 0
+      });
     } catch (error) {
-      console.error("Error sending message:", error);
-      alert('Failed to send message');
+      console.error('Error loading user stats:', error);
     }
   };
 
-  const navigateToReport = (reportId) => {
-    router.push(`/report/${reportId}`);
+  const handleSaveProfile = async () => {
+    if (!user || !editData.username || !editData.country || !editData.city) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        username: editData.username,
+        country: editData.country,
+        city: editData.city,
+        updatedAt: new Date()
+      });
+
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+
+      // Reload user profile
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!profileUser) {
+  if (!user) {
     return (
-      <div className="profile-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading profile...</p>
+      <div className="profile-section">
+        <h2>Please login to view profile</h2>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="profile-section">
+        <div className="loading">Loading profile...</div>
       </div>
     );
   }
@@ -111,178 +113,102 @@ const Profile = ({ userId, setSelectedSection, user }) => {
   return (
     <div className="profile-section">
       <div className="profile-header">
+        <div className="profile-avatar">
+          {userProfile.username?.charAt(0).toUpperCase()}
+        </div>
         <div className="profile-info">
-          <div className="profile-avatar">
-            {profileUser.photoURL ? (
-              <img src={profileUser.photoURL} alt="Profile" />
-            ) : (
-              <div className="avatar-placeholder">
-                {(profileUser.displayName || profileUser.email).charAt(0).toUpperCase()}
+          {isEditing ? (
+            <div className="edit-form">
+              <input
+                type="text"
+                value={editData.username}
+                onChange={(e) => setEditData(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="Username"
+              />
+              <input
+                type="text"
+                value={editData.country}
+                onChange={(e) => setEditData(prev => ({ ...prev, country: e.target.value }))}
+                placeholder="Country"
+              />
+              <input
+                type="text"
+                value={editData.city}
+                onChange={(e) => setEditData(prev => ({ ...prev, city: e.target.value }))}
+                placeholder="City"
+              />
+              <div className="edit-actions">
+                <button onClick={handleSaveProfile} disabled={loading}>
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+                <button onClick={() => setIsEditing(false)}>Cancel</button>
               </div>
-            )}
-          </div>
-          <div className="profile-details">
-            <h2>{profileUser.displayName || 'Anonymous User'}</h2>
-            <p className="profile-email">{profileUser.email}</p>
-            <div className="profile-stats">
-              <span>{userReports.length} Reports</span>
-              <span>{collaboratedReports.length} Collaborations</span>
-              <span>{favoriteReports.length} Favorites</span>
             </div>
+          ) : (
+            <div className="profile-display">
+              <h2>{userProfile.username}</h2>
+              <p className="profile-email">{userProfile.email}</p>
+              <p className="profile-location">📍 {userProfile.city}, {userProfile.country}</p>
+              <div className="profile-type">
+                <span className={`type-badge ${userProfile.profileType}`}>
+                  {userProfile.profileType === 'private' ? '🔒 Private Profile' : '🌍 Public Profile'}
+                </span>
+              </div>
+              <button onClick={() => setIsEditing(true)} className="edit-btn">
+                ✏️ Edit Profile
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="profile-stats">
+        <div className="stat-item">
+          <span className="stat-number">{userStats.sentInvites}</span>
+          <span className="stat-label">Sent Invites</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.receivedInvites}</span>
+          <span className="stat-label">Received Invites</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.acceptedInvites}</span>
+          <span className="stat-label">Accepted</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.favoriteCount}</span>
+          <span className="stat-label">Favorites</span>
+        </div>
+      </div>
+
+      <div className="profile-details">
+        <div className="detail-section">
+          <h3>Account Information</h3>
+          <div className="detail-item">
+            <label>Email:</label>
+            <span>{userProfile.email}</span>
+          </div>
+          <div className="detail-item">
+            <label>Profile Type:</label>
+            <span>
+              {userProfile.profileType === 'private' 
+                ? 'Private (Not discoverable by others)'
+                : 'Public (Visible for receiving invites)'
+              }
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Member Since:</label>
+            <span>{userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}</span>
+          </div>
+          <div className="detail-item">
+            <label>Email Verified:</label>
+            <span className={user.emailVerified ? 'verified' : 'unverified'}>
+              {user.emailVerified ? '✅ Verified' : '❌ Not Verified'}
+            </span>
           </div>
         </div>
-        
-        {!isOwnProfile && currentUserUid && (
-          <button 
-            className="message-btn"
-            onClick={() => setShowMessageModal(true)}
-          >
-            💬 Send Message
-          </button>
-        )}
       </div>
-
-      <div className="profile-tabs">
-        <button 
-          className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
-          onClick={() => setActiveTab('reports')}
-        >
-          My Reports
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'collaborated' ? 'active' : ''}`}
-          onClick={() => setActiveTab('collaborated')}
-        >
-          Collaborated
-        </button>
-        {isOwnProfile && (
-          <button 
-            className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
-            onClick={() => setActiveTab('favorites')}
-          >
-            Favorites
-          </button>
-        )}
-      </div>
-
-      <div className="profile-content">
-        {activeTab === 'reports' && (
-          <div className="reports-grid">
-            {userReports.length === 0 ? (
-              <div className="empty-state">
-                <p>No reports yet</p>
-              </div>
-            ) : (
-              userReports.map(report => (
-                <div 
-                  key={report.id} 
-                  className="report-card"
-                  onClick={() => navigateToReport(report.id)}
-                >
-                  <div className="report-image">
-                    {report.filename?.match(/\.(mp4|webm|ogg)$/i) ? (
-                      <video src={report.fileUrl} />
-                    ) : (
-                      <img src={report.fileUrl} alt="Report" />
-                    )}
-                  </div>
-                  <div className="report-info">
-                    <div className={`report-type ${report.reportType}`}>
-                      {report.reportType === 'problem' ? '🚨' : '✅'}
-                    </div>
-                    <p>{report.message}</p>
-                    <span className="report-date">
-                      {report.timestamp?.toDate?.()?.toLocaleDateString() || 'Recently'}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === 'collaborated' && (
-          <div className="reports-grid">
-            {collaboratedReports.length === 0 ? (
-              <div className="empty-state">
-                <p>No collaborations yet</p>
-              </div>
-            ) : (
-              collaboratedReports.map(report => (
-                <div 
-                  key={report.id} 
-                  className="report-card"
-                  onClick={() => navigateToReport(report.id)}
-                >
-                  <div className="report-image">
-                    {report.filename?.match(/\.(mp4|webm|ogg)$/i) ? (
-                      <video src={report.fileUrl} />
-                    ) : (
-                      <img src={report.fileUrl} alt="Report" />
-                    )}
-                  </div>
-                  <div className="report-info">
-                    <div className={`report-type ${report.reportType}`}>
-                      {report.reportType === 'problem' ? '🚨' : '✅'}
-                    </div>
-                    <p>{report.message}</p>
-                    <span className="report-date">
-                      {report.timestamp?.toDate?.()?.toLocaleDateString() || 'Recently'}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === 'favorites' && isOwnProfile && (
-          <div className="favorites-list">
-            {favoriteReports.length === 0 ? (
-              <div className="empty-state">
-                <p>No favorite reports yet</p>
-              </div>
-            ) : (
-              favoriteReports.map(favorite => (
-                <div 
-                  key={favorite.id} 
-                  className="favorite-item"
-                  onClick={() => navigateToReport(favorite.id)}
-                >
-                  <div className="favorite-icon">⭐</div>
-                  <div className="favorite-info">
-                    <h4>{favorite.title}</h4>
-                    <span>{favorite.link}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Message Modal */}
-      {showMessageModal && (
-        <div className="modal-overlay" onClick={() => setShowMessageModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowMessageModal(false)}>×</button>
-            <h3>Send Message to {profileUser.displayName || profileUser.email}</h3>
-            <textarea
-              placeholder="Type your message..."
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              className="message-textarea"
-            />
-            <button 
-              onClick={sendMessage}
-              disabled={!messageText.trim()}
-              className="send-message-btn"
-            >
-              Send Message
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
