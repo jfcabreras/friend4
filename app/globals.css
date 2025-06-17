@@ -1019,7 +1019,8 @@ body {
 }
 
 .modal-close {
-  position: absolute;
+  ```text
+position: absolute;
   top: 20px;
   right: 20px;
   background: var(--surface-elevated);
@@ -1450,6 +1451,71 @@ textarea {
   .formtextarea {
     padding: 14px 16px;
     font-size: 16px;
+  }
+
+  /* Pals Section Styles */
+  .pals-section {
+    padding: 0 12px 20px 12px;
+  }
+
+  .pals-header h2 {
+    font-size: 24px;
+  }
+
+  .filter-controls {
+    gap: 6px;
+  }
+
+  .filter-controls button {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .pals-grid {
+    gap: 10px;
+  }
+
+  .pal-card-header {
+    padding: 16px;
+  }
+
+  .pal-avatar,
+  .pal-profile-picture {
+    width: 56px;
+    height: 56px;
+  }
+
+  .pal-avatar {
+    font-size: 22px;
+  }
+
+  .pal-info h3 {
+    font-size: 18px;
+  }
+
+  .pal-location {
+    font-size: 13px;
+  }
+
+  .pal-activity-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .pal-actions {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .favorite-btn {
+    min-width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .invite-btn {
+    padding: 10px 16px;
+    font-size: 13px;
   }
 
   .pals-section {
@@ -3259,38 +3325,38 @@ textarea {
     padding: 16px;
     margin: 0;
   }
-  
+
   .profile-header {
     padding: 16px;
     margin-bottom: 20px;
   }
-  
+
   .profile-info {
     gap: 12px;
   }
-  
+
   .profile-avatar {
     align-self: center;
   }
-  
+
   .profile-stats {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin: 16px 0;
   }
-  
+
   .stat-item {
     padding: 12px;
   }
-  
+
   .stat-number {
     font-size: 18px;
   }
-  
+
   .edit-form {
     gap: 8px;
   }
-  
+
   .edit-form input,
   .edit-form select,
   .edit-form textarea {
@@ -3298,65 +3364,65 @@ textarea {
     box-sizing: border-box;
     font-size: 16px;
   }
-  
+
   .activity-input {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .activity-input input {
     width: 100%;
   }
-  
+
   .edit-actions {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .edit-actions button {
     width: 100%;
     padding: 12px;
   }
-  
+
   .detail-section {
     padding: 16px;
   }
-  
+
   .detail-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
     padding: 12px 0;
   }
-  
+
   .media-section {
     padding: 16px;
     margin-top: 20px;
   }
-  
+
   .media-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 10px;
   }
-  
+
   .media-preview {
     height: 120px;
   }
-  
+
   .profile-picture-upload input[type="file"] {
     width: 100%;
     font-size: 14px;
   }
-  
+
   .activity-preferences-display {
     padding: 16px;
   }
-  
+
   .activity-tags,
   .activity-tags-display {
     gap: 6px;
   }
-  
+
   .activity-tag,
   .activity-tag-display {
     font-size: 11px;

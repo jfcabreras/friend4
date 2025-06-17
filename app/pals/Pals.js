@@ -267,6 +267,20 @@ const Pals = ({ user, userProfile }) => {
                 <div className="pal-info">
                   <h3>{pal.username}</h3>
                   <p className="pal-location">{pal.city}, {pal.country}</p>
+                  {pal.activityPreferences && pal.activityPreferences.length > 0 && (
+                    <div className="pal-activity-preview">
+                      {pal.activityPreferences.slice(0, 3).map((activity, index) => (
+                        <span key={index} className="pal-activity-tag">
+                          {activity}
+                        </span>
+                      ))}
+                      {pal.activityPreferences.length > 3 && (
+                        <span className="pal-activity-tag">
+                          +{pal.activityPreferences.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="pal-actions" onClick={(e) => e.stopPropagation()}>
