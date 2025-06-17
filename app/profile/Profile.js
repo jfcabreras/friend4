@@ -15,6 +15,12 @@ const Profile = ({ user, userProfile }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+  const [userStats, setUserStats] = useState({
+    sentInvites: 0,
+    receivedInvites: 0,
+    acceptedInvites: 0,
+    favoriteCount: 0
+  });
 
   useEffect(() => {
     if (userProfile) {
@@ -26,9 +32,46 @@ const Profile = ({ user, userProfile }) => {
       // Show username setup if user doesn't have a username
       if (!userProfile.username || !userProfile.usernameSet) {
         setShowUsernameSetup(true);
+      } else {
+        loadUserStats();
       }
     }
-  }, [userProfile]);
+  }, [userProfile, user]);
+
+  const loadUserStats = async () => {
+    if (!user?.uid) return;
+
+    try {
+      // Count sent invites
+      const sentQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentSnapshot = await getDocs(sentQuery);
+
+      // Count received invites
+      const receivedQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedSnapshot = await getDocs(receivedQuery);
+
+      // Count accepted invites (both sent and received)
+      const acceptedInvites = [
+        ...sentSnapshot.docs.map(doc => doc.data()),
+        ...receivedSnapshot.docs.map(doc => doc.data())
+      ].filter(invite => invite.status === 'accepted');
+
+      setUserStats({
+        sentInvites: sentSnapshot.size,
+        receivedInvites: receivedSnapshot.size,
+        acceptedInvites: acceptedInvites.length,
+        favoriteCount: userProfile.favorites?.length || 0
+      });
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
 
   const checkUsernameAvailability = async (usernameToCheck) => {
     if (!usernameToCheck.trim()) return false;
@@ -103,11 +146,18 @@ const Profile = ({ user, userProfile }) => {
         username: username.trim(),
         country: country.trim(),
         city: city.trim(),
-        profileType: profileType
+        profileType: profileType,
+        updatedAt: new Date()
       });
 
       setSuccessMessage('Profile updated successfully!');
       setIsEditing(false);
+      
+      // Reload stats after update
+      loadUserStats();
+      
+      // Refresh the page to update userProfile
+      window.location.reload();
     } catch (error) {
       console.error('Error updating profile:', error);
       setErrorMessage('Failed to update profile. Please try again.');
@@ -120,6 +170,14 @@ const Profile = ({ user, userProfile }) => {
     return (
       <div className="profile-section">
         <h2>Please log in to view your profile</h2>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="profile-section">
+        <div className="loading">Loading profile...</div>
       </div>
     );
   }
@@ -160,114 +218,128 @@ const Profile = ({ user, userProfile }) => {
   return (
     <div className="profile-section">
       <div className="profile-header">
-        <h2>My Profile</h2>
-        {!isEditing && (
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="edit-btn"
-          >
-            Edit Profile
-          </button>
-        )}
-      </div>
-
-      {isEditing ? (
-        <form onSubmit={handleUpdateProfile} className="profile-form">
-          <div className="form-group">
-            <label>Username:</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Profile Type:</label>
-            <select
-              value={profileType}
-              onChange={(e) => setProfileType(e.target.value)}
-              className="form-input"
-            >
-              <option value="public">Public Profile (Visible for receiving invites)</option>
-              <option value="private">Private Profile (Not discoverable)</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Country:</label>
-            <input
-              type="text"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>City:</label>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
-
-          <div className="form-actions">
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="form-button"
-            >
-              {loading ? 'Updating...' : 'Update Profile'}
-            </button>
-            <button 
-              type="button" 
-              onClick={() => {
-                setIsEditing(false);
-                setErrorMessage('');
-                setSuccessMessage('');
-                // Reset form values
-                setUsername(userProfile.username || '');
-                setCountry(userProfile.country || '');
-                setCity(userProfile.city || '');
-                setProfileType(userProfile.profileType || 'public');
-              }}
-              className="cancel-btn"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-          {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-        </form>
-      ) : (
-        <div className="profile-display">
-          <div className="profile-info">
-            <div className="info-item">
-              <strong>Username:</strong> {userProfile?.username || 'Not set'}
-            </div>
-            <div className="info-item">
-              <strong>Email:</strong> {user.email}
-            </div>
-            <div className="info-item">
-              <strong>Profile Type:</strong> {userProfile?.profileType || 'Not set'}
-            </div>
-            <div className="info-item">
-              <strong>Location:</strong> {userProfile?.city}, {userProfile?.country}
-            </div>
-            <div className="info-item">
-              <strong>Email Verified:</strong> {user.emailVerified ? 'Yes' : 'No'}
-            </div>
+        <div className="profile-avatar">
+          <div className="avatar-placeholder">
+            {userProfile.username?.charAt(0).toUpperCase()}
           </div>
         </div>
-      )}
+        <div className="profile-info">
+          {isEditing ? (
+            <div className="edit-form">
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                required
+              />
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="Country"
+                required
+              />
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="City"
+                required
+              />
+              <select
+                value={profileType}
+                onChange={(e) => setProfileType(e.target.value)}
+              >
+                <option value="public">Public Profile (Visible for receiving invites)</option>
+                <option value="private">Private Profile (Not discoverable)</option>
+              </select>
+              <div className="edit-actions">
+                <button onClick={handleUpdateProfile} disabled={loading}>
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+                <button onClick={() => {
+                  setIsEditing(false);
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                  // Reset form values
+                  setUsername(userProfile.username || '');
+                  setCountry(userProfile.country || '');
+                  setCity(userProfile.city || '');
+                  setProfileType(userProfile.profileType || 'public');
+                }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="profile-display">
+              <h2>{userProfile.username}</h2>
+              <p className="profile-email">{user.email}</p>
+              <p className="profile-location">📍 {userProfile.city}, {userProfile.country}</p>
+              <div className="profile-type">
+                <span className={`type-badge ${userProfile.profileType}`}>
+                  {userProfile.profileType === 'private' ? '🔒 Private Profile' : '🌍 Public Profile'}
+                </span>
+              </div>
+              <button onClick={() => setIsEditing(true)} className="edit-btn">
+                ✏️ Edit Profile
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+
+      <div className="profile-stats">
+        <div className="stat-item">
+          <span className="stat-number">{userStats.sentInvites}</span>
+          <span className="stat-label">Sent Invites</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.receivedInvites}</span>
+          <span className="stat-label">Received Invites</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.acceptedInvites}</span>
+          <span className="stat-label">Accepted</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.favoriteCount}</span>
+          <span className="stat-label">Favorites</span>
+        </div>
+      </div>
+
+      <div className="profile-details">
+        <div className="detail-section">
+          <h3>Account Information</h3>
+          <div className="detail-item">
+            <label>Email:</label>
+            <span>{user.email}</span>
+          </div>
+          <div className="detail-item">
+            <label>Profile Type:</label>
+            <span>
+              {userProfile.profileType === 'private' 
+                ? 'Private (Not discoverable by others)'
+                : 'Public (Visible for receiving invites)'
+              }
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Member Since:</label>
+            <span>{userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}</span>
+          </div>
+          <div className="detail-item">
+            <label>Email Verified:</label>
+            <span className={user.emailVerified ? 'verified' : 'unverified'}>
+              {user.emailVerified ? '✅ Verified' : '❌ Not Verified'}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
