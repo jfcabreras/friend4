@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, addDoc, getDoc } from 'firebase/firestore';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../lib/firebase';
 
 const Pals = ({ user, userProfile }) => {
   const [pals, setPals] = useState([]);
@@ -12,6 +14,8 @@ const Pals = ({ user, userProfile }) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedPal, setSelectedPal] = useState(null);
+  const [selectedPalMedia, setSelectedPalMedia] = useState([]);
+  const [loadingPalMedia, setLoadingPalMedia] = useState(false);
   const [inviteData, setInviteData] = useState({
     title: '',
     description: '',
@@ -91,6 +95,46 @@ const Pals = ({ user, userProfile }) => {
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
+    }
+  };
+
+  const loadPalMedia = async (palId) => {
+    if (!palId) return;
+    
+    setLoadingPalMedia(true);
+    try {
+      // Get media metadata from Firestore to check deleted status
+      const userMediaRef = doc(db, 'users', palId);
+      const userDoc = await getDoc(userMediaRef);
+      const userData = userDoc.data();
+      const deletedMedia = userData?.deletedMedia || [];
+      
+      const mediaRef = ref(storage, `users/${palId}/media`);
+      const mediaList = await listAll(mediaRef);
+      
+      const mediaUrls = await Promise.all(
+        mediaList.items.map(async (item) => {
+          // Skip deleted media files
+          if (deletedMedia.includes(item.name)) {
+            return null;
+          }
+          
+          const url = await getDownloadURL(item);
+          return {
+            name: item.name,
+            url: url,
+            type: item.name.toLowerCase().includes('.mp4') || item.name.toLowerCase().includes('.mov') ? 'video' : 'image'
+          };
+        })
+      );
+      
+      // Filter out null values (deleted media)
+      setSelectedPalMedia(mediaUrls.filter(media => media !== null));
+    } catch (error) {
+      console.error('Error loading pal media:', error);
+      setSelectedPalMedia([]);
+    } finally {
+      setLoadingPalMedia(false);
     }
   };
 
@@ -183,11 +227,16 @@ const Pals = ({ user, userProfile }) => {
               onClick={() => {
                 setSelectedPal(pal);
                 setShowProfileModal(true);
+                loadPalMedia(pal.id);
               }}
             >
               <div className="pal-card-header">
                 <div className="pal-avatar">
-                  {pal.username?.charAt(0).toUpperCase()}
+                  {pal.profilePicture ? (
+                    <img src={pal.profilePicture} alt={`${pal.username}'s profile`} className="pal-profile-picture" />
+                  ) : (
+                    pal.username?.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div className="pal-info">
                   <h3>{pal.username}</h3>
@@ -264,11 +313,18 @@ const Pals = ({ user, userProfile }) => {
       {showProfileModal && selectedPal && (
         <div className="modal-overlay" onClick={() => setShowProfileModal(false)}>
           <div className="modal-content profile-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowProfileModal(false)}>×</button>
+            <button className="modal-close" onClick={() => {
+              setShowProfileModal(false);
+              setSelectedPalMedia([]);
+            }}>×</button>
             
             <div className="profile-modal-header">
               <div className="profile-avatar-large">
-                {selectedPal.username?.charAt(0).toUpperCase()}
+                {selectedPal.profilePicture ? (
+                  <img src={selectedPal.profilePicture} alt={`${selectedPal.username}'s profile`} className="profile-picture-large" />
+                ) : (
+                  selectedPal.username?.charAt(0).toUpperCase()
+                )}
               </div>
               <div className="profile-info-large">
                 <h2>{selectedPal.username}</h2>
@@ -290,6 +346,30 @@ const Pals = ({ user, userProfile }) => {
               </div>
             </div>
 
+            <div className="profile-modal-media">
+              <h3>Media Gallery</h3>
+              {loadingPalMedia ? (
+                <div className="loading">Loading media...</div>
+              ) : selectedPalMedia.length > 0 ? (
+                <div className="modal-media-grid">
+                  {selectedPalMedia.map((media, index) => (
+                    <div key={index} className="modal-media-item">
+                      {media.type === 'video' ? (
+                        <video controls className="modal-media-preview">
+                          <source src={media.url} type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <img src={media.url} alt={`Media ${index + 1}`} className="modal-media-preview" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-media">No media shared by this pal.</p>
+              )}
+            </div>
+
             <div className="profile-modal-actions">
               <button 
                 onClick={() => toggleFavorite(selectedPal.id)}
@@ -301,6 +381,7 @@ const Pals = ({ user, userProfile }) => {
                 onClick={() => {
                   setShowProfileModal(false);
                   setShowInviteModal(true);
+                  loadPalMedia(selectedPal.id);
                 }}
                 className="modal-invite-btn"
               >
