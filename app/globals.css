@@ -191,9 +191,12 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow);
   transition: all 0.2s ease;
-  height: 60vh; /* Nearly full screen height */
-  scroll-snap-align: start; /* snaps each item to top */
-  flex-shrink: 0; /* 👈 prevents it from shrinking */
+  height: 60vh;
+  /* Nearly full screen height */
+  scroll-snap-align: start;
+  /* snaps each item to top */
+  flex-shrink: 0;
+  /* 👈 prevents it from shrinking */
 }
 
 .feed-item:hover {
@@ -225,7 +228,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(0deg, transparent 0%, rgba(0,0,0,0.7) 15%, rgba(0,0,0,1) 100%);
+  background: linear-gradient(0deg, transparent 0%, rgba(0, 0, 0, 0.7) 15%, rgba(0, 0, 0, 1) 100%);
   padding: 16px;
   display: flex;
   justify-content: space-between;
@@ -249,7 +252,7 @@ body {
   color: white;
   font-size: 12px;
   font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .feed-content {
@@ -257,7 +260,7 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.9) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.9) 100%);
   padding: 20px 16px 16px;
   color: white;
   z-index: 10;
@@ -274,7 +277,7 @@ body {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .feed-actions {
@@ -294,7 +297,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .feed-action-btn:hover {
@@ -320,7 +323,7 @@ body {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .feed-comment-text {
@@ -457,7 +460,8 @@ body {
   display: flex;
 }
 
-.report-btn, .login-action-btn {
+.report-btn,
+.login-action-btn {
   width: 100%;
   padding: 14px 20px;
   background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-purple-hover));
@@ -476,7 +480,8 @@ body {
   background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-purple-hover));
 }
 
-.report-btn:hover, .login-action-btn:hover {
+.report-btn:hover,
+.login-action-btn:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow);
 }
@@ -561,8 +566,15 @@ body {
 }
 
 @keyframes fadeInOut {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 .fullscreen-image-container {
@@ -1012,6 +1024,7 @@ body {
     transform: translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -1020,7 +1033,7 @@ body {
 
 .modal-close {
   position: absolute,
-  top: 20px;
+    top: 20px;
   right: 20px;
   background: var(--surface-elevated);
   border: 1px solid var(--border);
@@ -1118,7 +1131,8 @@ body {
   border: 1px solid var(--border);
 }
 
-.link-problems-btn, .add-collaborators-btn {
+.link-problems-btn,
+.add-collaborators-btn {
   padding: 8px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1127,17 +1141,20 @@ body {
   transition: all 0.2s ease;
 }
 
-.link-problems-btn:hover, .add-collaborators-btn:hover {
+.link-problems-btn:hover,
+.add-collaborators-btn:hover {
   background: var(--surface-elevated);
 }
 
-.problem-list, .collaborator-list {
+.problem-list,
+.collaborator-list {
   max-height: 300px;
   overflow-y: auto;
   margin: 16px 0;
 }
 
-.problem-item, .collaborator-item {
+.problem-item,
+.collaborator-item {
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1173,7 +1190,8 @@ body {
   margin: 16px 0;
 }
 
-.linked-problems-full, .collaborators-full {
+.linked-problems-full,
+.collaborators-full {
   margin: 16px 0;
   padding: 16px;
   background: var(--surface-elevated);
@@ -1373,7 +1391,8 @@ body {
 }
 
 /* Touch-friendly button sizing */
-button, .btn {
+button,
+.btn {
   min-height: 44px;
   min-width: 44px;
 }
@@ -2109,23 +2128,27 @@ textarea {
   flex: 1;
 }
 
-.invite-card, .wish-card {
+.invite-card,
+.wish-card {
   border-left: 4px solid var(--cyber-purple);
 }
 
-.invite-header, .wish-header {
+.invite-header,
+.wish-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
 }
 
-.price, .budget {
+.price,
+.budget {
   color: var(--cyber-purple);
   font-weight: bold;
 }
 
-.invite-details, .wish-author {
+.invite-details,
+.wish-author {
   display: flex;
   gap: 16px;
   margin-top: 12px;
@@ -2149,7 +2172,8 @@ textarea {
   font-weight: 500;
 }
 
-.invite-btn, .offer-btn {
+.invite-btn,
+.offer-btn {
   padding: 8px 16px;
   background: var(--cyber-purple);
   color: white;
@@ -2221,7 +2245,8 @@ textarea {
 
 .pal-avatar {
   width: 60px;
-  height: 60px;  border-radius: 50%;
+  height: 60px;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--cyber-purple), #6366f1);
   color: white;
   display: flex;
@@ -2473,7 +2498,7 @@ textarea {
   background: var(--cyber-purple);
   color: white;
   border: none,
-  border-radius: 8px;
+    border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -2917,7 +2942,8 @@ textarea {
   margin-top: 16px;
 }
 
-.edit-invite-btn, .cancel-invite-btn {
+.edit-invite-btn,
+.cancel-invite-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -3318,7 +3344,7 @@ textarea {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
 }
 
@@ -3336,9 +3362,8 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  ```text
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .delete-media-btn:hover {
@@ -3461,7 +3486,8 @@ textarea {
 }
 
 /* Empty states */
-.empty-state, .empty-feed {
+.empty-state,
+.empty-feed {
   text-align: center;
   padding: 40px 20px;
   color: var(--text-secondary);
@@ -3588,8 +3614,13 @@ textarea {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .report-not-found {
@@ -3854,7 +3885,8 @@ textarea {
   color: #065f46;
 }
 
-.start-btn, .start-invite-btn {
+.start-btn,
+.start-invite-btn {
   background: #f59e0b;
   color: white;
   border: none;
@@ -3865,11 +3897,13 @@ textarea {
   transition: background 0.2s;
 }
 
-.start-btn:hover, .start-invite-btn:hover {
+.start-btn:hover,
+.start-invite-btn:hover {
   background: #d97706;
 }
 
-.finish-btn, .finish-invite-btn {
+.finish-btn,
+.finish-invite-btn {
   background: #059669;
   color: white;
   border: none;
@@ -3880,11 +3914,13 @@ textarea {
   transition: background 0.2s;
 }
 
-.finish-btn:hover, .finish-invite-btn:hover {
+.finish-btn:hover,
+.finish-invite-btn:hover {
   background: #047857;
 }
 
-.payment-btn, .payment-invite-btn {
+.payment-btn,
+.payment-invite-btn {
   background: #3730a3;
   color: white;
   border: none;
@@ -3895,11 +3931,13 @@ textarea {
   transition: background 0.2s;
 }
 
-.payment-btn:hover, .payment-invite-btn:hover {
+.payment-btn:hover,
+.payment-invite-btn:hover {
   background: #312e81;
 }
 
-.receive-payment-btn, .receive-payment-invite-btn {
+.receive-payment-btn,
+.receive-payment-invite-btn {
   background: #059669;
   color: white;
   border: none;
@@ -3910,7 +3948,8 @@ textarea {
   transition: background 0.2s;
 }
 
-.receive-payment-btn:hover, .receive-payment-invite-btn:hover {
+.receive-payment-btn:hover,
+.receive-payment-invite-btn:hover {
   background: #047857;
 }
 
