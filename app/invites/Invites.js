@@ -314,14 +314,16 @@ const Invites = ({ user, userProfile }) => {
                   👁️ View Details
                 </button>
 
-                {invite.type === 'sent' && invite.status === 'pending' && (
+                {invite.type === 'sent' && (invite.status === 'pending' || invite.status === 'accepted') && (
                   <>
-                    <button 
-                      onClick={() => openEditModal(invite)}
-                      className="edit-btn"
-                    >
-                      ✏️ Edit
-                    </button>
+                    {invite.status === 'pending' && (
+                      <button 
+                        onClick={() => openEditModal(invite)}
+                        className="edit-btn"
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
                     <button 
                       onClick={() => handleCancelInvite(invite.id, invite.price)}
                       className="cancel-btn"
@@ -423,13 +425,23 @@ const Invites = ({ user, userProfile }) => {
                   )}
                 </div>
 
-                {selectedInvite.type === 'sent' && selectedInvite.status === 'pending' && (
-                  <button 
-                    onClick={() => openEditModal(selectedInvite)}
-                    className="edit-invite-btn"
-                  >
-                    ✏️ Edit Invite
-                  </button>
+                {selectedInvite.type === 'sent' && (selectedInvite.status === 'pending' || selectedInvite.status === 'accepted') && (
+                  <div className="invite-actions-detail">
+                    {selectedInvite.status === 'pending' && (
+                      <button 
+                        onClick={() => openEditModal(selectedInvite)}
+                        className="edit-invite-btn"
+                      >
+                        ✏️ Edit Invite
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleCancelInvite(selectedInvite.id, selectedInvite.price)}
+                      className="cancel-invite-btn"
+                    >
+                      🚫 Cancel Invite
+                    </button>
+                  </div>
                 )}
               </div>
 

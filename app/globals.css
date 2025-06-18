@@ -2906,6 +2906,40 @@ textarea {
   gap: 8px;
 }
 
+.invite-actions-detail {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.edit-invite-btn, .cancel-invite-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.edit-invite-btn {
+  background: var(--cyber-purple);
+  color: white;
+}
+
+.edit-invite-btn:hover {
+  background: #8b5cf6;
+}
+
+.cancel-invite-btn {
+  background: #f97316;
+  color: white;
+}
+
+.cancel-invite-btn:hover {
+  background: #ea580c;
+};
+}
+
 .type-badge {
   padding: 4px 12px;
   border-radius: 12px;
