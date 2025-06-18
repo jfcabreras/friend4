@@ -19,6 +19,8 @@ const Invites = ({ user, userProfile }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [messagesUnsubscribe, setMessagesUnsubscribe] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   useEffect(() => {
     if (user && userProfile) {
@@ -68,7 +70,9 @@ const Invites = ({ user, userProfile }) => {
         pending: allInvites.filter(invite => invite.status === 'pending'),
         accepted: allInvites.filter(invite => invite.status === 'accepted'),
         declined: allInvites.filter(invite => invite.status === 'declined'),
-        cancelled: allInvites.filter(invite => invite.status === 'cancelled')
+        cancelled: allInvites.filter(invite => invite.status === 'cancelled'),
+        in_progress: allInvites.filter(invite => invite.status === 'in_progress'),
+        completed: allInvites.filter(invite => invite.status === 'completed')
       };
 
       setInvites(groupedInvites);
@@ -82,10 +86,19 @@ const Invites = ({ user, userProfile }) => {
   const handleInviteResponse = async (inviteId, response) => {
     try {
       const inviteRef = doc(db, 'planInvitations', inviteId);
-      await updateDoc(inviteRef, {
+      const updateData = {
         status: response,
         respondedAt: new Date()
-      });
+      };
+
+      // Add specific datetime fields based on response
+      if (response === 'accepted') {
+        updateData.acceptedAt = new Date();
+      } else if (response === 'declined') {
+        updateData.declinedAt = new Date();
+      }
+
+      await updateDoc(inviteRef, updateData);
 
       // Reload invites
       loadInvites();
@@ -235,6 +248,64 @@ const Invites = ({ user, userProfile }) => {
     }
   };
 
+  const startInvite = async (inviteId) => {
+    try {
+      const inviteRef = doc(db, 'planInvitations', inviteId);
+      await updateDoc(inviteRef, {
+        status: 'in_progress',
+        startedAt: new Date()
+      });
+
+      alert('Invite started! Have a great time!');
+      loadInvites();
+
+      // Update selected invite if detail view is open
+      if (showInviteDetail && selectedInvite.id === inviteId) {
+        setSelectedInvite(prev => ({ ...prev, status: 'in_progress', startedAt: new Date() }));
+      }
+    } catch (error) {
+      console.error('Error starting invite:', error);
+      alert('Failed to start invite');
+    }
+  };
+
+  const finishInvite = async (inviteId, price) => {
+    setPaymentAmount(price);
+    setShowPaymentModal(true);
+  };
+
+  const confirmPayment = async () => {
+    if (!selectedInvite) return;
+
+    try {
+      const inviteRef = doc(db, 'planInvitations', selectedInvite.id);
+      await updateDoc(inviteRef, {
+        status: 'completed',
+        completedAt: new Date(),
+        paymentConfirmed: true,
+        paymentMethod: 'cash'
+      });
+
+      alert('Payment confirmed! Invite completed successfully.');
+      setShowPaymentModal(false);
+      loadInvites();
+
+      // Update selected invite if detail view is open
+      if (showInviteDetail) {
+        setSelectedInvite(prev => ({ 
+          ...prev, 
+          status: 'completed', 
+          completedAt: new Date(),
+          paymentConfirmed: true,
+          paymentMethod: 'cash'
+        }));
+      }
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      alert('Failed to confirm payment');
+    }
+  };
+
   if (!user) {
     return (
       <div className="invites-section">
@@ -281,6 +352,18 @@ const Invites = ({ user, userProfile }) => {
             className={`filter-btn ${activeTab === 'cancelled' ? 'active' : ''}`}
           >
             Cancelled ({invites.cancelled?.length || 0})
+          </button>
+          <button 
+            onClick={() => setActiveTab('in_progress')}
+            className={`filter-btn ${activeTab === 'in_progress' ? 'active' : ''}`}
+          >
+            In Progress ({invites.in_progress?.length || 0})
+          </button>
+          <button 
+            onClick={() => setActiveTab('completed')}
+            className={`filter-btn ${activeTab === 'completed' ? 'active' : ''}`}
+          >
+            Completed ({invites.completed?.length || 0})
           </button>
         </div>
       </div>
@@ -366,6 +449,24 @@ const Invites = ({ user, userProfile }) => {
                     </button>
                   </>
                 )}
+
+                {invite.status === 'accepted' && (
+                  <button 
+                    onClick={() => startInvite(invite.id)}
+                    className="start-btn"
+                  >
+                    🚀 Start Invite
+                  </button>
+                )}
+
+                {invite.status === 'in_progress' && (
+                  <button 
+                    onClick={() => finishInvite(invite.id, invite.price)}
+                    className="finish-btn"
+                  >
+                    🏁 Finish & Pay
+                  </button>
+                )}
               </div>
 
               <div className="invite-status">
@@ -374,6 +475,8 @@ const Invites = ({ user, userProfile }) => {
                   {invite.status === 'accepted' && '✅ Accepted'}
                   {invite.status === 'declined' && '❌ Declined'}
                   {invite.status === 'cancelled' && '🚫 Cancelled'}
+                  {invite.status === 'in_progress' && '🚀 In Progress'}
+                  {invite.status === 'completed' && '🏁 Completed'}
                 </span>
                 <span className="invite-created">
                   {invite.createdAt?.toDate?.()?.toLocaleDateString()}
@@ -397,6 +500,8 @@ const Invites = ({ user, userProfile }) => {
                 {selectedInvite.status === 'accepted' && '✅ Accepted'}
                 {selectedInvite.status === 'declined' && '❌ Declined'}
                 {selectedInvite.status === 'cancelled' && '🚫 Cancelled'}
+                {selectedInvite.status === 'in_progress' && '🚀 In Progress'}
+                {selectedInvite.status === 'completed' && '🏁 Completed'}
               </span>
             </div>
 
@@ -440,6 +545,36 @@ const Invites = ({ user, userProfile }) => {
                       <span>{selectedInvite.cancelledAt?.toDate?.()?.toLocaleString()}</span>
                     </div>
                   )}
+                  {selectedInvite.acceptedAt && (
+                    <div className="detail-item">
+                      <strong>Accepted At:</strong>
+                      <span>{selectedInvite.acceptedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.declinedAt && (
+                    <div className="detail-item">
+                      <strong>Declined At:</strong>
+                      <span>{selectedInvite.declinedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.startedAt && (
+                    <div className="detail-item">
+                      <strong>Started At:</strong>
+                      <span>{selectedInvite.startedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.completedAt && (
+                    <div className="detail-item">
+                      <strong>Completed At:</strong>
+                      <span>{selectedInvite.completedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.paymentConfirmed && (
+                    <div className="detail-item">
+                      <strong>Payment:</strong>
+                      <span className="payment-confirmed">✅ Confirmed ({selectedInvite.paymentMethod})</span>
+                    </div>
+                  )}
                 </div>
 
                 {selectedInvite.type === 'sent' && (selectedInvite.status === 'pending' || selectedInvite.status === 'accepted') && (
@@ -457,6 +592,28 @@ const Invites = ({ user, userProfile }) => {
                       className="cancel-invite-btn"
                     >
                       🚫 Cancel Invite
+                    </button>
+                  </div>
+                )}
+
+                {selectedInvite.status === 'accepted' && (
+                  <div className="invite-actions-detail">
+                    <button 
+                      onClick={() => startInvite(selectedInvite.id)}
+                      className="start-invite-btn"
+                    >
+                      🚀 Start Invite
+                    </button>
+                  </div>
+                )}
+
+                {selectedInvite.status === 'in_progress' && (
+                  <div className="invite-actions-detail">
+                    <button 
+                      onClick={() => finishInvite(selectedInvite.id, selectedInvite.price)}
+                      className="finish-invite-btn"
+                    >
+                      🏁 Finish & Pay
                     </button>
                   </div>
                 )}
@@ -553,6 +710,56 @@ const Invites = ({ user, userProfile }) => {
               />
               <button onClick={updateInvite} className="update-invite-btn">
                 Update Invite
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Confirmation Modal */}
+      {showPaymentModal && (
+        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div className="modal-content payment-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowPaymentModal(false)}>×</button>
+            
+            <div className="payment-header">
+              <h2>💰 Payment Confirmation</h2>
+              <p>Ready to complete your invite?</p>
+            </div>
+
+            <div className="payment-details">
+              <div className="payment-amount">
+                <span className="amount-label">Amount to Pay:</span>
+                <span className="amount-value">${paymentAmount.toFixed(2)}</span>
+              </div>
+              
+              <div className="payment-method">
+                <span className="method-label">Payment Method:</span>
+                <span className="method-value">💵 Cash Payment</span>
+              </div>
+
+              <div className="payment-instructions">
+                <h4>Instructions:</h4>
+                <ul>
+                  <li>Please pay the amount in cash to your invite partner</li>
+                  <li>Ensure both parties are satisfied with the experience</li>
+                  <li>Confirm payment only after completing the transaction</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="payment-actions">
+              <button 
+                onClick={confirmPayment}
+                className="confirm-payment-btn"
+              >
+                ✅ Confirm Cash Payment
+              </button>
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="cancel-payment-btn"
+              >
+                Cancel
               </button>
             </div>
           </div>

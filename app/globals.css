@@ -1019,7 +1019,7 @@ body {
 }
 
 .modal-close {
-  position: absolute;
+  position: absolute,
   top: 20px;
   right: 20px;
   background: var(--surface-elevated);
@@ -2833,7 +2833,7 @@ textarea {
 }
 
 .invite-item.cancelled {
-  border-left: 4px solid #f97316;
+  border-left-color: #6b7280;
   opacity: 0.8;
 }
 
@@ -3807,4 +3807,194 @@ textarea {
 .invite-incentive {
   color: #10b981;
   font-weight: 500;
+}
+
+.invite-item.cancelled {
+  border-left-color: #6b7280;
+  background: rgba(107, 114, 128, 0.05);
+}
+
+.invite-item.in_progress {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.invite-item.completed {
+  border-left-color: #059669;
+  background: rgba(5, 150, 105, 0.05);
+}
+
+.status-badge.in_progress {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.start-btn, .start-invite-btn {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.start-btn:hover, .start-invite-btn:hover {
+  background: #d97706;
+}
+
+.finish-btn, .finish-invite-btn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.finish-btn:hover, .finish-invite-btn:hover {
+  background: #047857;
+}
+
+.payment-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.payment-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.payment-header h2 {
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.payment-header p {
+  color: #6b7280;
+}
+
+.payment-details {
+  margin-bottom: 24px;
+}
+
+.payment-amount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.amount-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.amount-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.payment-method {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.method-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.method-value {
+  color: #6b7280;
+}
+
+.payment-instructions {
+  background: #fef7ec;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.payment-instructions h4 {
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.payment-instructions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.payment-instructions li {
+  color: #92400e;
+  margin-bottom: 8px;
+  padding-left: 16px;
+  position: relative;
+}
+
+.payment-instructions li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+}
+
+.payment-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-payment-btn {
+  flex: 1;
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.confirm-payment-btn:hover {
+  background: #047857;
+}
+
+.cancel-payment-btn {
+  flex: 1;
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.cancel-payment-btn:hover {
+  background: #4b5563;
+}
+
+.payment-confirmed {
+  color: #059669;
+  font-weight: 600;
 }
