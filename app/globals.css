@@ -3819,6 +3819,16 @@ textarea {
   background: rgba(245, 158, 11, 0.05);
 }
 
+.invite-item.finished {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.invite-item.payment_done {
+  border-left-color: #3730a3;
+  background: rgba(55, 48, 163, 0.05);
+}
+
 .invite-item.completed {
   border-left-color: #059669;
   background: rgba(5, 150, 105, 0.05);
@@ -3827,6 +3837,16 @@ textarea {
 .status-badge.in_progress {
   background: #fef3c7;
   color: #92400e;
+}
+
+.status-badge.finished {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.payment_done {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
 .status-badge.completed {
@@ -3861,6 +3881,36 @@ textarea {
 }
 
 .finish-btn:hover, .finish-invite-btn:hover {
+  background: #047857;
+}
+
+.payment-btn, .payment-invite-btn {
+  background: #3730a3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.payment-btn:hover, .payment-invite-btn:hover {
+  background: #312e81;
+}
+
+.receive-payment-btn, .receive-payment-invite-btn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.receive-payment-btn:hover, .receive-payment-invite-btn:hover {
   background: #047857;
 }
 

@@ -72,6 +72,8 @@ const Invites = ({ user, userProfile }) => {
         declined: allInvites.filter(invite => invite.status === 'declined'),
         cancelled: allInvites.filter(invite => invite.status === 'cancelled'),
         in_progress: allInvites.filter(invite => invite.status === 'in_progress'),
+        finished: allInvites.filter(invite => invite.status === 'finished'),
+        payment_done: allInvites.filter(invite => invite.status === 'payment_done'),
         completed: allInvites.filter(invite => invite.status === 'completed')
       };
 
@@ -269,24 +271,44 @@ const Invites = ({ user, userProfile }) => {
     }
   };
 
-  const finishInvite = async (inviteId, price) => {
+  const finishInvite = async (inviteId) => {
+    try {
+      const inviteRef = doc(db, 'planInvitations', inviteId);
+      await updateDoc(inviteRef, {
+        status: 'finished',
+        finishedAt: new Date()
+      });
+
+      alert('Invite finished! Now proceed to payment.');
+      loadInvites();
+
+      // Update selected invite if detail view is open
+      if (showInviteDetail && selectedInvite.id === inviteId) {
+        setSelectedInvite(prev => ({ ...prev, status: 'finished', finishedAt: new Date() }));
+      }
+    } catch (error) {
+      console.error('Error finishing invite:', error);
+      alert('Failed to finish invite');
+    }
+  };
+
+  const markPaymentDone = async (inviteId, price) => {
     setPaymentAmount(price);
     setShowPaymentModal(true);
   };
 
-  const confirmPayment = async () => {
+  const confirmPaymentDone = async () => {
     if (!selectedInvite) return;
 
     try {
       const inviteRef = doc(db, 'planInvitations', selectedInvite.id);
       await updateDoc(inviteRef, {
-        status: 'completed',
-        completedAt: new Date(),
-        paymentConfirmed: true,
+        status: 'payment_done',
+        paymentDoneAt: new Date(),
         paymentMethod: 'cash'
       });
 
-      alert('Payment confirmed! Invite completed successfully.');
+      alert('Payment marked as done! Waiting for recipient confirmation.');
       setShowPaymentModal(false);
       loadInvites();
 
@@ -294,15 +316,41 @@ const Invites = ({ user, userProfile }) => {
       if (showInviteDetail) {
         setSelectedInvite(prev => ({ 
           ...prev, 
-          status: 'completed', 
-          completedAt: new Date(),
-          paymentConfirmed: true,
+          status: 'payment_done', 
+          paymentDoneAt: new Date(),
           paymentMethod: 'cash'
         }));
       }
     } catch (error) {
-      console.error('Error confirming payment:', error);
-      alert('Failed to confirm payment');
+      console.error('Error marking payment as done:', error);
+      alert('Failed to mark payment as done');
+    }
+  };
+
+  const confirmPaymentReceived = async (inviteId) => {
+    try {
+      const inviteRef = doc(db, 'planInvitations', inviteId);
+      await updateDoc(inviteRef, {
+        status: 'completed',
+        paymentReceivedAt: new Date(),
+        paymentConfirmed: true
+      });
+
+      alert('Payment received confirmed! Invite completed successfully.');
+      loadInvites();
+
+      // Update selected invite if detail view is open
+      if (showInviteDetail && selectedInvite.id === inviteId) {
+        setSelectedInvite(prev => ({ 
+          ...prev, 
+          status: 'completed', 
+          paymentReceivedAt: new Date(),
+          paymentConfirmed: true
+        }));
+      }
+    } catch (error) {
+      console.error('Error confirming payment received:', error);
+      alert('Failed to confirm payment received');
     }
   };
 
@@ -358,6 +406,18 @@ const Invites = ({ user, userProfile }) => {
             className={`filter-btn ${activeTab === 'in_progress' ? 'active' : ''}`}
           >
             In Progress ({invites.in_progress?.length || 0})
+          </button>
+          <button 
+            onClick={() => setActiveTab('finished')}
+            className={`filter-btn ${activeTab === 'finished' ? 'active' : ''}`}
+          >
+            Finished ({invites.finished?.length || 0})
+          </button>
+          <button 
+            onClick={() => setActiveTab('payment_done')}
+            className={`filter-btn ${activeTab === 'payment_done' ? 'active' : ''}`}
+          >
+            Payment Done ({invites.payment_done?.length || 0})
           </button>
           <button 
             onClick={() => setActiveTab('completed')}
@@ -461,10 +521,28 @@ const Invites = ({ user, userProfile }) => {
 
                 {invite.status === 'in_progress' && (
                   <button 
-                    onClick={() => finishInvite(invite.id, invite.price)}
+                    onClick={() => finishInvite(invite.id)}
                     className="finish-btn"
                   >
-                    🏁 Finish & Pay
+                    🏁 Finish Invite
+                  </button>
+                )}
+
+                {invite.status === 'finished' && (
+                  <button 
+                    onClick={() => markPaymentDone(invite.id, invite.price)}
+                    className="payment-btn"
+                  >
+                    💰 Mark Payment Done
+                  </button>
+                )}
+
+                {invite.status === 'payment_done' && invite.type === 'received' && (
+                  <button 
+                    onClick={() => confirmPaymentReceived(invite.id)}
+                    className="receive-payment-btn"
+                  >
+                    ✅ Confirm Payment Received
                   </button>
                 )}
               </div>
@@ -476,7 +554,9 @@ const Invites = ({ user, userProfile }) => {
                   {invite.status === 'declined' && '❌ Declined'}
                   {invite.status === 'cancelled' && '🚫 Cancelled'}
                   {invite.status === 'in_progress' && '🚀 In Progress'}
-                  {invite.status === 'completed' && '🏁 Completed'}
+                  {invite.status === 'finished' && '🏁 Finished'}
+                  {invite.status === 'payment_done' && '💰 Payment Done'}
+                  {invite.status === 'completed' && '✅ Completed'}
                 </span>
                 <span className="invite-created">
                   {invite.createdAt?.toDate?.()?.toLocaleDateString()}
@@ -501,7 +581,9 @@ const Invites = ({ user, userProfile }) => {
                 {selectedInvite.status === 'declined' && '❌ Declined'}
                 {selectedInvite.status === 'cancelled' && '🚫 Cancelled'}
                 {selectedInvite.status === 'in_progress' && '🚀 In Progress'}
-                {selectedInvite.status === 'completed' && '🏁 Completed'}
+                {selectedInvite.status === 'finished' && '🏁 Finished'}
+                {selectedInvite.status === 'payment_done' && '💰 Payment Done'}
+                {selectedInvite.status === 'completed' && '✅ Completed'}
               </span>
             </div>
 
@@ -563,6 +645,24 @@ const Invites = ({ user, userProfile }) => {
                       <span>{selectedInvite.startedAt?.toDate?.()?.toLocaleString()}</span>
                     </div>
                   )}
+                  {selectedInvite.finishedAt && (
+                    <div className="detail-item">
+                      <strong>Finished At:</strong>
+                      <span>{selectedInvite.finishedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.paymentDoneAt && (
+                    <div className="detail-item">
+                      <strong>Payment Done At:</strong>
+                      <span>{selectedInvite.paymentDoneAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.paymentReceivedAt && (
+                    <div className="detail-item">
+                      <strong>Payment Received At:</strong>
+                      <span>{selectedInvite.paymentReceivedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
                   {selectedInvite.completedAt && (
                     <div className="detail-item">
                       <strong>Completed At:</strong>
@@ -610,10 +710,32 @@ const Invites = ({ user, userProfile }) => {
                 {selectedInvite.status === 'in_progress' && (
                   <div className="invite-actions-detail">
                     <button 
-                      onClick={() => finishInvite(selectedInvite.id, selectedInvite.price)}
+                      onClick={() => finishInvite(selectedInvite.id)}
                       className="finish-invite-btn"
                     >
-                      🏁 Finish & Pay
+                      🏁 Finish Invite
+                    </button>
+                  </div>
+                )}
+
+                {selectedInvite.status === 'finished' && (
+                  <div className="invite-actions-detail">
+                    <button 
+                      onClick={() => markPaymentDone(selectedInvite.id, selectedInvite.price)}
+                      className="payment-invite-btn"
+                    >
+                      💰 Mark Payment Done
+                    </button>
+                  </div>
+                )}
+
+                {selectedInvite.status === 'payment_done' && selectedInvite.type === 'received' && (
+                  <div className="invite-actions-detail">
+                    <button 
+                      onClick={() => confirmPaymentReceived(selectedInvite.id)}
+                      className="receive-payment-invite-btn"
+                    >
+                      ✅ Confirm Payment Received
                     </button>
                   </div>
                 )}
@@ -750,10 +872,10 @@ const Invites = ({ user, userProfile }) => {
 
             <div className="payment-actions">
               <button 
-                onClick={confirmPayment}
+                onClick={confirmPaymentDone}
                 className="confirm-payment-btn"
               >
-                ✅ Confirm Cash Payment
+                ✅ Mark Payment as Done
               </button>
               <button 
                 onClick={() => setShowPaymentModal(false)}
