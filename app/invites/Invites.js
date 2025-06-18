@@ -21,6 +21,8 @@ const Invites = ({ user, userProfile }) => {
   const [messagesUnsubscribe, setMessagesUnsubscribe] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [finishInviteId, setFinishInviteId] = useState(null);
 
   useEffect(() => {
     if (user && userProfile) {
@@ -271,19 +273,28 @@ const Invites = ({ user, userProfile }) => {
     }
   };
 
-  const finishInvite = async (inviteId) => {
+  const finishInvite = (inviteId) => {
+    setFinishInviteId(inviteId);
+    setShowFinishModal(true);
+  };
+
+  const confirmFinishInvite = async () => {
+    if (!finishInviteId) return;
+
     try {
-      const inviteRef = doc(db, 'planInvitations', inviteId);
+      const inviteRef = doc(db, 'planInvitations', finishInviteId);
       await updateDoc(inviteRef, {
         status: 'finished',
         finishedAt: new Date()
       });
 
       alert('Invite finished! Now proceed to payment.');
+      setShowFinishModal(false);
+      setFinishInviteId(null);
       loadInvites();
 
       // Update selected invite if detail view is open
-      if (showInviteDetail && selectedInvite.id === inviteId) {
+      if (showInviteDetail && selectedInvite.id === finishInviteId) {
         setSelectedInvite(prev => ({ ...prev, status: 'finished', finishedAt: new Date() }));
       }
     } catch (error) {
@@ -832,6 +843,65 @@ const Invites = ({ user, userProfile }) => {
               />
               <button onClick={updateInvite} className="update-invite-btn">
                 Update Invite
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Finish Invite Confirmation Modal */}
+      {showFinishModal && (
+        <div className="modal-overlay" onClick={() => setShowFinishModal(false)}>
+          <div className="modal-content finish-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowFinishModal(false)}>×</button>
+            
+            <div className="finish-header">
+              <h2>🏁 Finish Invite</h2>
+              <p>Ready to complete your activity?</p>
+            </div>
+
+            <div className="finish-instructions">
+              {(() => {
+                const invite = [...invites.in_progress].find(inv => inv.id === finishInviteId);
+                if (!invite) return null;
+                
+                const isAuthor = invite.type === 'sent';
+                
+                return (
+                  <>
+                    <h4>Instructions:</h4>
+                    <ul>
+                      {isAuthor ? (
+                        <>
+                          <li>Ensure both parties are satisfied with the experience</li>
+                          <li>After finishing, you will be able to mark payment as done</li>
+                          <li>Wait for your pal to confirm payment received to complete the invite</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Ensure both parties are satisfied with the experience</li>
+                          <li>After finishing, your pal will mark payment as done</li>
+                          <li>You will then confirm payment received to complete the invite</li>
+                        </>
+                      )}
+                    </ul>
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="finish-actions">
+              <button 
+                onClick={confirmFinishInvite}
+                className="confirm-finish-btn"
+              >
+                ✅ Finish Invite
+              </button>
+              <button 
+                onClick={() => setShowFinishModal(false)}
+                className="cancel-finish-btn"
+              >
+                Cancel
               </button>
             </div>
           </div>
