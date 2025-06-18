@@ -272,19 +272,47 @@ const Invites = ({ user, userProfile }) => {
   };
 
   const finishInvite = async (inviteId) => {
+    const invite = invites.in_progress.find(inv => inv.id === inviteId) || selectedInvite;
+    if (!invite) return;
+
+    const isAuthor = invite.fromUserId === user.uid;
+    const isPal = invite.toUserId === user.uid;
+    const role = isAuthor ? 'author' : 'pal';
+    
+    const confirmMessage = isAuthor 
+      ? `Are you sure you want to finish this invite as the AUTHOR?\n\nAs the author, you are responsible for:\n• Paying the incentive amount ($${invite.price}) to your pal\n• Confirming the experience was completed\n\nAfter finishing, you'll be able to mark payment as done.`
+      : `Are you sure you want to finish this invite as the PAL?\n\nAs the pal, you are confirming that:\n• The experience/activity was completed\n• You're ready to receive payment ($${invite.price}) from the author\n\nAfter finishing, wait for the author to process payment.`;
+
+    const confirmed = window.confirm(confirmMessage);
+    if (!confirmed) return;
+
     try {
       const inviteRef = doc(db, 'planInvitations', inviteId);
       await updateDoc(inviteRef, {
         status: 'finished',
-        finishedAt: new Date()
+        finishedAt: new Date(),
+        finishedBy: user.uid,
+        finishedByRole: role,
+        finishedByUsername: userProfile.username
       });
 
-      alert('Invite finished! Now proceed to payment.');
+      const successMessage = isAuthor 
+        ? 'Invite finished! As the author, you can now proceed to mark payment as done.'
+        : 'Invite finished! As the pal, wait for the author to process your payment.';
+
+      alert(successMessage);
       loadInvites();
 
       // Update selected invite if detail view is open
       if (showInviteDetail && selectedInvite.id === inviteId) {
-        setSelectedInvite(prev => ({ ...prev, status: 'finished', finishedAt: new Date() }));
+        setSelectedInvite(prev => ({ 
+          ...prev, 
+          status: 'finished', 
+          finishedAt: new Date(),
+          finishedBy: user.uid,
+          finishedByRole: role,
+          finishedByUsername: userProfile.username
+        }));
       }
     } catch (error) {
       console.error('Error finishing invite:', error);
@@ -300,15 +328,20 @@ const Invites = ({ user, userProfile }) => {
   const confirmPaymentDone = async () => {
     if (!selectedInvite) return;
 
+    const isAuthor = selectedInvite.fromUserId === user.uid;
+    
     try {
       const inviteRef = doc(db, 'planInvitations', selectedInvite.id);
       await updateDoc(inviteRef, {
         status: 'payment_done',
         paymentDoneAt: new Date(),
-        paymentMethod: 'cash'
+        paymentMethod: 'cash',
+        paymentDoneBy: user.uid,
+        paymentDoneByRole: isAuthor ? 'author' : 'pal',
+        paymentDoneByUsername: userProfile.username
       });
 
-      alert('Payment marked as done! Waiting for recipient confirmation.');
+      alert('Payment marked as done by AUTHOR! Waiting for PAL to confirm receipt.');
       setShowPaymentModal(false);
       loadInvites();
 
@@ -318,7 +351,10 @@ const Invites = ({ user, userProfile }) => {
           ...prev, 
           status: 'payment_done', 
           paymentDoneAt: new Date(),
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
+          paymentDoneBy: user.uid,
+          paymentDoneByRole: isAuthor ? 'author' : 'pal',
+          paymentDoneByUsername: userProfile.username
         }));
       }
     } catch (error) {
@@ -328,15 +364,29 @@ const Invites = ({ user, userProfile }) => {
   };
 
   const confirmPaymentReceived = async (inviteId) => {
+    const invite = invites.payment_done.find(inv => inv.id === inviteId) || selectedInvite;
+    if (!invite) return;
+
+    const isPal = invite.toUserId === user.uid;
+    
+    const confirmMessage = `Are you sure you want to confirm payment received as the PAL?\n\nBy confirming, you acknowledge that:\n• You have received the full payment ($${invite.price}) in cash from the author\n• You are satisfied with the transaction\n• The invite will be marked as completed\n\nThis action cannot be undone.`;
+
+    const confirmed = window.confirm(confirmMessage);
+    if (!confirmed) return;
+
     try {
       const inviteRef = doc(db, 'planInvitations', inviteId);
       await updateDoc(inviteRef, {
         status: 'completed',
         paymentReceivedAt: new Date(),
-        paymentConfirmed: true
+        paymentConfirmed: true,
+        paymentReceivedBy: user.uid,
+        paymentReceivedByRole: isPal ? 'pal' : 'author',
+        paymentReceivedByUsername: userProfile.username,
+        completedAt: new Date()
       });
 
-      alert('Payment received confirmed! Invite completed successfully.');
+      alert('Payment received confirmed by PAL! Invite completed successfully.');
       loadInvites();
 
       // Update selected invite if detail view is open
@@ -345,7 +395,11 @@ const Invites = ({ user, userProfile }) => {
           ...prev, 
           status: 'completed', 
           paymentReceivedAt: new Date(),
-          paymentConfirmed: true
+          paymentConfirmed: true,
+          paymentReceivedBy: user.uid,
+          paymentReceivedByRole: isPal ? 'pal' : 'author',
+          paymentReceivedByUsername: userProfile.username,
+          completedAt: new Date()
         }));
       }
     } catch (error) {
@@ -528,12 +582,12 @@ const Invites = ({ user, userProfile }) => {
                   </button>
                 )}
 
-                {invite.status === 'finished' && (
+                {invite.status === 'finished' && invite.fromUserId === user.uid && (
                   <button 
                     onClick={() => markPaymentDone(invite.id, invite.price)}
                     className="payment-btn"
                   >
-                    💰 Mark Payment Done
+                    💰 Mark Payment Done (AUTHOR)
                   </button>
                 )}
 
@@ -542,7 +596,7 @@ const Invites = ({ user, userProfile }) => {
                     onClick={() => confirmPaymentReceived(invite.id)}
                     className="receive-payment-btn"
                   >
-                    ✅ Confirm Payment Received
+                    ✅ Confirm Payment Received (PAL)
                   </button>
                 )}
               </div>
@@ -651,16 +705,40 @@ const Invites = ({ user, userProfile }) => {
                       <span>{selectedInvite.finishedAt?.toDate?.()?.toLocaleString()}</span>
                     </div>
                   )}
+                  {selectedInvite.finishedBy && (
+                    <div className="detail-item">
+                      <strong>Finished By:</strong>
+                      <span className="role-indicator">
+                        {selectedInvite.finishedByUsername} ({selectedInvite.finishedByRole?.toUpperCase()})
+                      </span>
+                    </div>
+                  )}
                   {selectedInvite.paymentDoneAt && (
                     <div className="detail-item">
                       <strong>Payment Done At:</strong>
                       <span>{selectedInvite.paymentDoneAt?.toDate?.()?.toLocaleString()}</span>
                     </div>
                   )}
+                  {selectedInvite.paymentDoneBy && (
+                    <div className="detail-item">
+                      <strong>Payment Done By:</strong>
+                      <span className="role-indicator">
+                        {selectedInvite.paymentDoneByUsername} ({selectedInvite.paymentDoneByRole?.toUpperCase()})
+                      </span>
+                    </div>
+                  )}
                   {selectedInvite.paymentReceivedAt && (
                     <div className="detail-item">
                       <strong>Payment Received At:</strong>
                       <span>{selectedInvite.paymentReceivedAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvite.paymentReceivedBy && (
+                    <div className="detail-item">
+                      <strong>Payment Confirmed By:</strong>
+                      <span className="role-indicator">
+                        {selectedInvite.paymentReceivedByUsername} ({selectedInvite.paymentReceivedByRole?.toUpperCase()})
+                      </span>
                     </div>
                   )}
                   {selectedInvite.completedAt && (
@@ -718,13 +796,13 @@ const Invites = ({ user, userProfile }) => {
                   </div>
                 )}
 
-                {selectedInvite.status === 'finished' && (
+                {selectedInvite.status === 'finished' && selectedInvite.fromUserId === user.uid && (
                   <div className="invite-actions-detail">
                     <button 
                       onClick={() => markPaymentDone(selectedInvite.id, selectedInvite.price)}
                       className="payment-invite-btn"
                     >
-                      💰 Mark Payment Done
+                      💰 Mark Payment Done (AUTHOR)
                     </button>
                   </div>
                 )}
@@ -735,7 +813,7 @@ const Invites = ({ user, userProfile }) => {
                       onClick={() => confirmPaymentReceived(selectedInvite.id)}
                       className="receive-payment-invite-btn"
                     >
-                      ✅ Confirm Payment Received
+                      ✅ Confirm Payment Received (PAL)
                     </button>
                   </div>
                 )}
@@ -861,11 +939,13 @@ const Invites = ({ user, userProfile }) => {
               </div>
 
               <div className="payment-instructions">
-                <h4>Instructions:</h4>
+                <h4>Instructions for AUTHOR:</h4>
                 <ul>
-                  <li>Please pay the amount in cash to your invite partner</li>
-                  <li>Ensure both parties are satisfied with the experience</li>
-                  <li>Confirm payment only after completing the transaction</li>
+                  <li>🏦 Pay ${paymentAmount.toFixed(2)} in cash to your PAL</li>
+                  <li>💬 Ensure both parties are satisfied with the experience</li>
+                  <li>✅ Click "Mark Payment as Done" only AFTER you have given the cash</li>
+                  <li>⏳ Wait for your PAL to confirm they received the payment</li>
+                  <li>🎉 The invite will be completed once PAL confirms receipt</li>
                 </ul>
               </div>
             </div>
