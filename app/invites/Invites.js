@@ -94,26 +94,43 @@ const Invites = ({ user, userProfile }) => {
     }
   };
 
-  const handleCancelInvite = async (inviteId, originalPrice) => {
-    const cancellationFee = originalPrice * 0.5;
-    const confirmed = window.confirm(
-      `Are you sure you want to cancel this invite?\n\nCancellation fee: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\nThis action cannot be undone.`
-    );
+  const handleCancelInvite = async (inviteId, originalPrice, inviteStatus) => {
+    let cancellationFee = 0;
+    let confirmMessage = '';
+    let successMessage = '';
 
+    if (inviteStatus === 'accepted') {
+      // Charge 50% cancellation fee only for accepted invites
+      cancellationFee = originalPrice * 0.5;
+      confirmMessage = `Are you sure you want to cancel this accepted invite?\n\n⚠️ CANCELLATION FEE: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\nThis fee will be added to your pending balance.\n\nThis action cannot be undone.`;
+      successMessage = `Invite cancelled successfully. Cancellation fee of $${cancellationFee.toFixed(2)} has been applied to your account.`;
+    } else {
+      // No fee for pending invites
+      confirmMessage = `Are you sure you want to cancel this invite?\n\nNo cancellation fee will be charged since the invite hasn't been accepted yet.\n\nThis action cannot be undone.`;
+      successMessage = 'Invite cancelled successfully. No cancellation fee was charged.';
+    }
+
+    const confirmed = window.confirm(confirmMessage);
     if (!confirmed) return;
 
     try {
-      const inviteRef = doc(db, 'planInvitations', inviteId);
-      await updateDoc(inviteRef, {
+      const updateData = {
         status: 'cancelled',
         cancelledAt: new Date(),
-        cancellationFee: cancellationFee,
         originalPrice: originalPrice
-      });
+      };
+
+      // Only add cancellation fee if invite was accepted
+      if (inviteStatus === 'accepted') {
+        updateData.cancellationFee = cancellationFee;
+      }
+
+      const inviteRef = doc(db, 'planInvitations', inviteId);
+      await updateDoc(inviteRef, updateData);
 
       // Reload invites
       loadInvites();
-      alert(`Invite cancelled successfully. Cancellation fee of $${cancellationFee.toFixed(2)} has been applied.`);
+      alert(successMessage);
     } catch (error) {
       console.error('Error cancelling invite:', error);
       alert('Failed to cancel invite. Please try again.');
@@ -325,7 +342,7 @@ const Invites = ({ user, userProfile }) => {
                       </button>
                     )}
                     <button 
-                      onClick={() => handleCancelInvite(invite.id, invite.price)}
+                      onClick={() => handleCancelInvite(invite.id, invite.price, invite.status)}
                       className="cancel-btn"
                     >
                       🚫 Cancel
@@ -436,7 +453,7 @@ const Invites = ({ user, userProfile }) => {
                       </button>
                     )}
                     <button 
-                      onClick={() => handleCancelInvite(selectedInvite.id, selectedInvite.price)}
+                      onClick={() => handleCancelInvite(selectedInvite.id, selectedInvite.price, selectedInvite.status)}
                       className="cancel-invite-btn"
                     >
                       🚫 Cancel Invite
