@@ -1020,7 +1020,7 @@ body {
 
 .modal-close {
   position: absolute;
-  top: 20px;```text
+  top: 20px;
   right: 20px;
   background: var(--surface-elevated);
   border: 1px solid var(--border);
@@ -2224,8 +2224,7 @@ textarea {
   height: 60px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--cyber-purple), #6366f1);
-  ```text
-color: white;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
