@@ -32,6 +32,12 @@ const Profile = ({ user, userProfile }) => {
     acceptedInvites: 0,
     favoriteCount: 0
   });
+  
+  const [balanceData, setBalanceData] = useState({
+    totalCancellationFees: 0,
+    totalOwed: 0,
+    pendingPayments: []
+  });
 
   useEffect(() => {
     if (userProfile && user) {
@@ -60,6 +66,11 @@ const Profile = ({ user, userProfile }) => {
         receivedInvites: 0,
         acceptedInvites: 0,
         favoriteCount: 0
+      });
+      setBalanceData({
+        totalCancellationFees: 0,
+        totalOwed: 0,
+        pendingPayments: []
       });
     }
   }, [userProfile, user]);
@@ -94,6 +105,53 @@ const Profile = ({ user, userProfile }) => {
         acceptedInvites: acceptedInvites.length,
         favoriteCount: userProfile.favorites?.length || 0
       });
+
+      // Calculate balance - cancellation fees and other pending payments
+      const allInvites = [
+        ...sentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        ...receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      ];
+
+      const cancelledInvites = allInvites.filter(invite => 
+        invite.status === 'cancelled' && invite.fromUserId === user.uid
+      );
+
+      const totalCancellationFees = cancelledInvites.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // Calculate incentives owed for accepted invites where user is the sender
+      const acceptedSentInvites = allInvites.filter(invite => 
+        invite.status === 'accepted' && invite.fromUserId === user.uid
+      );
+
+      const totalOwed = acceptedSentInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const pendingPayments = [
+        ...cancelledInvites.map(invite => ({
+          id: invite.id,
+          type: 'cancellation_fee',
+          amount: invite.cancellationFee || 0,
+          description: `Cancellation fee for "${invite.title}"`,
+          date: invite.cancelledAt?.toDate?.() || new Date()
+        })),
+        ...acceptedSentInvites.map(invite => ({
+          id: invite.id,
+          type: 'incentive_payment',
+          amount: invite.price || 0,
+          description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
+          date: invite.respondedAt?.toDate?.() || new Date()
+        }))
+      ];
+
+      setBalanceData({
+        totalCancellationFees,
+        totalOwed,
+        pendingPayments: pendingPayments.sort((a, b) => b.date - a.date)
+      });
+
     } catch (error) {
       console.error('Error loading user stats:', error);
     }
@@ -582,6 +640,49 @@ const Profile = ({ user, userProfile }) => {
           <span className="stat-number">{userStats.favoriteCount}</span>
           <span className="stat-label">Favorites</span>
         </div>
+      </div>
+
+      <div className="balance-section">
+        <h3>Pending Balance</h3>
+        <div className="balance-summary">
+          <div className="balance-item total-owed">
+            <span className="balance-amount">${(balanceData.totalCancellationFees + balanceData.totalOwed).toFixed(2)}</span>
+            <span className="balance-label">Total Pending</span>
+          </div>
+          <div className="balance-breakdown">
+            <div className="balance-detail">
+              <span className="balance-type">Cancellation Fees:</span>
+              <span className="balance-value cancellation">${balanceData.totalCancellationFees.toFixed(2)}</span>
+            </div>
+            <div className="balance-detail">
+              <span className="balance-type">Incentive Payments:</span>
+              <span className="balance-value incentive">${balanceData.totalOwed.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {balanceData.pendingPayments.length > 0 && (
+          <div className="pending-payments">
+            <h4>Pending Payments</h4>
+            <div className="payments-list">
+              {balanceData.pendingPayments.map(payment => (
+                <div key={`${payment.type}-${payment.id}`} className={`payment-item ${payment.type}`}>
+                  <div className="payment-info">
+                    <span className="payment-description">{payment.description}</span>
+                    <span className="payment-date">{payment.date.toLocaleDateString()}</span>
+                  </div>
+                  <span className={`payment-amount ${payment.type}`}>
+                    ${payment.amount.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {balanceData.pendingPayments.length === 0 && (
+          <p className="no-pending">No pending payments</p>
+        )}
       </div>
 
       <div className="profile-details">

@@ -2224,6 +2224,7 @@ textarea {
   height: 60px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--cyber-purple), #6366f1);
+```
   color: white;
   display: flex;
   align-items: center;
@@ -3389,7 +3390,7 @@ textarea {
   cursor: not-allowed;
 }
 
-/* Profile Picture Styles */
+/*/* Profile Picture Styles */
 .profile-picture {
   width: 80px;
   height: 80px;
