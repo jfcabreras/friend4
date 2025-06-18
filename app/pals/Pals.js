@@ -257,40 +257,46 @@ const Pals = ({ user, userProfile }) => {
               }}
             >
               <div className="pal-card-header">
-                <div className="pal-avatar">
-                  {pal.profilePicture ? (
-                    <img src={pal.profilePicture} alt={`${pal.username}'s profile`} className="pal-profile-picture" />
-                  ) : (
-                    pal.username?.charAt(0).toUpperCase()
-                  )}
+                <div className="pal-card-info">
+                  <div className="pal-avatar">
+                    {pal.profilePicture ? (
+                      <img src={pal.profilePicture} alt={`${pal.username}'s profile`} className="pal-profile-picture" />
+                    ) : (
+                      pal.username?.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="pal-info">
+                    <h3>{pal.username}</h3>
+                    <p className="pal-location">📍 {pal.city}, {pal.country}</p>
+                    {pal.activityPreferences && pal.activityPreferences.length > 0 && (
+                      <div className="pal-activity-preview">
+                        {pal.activityPreferences.slice(0, 3).map((activity, index) => (
+                          <span key={index} className="pal-activity-tag">
+                            {activity}
+                          </span>
+                        ))}
+                        {pal.activityPreferences.length > 3 && (
+                          <span className="pal-activity-tag">
+                            +{pal.activityPreferences.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="pal-info">
-                  <h3>{pal.username}</h3>
-                  <p className="pal-location">{pal.city}, {pal.country}</p>
-                  {pal.activityPreferences && pal.activityPreferences.length > 0 && (
-                    <div className="pal-activity-preview">
-                      {pal.activityPreferences.slice(0, 3).map((activity, index) => (
-                        <span key={index} className="pal-activity-tag">
-                          {activity}
-                        </span>
-                      ))}
-                      {pal.activityPreferences.length > 3 && (
-                        <span className="pal-activity-tag">
-                          +{pal.activityPreferences.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <span className="pal-type">🌍 Public</span>
               </div>
+              
               <div className="pal-actions" onClick={(e) => e.stopPropagation()}>
-                <button 
-                  onClick={() => toggleFavorite(pal.id)}
-                  className={`favorite-btn ${favorites.includes(pal.id) ? 'favorited' : ''}`}
-                  title={favorites.includes(pal.id) ? 'Remove from favorites' : 'Add to favorites'}
-                >
-                  {favorites.includes(pal.id) ? '⭐' : '☆'}
-                </button>
+                <div className="pal-actions-left">
+                  <button 
+                    onClick={() => toggleFavorite(pal.id)}
+                    className={`favorite-btn ${favorites.includes(pal.id) ? 'favorited' : ''}`}
+                    title={favorites.includes(pal.id) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {favorites.includes(pal.id) ? '⭐' : '☆'}
+                  </button>
+                </div>
                 <button 
                   onClick={() => {
                     setSelectedPal(pal);
