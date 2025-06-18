@@ -304,6 +304,10 @@ const Invites = ({ user, userProfile }) => {
   };
 
   const markPaymentDone = async (inviteId, price) => {
+    const invite = [...invites.finished, ...invites.in_progress].find(inv => inv.id === inviteId);
+    if (invite) {
+      setSelectedInvite(invite);
+    }
     setPaymentAmount(price);
     setShowPaymentModal(true);
   };
@@ -324,7 +328,7 @@ const Invites = ({ user, userProfile }) => {
       loadInvites();
 
       // Update selected invite if detail view is open
-      if (showInviteDetail) {
+      if (showInviteDetail && selectedInvite.id === selectedInvite.id) {
         setSelectedInvite(prev => ({ 
           ...prev, 
           status: 'payment_done', 
@@ -539,12 +543,21 @@ const Invites = ({ user, userProfile }) => {
                   </button>
                 )}
 
-                {invite.status === 'finished' && (
+                {invite.status === 'finished' && invite.type === 'sent' && (
                   <button 
                     onClick={() => markPaymentDone(invite.id, invite.price)}
                     className="payment-btn"
                   >
                     💰 Mark Payment Done
+                  </button>
+                )}
+
+                {invite.status === 'finished' && invite.type === 'received' && (
+                  <button 
+                    onClick={() => confirmPaymentReceived(invite.id)}
+                    className="receive-payment-btn"
+                  >
+                    ✅ Confirm Payment Received
                   </button>
                 )}
 
@@ -729,13 +742,24 @@ const Invites = ({ user, userProfile }) => {
                   </div>
                 )}
 
-                {selectedInvite.status === 'finished' && (
+                {selectedInvite.status === 'finished' && selectedInvite.type === 'sent' && (
                   <div className="invite-actions-detail">
                     <button 
                       onClick={() => markPaymentDone(selectedInvite.id, selectedInvite.price)}
                       className="payment-invite-btn"
                     >
                       💰 Mark Payment Done
+                    </button>
+                  </div>
+                )}
+
+                {selectedInvite.status === 'finished' && selectedInvite.type === 'received' && (
+                  <div className="invite-actions-detail">
+                    <button 
+                      onClick={() => confirmPaymentReceived(selectedInvite.id)}
+                      className="receive-payment-invite-btn"
+                    >
+                      ✅ Confirm Payment Received
                     </button>
                   </div>
                 )}
@@ -933,9 +957,10 @@ const Invites = ({ user, userProfile }) => {
               <div className="payment-instructions">
                 <h4>Instructions:</h4>
                 <ul>
-                  <li>Please pay the amount in cash to your invite partner</li>
+                  <li>Please pay the amount in cash to your pal</li>
                   <li>Ensure both parties are satisfied with the experience</li>
-                  <li>Confirm payment only after completing the transaction</li>
+                  <li>Mark payment as done only after completing the cash transaction</li>
+                  <li>Your pal will then confirm they received the payment</li>
                 </ul>
               </div>
             </div>
