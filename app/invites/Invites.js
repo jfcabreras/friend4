@@ -67,7 +67,8 @@ const Invites = ({ user, userProfile }) => {
       const groupedInvites = {
         pending: allInvites.filter(invite => invite.status === 'pending'),
         accepted: allInvites.filter(invite => invite.status === 'accepted'),
-        declined: allInvites.filter(invite => invite.status === 'declined')
+        declined: allInvites.filter(invite => invite.status === 'declined'),
+        cancelled: allInvites.filter(invite => invite.status === 'cancelled')
       };
 
       setInvites(groupedInvites);
@@ -90,6 +91,32 @@ const Invites = ({ user, userProfile }) => {
       loadInvites();
     } catch (error) {
       console.error('Error updating invite:', error);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId, originalPrice) => {
+    const cancellationFee = originalPrice * 0.5;
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel this invite?\n\nCancellation fee: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const inviteRef = doc(db, 'planInvitations', inviteId);
+      await updateDoc(inviteRef, {
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        cancellationFee: cancellationFee,
+        originalPrice: originalPrice
+      });
+
+      // Reload invites
+      loadInvites();
+      alert(`Invite cancelled successfully. Cancellation fee of $${cancellationFee.toFixed(2)} has been applied.`);
+    } catch (error) {
+      console.error('Error cancelling invite:', error);
+      alert('Failed to cancel invite. Please try again.');
     }
   };
 
@@ -232,6 +259,12 @@ const Invites = ({ user, userProfile }) => {
           >
             Declined ({invites.declined.length})
           </button>
+          <button 
+            onClick={() => setActiveTab('cancelled')}
+            className={`filter-btn ${activeTab === 'cancelled' ? 'active' : ''}`}
+          >
+            Cancelled ({invites.cancelled?.length || 0})
+          </button>
         </div>
       </div>
 
@@ -267,6 +300,9 @@ const Invites = ({ user, userProfile }) => {
                   <span className="invite-time">🕐 {invite.time}</span>
                   <span className="invite-location">📍 {invite.meetingLocation}</span>
                   <span className="invite-incentive">💰 ${invite.price}</span>
+                  {invite.status === 'cancelled' && invite.cancellationFee && (
+                    <span className="cancellation-fee">❌ Fee: ${invite.cancellationFee.toFixed(2)}</span>
+                  )}
                 </div>
               </div>
 
@@ -279,12 +315,20 @@ const Invites = ({ user, userProfile }) => {
                 </button>
 
                 {invite.type === 'sent' && invite.status === 'pending' && (
-                  <button 
-                    onClick={() => openEditModal(invite)}
-                    className="edit-btn"
-                  >
-                    ✏️ Edit
-                  </button>
+                  <>
+                    <button 
+                      onClick={() => openEditModal(invite)}
+                      className="edit-btn"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onClick={() => handleCancelInvite(invite.id, invite.price)}
+                      className="cancel-btn"
+                    >
+                      🚫 Cancel
+                    </button>
+                  </>
                 )}
 
                 {invite.type === 'received' && invite.status === 'pending' && (
@@ -310,6 +354,7 @@ const Invites = ({ user, userProfile }) => {
                   {invite.status === 'pending' && '⏳ Pending'}
                   {invite.status === 'accepted' && '✅ Accepted'}
                   {invite.status === 'declined' && '❌ Declined'}
+                  {invite.status === 'cancelled' && '🚫 Cancelled'}
                 </span>
                 <span className="invite-created">
                   {invite.createdAt?.toDate?.()?.toLocaleDateString()}
@@ -332,6 +377,7 @@ const Invites = ({ user, userProfile }) => {
                 {selectedInvite.status === 'pending' && '⏳ Pending'}
                 {selectedInvite.status === 'accepted' && '✅ Accepted'}
                 {selectedInvite.status === 'declined' && '❌ Declined'}
+                {selectedInvite.status === 'cancelled' && '🚫 Cancelled'}
               </span>
             </div>
 
@@ -363,6 +409,18 @@ const Invites = ({ user, userProfile }) => {
                     <strong>Incentive:</strong>
                     <span>${selectedInvite.price}</span>
                   </div>
+                  {selectedInvite.status === 'cancelled' && selectedInvite.cancellationFee && (
+                    <div className="detail-item">
+                      <strong>Cancellation Fee:</strong>
+                      <span className="cancellation-fee-detail">${selectedInvite.cancellationFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {selectedInvite.status === 'cancelled' && selectedInvite.cancelledAt && (
+                    <div className="detail-item">
+                      <strong>Cancelled At:</strong>
+                      <span>{selectedInvite.cancelledAt?.toDate?.()?.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
 
                 {selectedInvite.type === 'sent' && selectedInvite.status === 'pending' && (

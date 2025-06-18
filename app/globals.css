@@ -2802,6 +2802,41 @@ textarea {
   cursor: pointer;
 }
 
+.cancel-btn {
+  background: #f97316;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.cancel-btn:hover {
+  background: #ea580c;
+}
+
+.cancellation-fee {
+  color: #f97316;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cancellation-fee-detail {
+  color: #f97316;
+  font-weight: 600;
+}
+
+.status-badge.cancelled {
+  background: #fed7aa;
+  color: #ea580c;
+}
+
+.invite-item.cancelled {
+  border-left: 4px solid #f97316;
+  opacity: 0.8;
+}
+
 .status-badge {
   padding: 4px 8px;
   border-radius: 12px;
