@@ -121,11 +121,11 @@ const Profile = ({ user, userProfile }) => {
         ...receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       ];
 
-      const cancelledInvites = allInvites.filter(invite => 
+      const cancelledInvitesForFees = allInvites.filter(invite => 
         invite.status === 'cancelled' && invite.fromUserId === user.uid
       );
 
-      const totalCancellationFees = cancelledInvites.reduce((total, invite) => {
+      const totalCancellationFees = cancelledInvitesForFees.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
 
@@ -139,7 +139,7 @@ const Profile = ({ user, userProfile }) => {
       }, 0);
 
       const pendingPayments = [
-        ...cancelledInvites.map(invite => ({
+        ...cancelledInvitesForFees.map(invite => ({
           id: invite.id,
           type: 'cancellation_fee',
           amount: invite.cancellationFee || 0,
