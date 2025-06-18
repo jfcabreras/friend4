@@ -266,7 +266,7 @@ const Invites = ({ user, userProfile }) => {
                   </span>
                   <span className="invite-time">🕐 {invite.time}</span>
                   <span className="invite-location">📍 {invite.meetingLocation}</span>
-                  <span className="invite-price">💰 ${invite.price}</span>
+                  <span className="invite-incentive">💰 ${invite.price}</span>
                 </div>
               </div>
 
@@ -360,7 +360,7 @@ const Invites = ({ user, userProfile }) => {
                     <span>{selectedInvite.meetingLocation}</span>
                   </div>
                   <div className="detail-item">
-                    <strong>Price:</strong>
+                    <strong>Incentive:</strong>
                     <span>${selectedInvite.price}</span>
                   </div>
                 </div>
@@ -459,7 +459,7 @@ const Invites = ({ user, userProfile }) => {
               />
               <input
                 type="number"
-                placeholder="Price ($) *"
+                placeholder="Incentive ($) *"
                 value={editFormData.price || ''}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, price: e.target.value }))}
                 required

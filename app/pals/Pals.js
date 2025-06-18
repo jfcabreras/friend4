@@ -103,7 +103,7 @@ const Pals = ({ user, userProfile }) => {
 
   const loadPalMedia = async (palId) => {
     if (!palId) return;
-    
+
     setLoadingPalMedia(true);
     try {
       // Get media metadata from Firestore to check deleted status
@@ -111,17 +111,17 @@ const Pals = ({ user, userProfile }) => {
       const userDoc = await getDoc(userMediaRef);
       const userData = userDoc.data();
       const deletedMedia = userData?.deletedMedia || [];
-      
+
       const mediaRef = ref(storage, `users/${palId}/media`);
       const mediaList = await listAll(mediaRef);
-      
+
       const mediaUrls = await Promise.all(
         mediaList.items.map(async (item) => {
           // Skip deleted media files
           if (deletedMedia.includes(item.name)) {
             return null;
           }
-          
+
           const url = await getDownloadURL(item);
           return {
             name: item.name,
@@ -130,7 +130,7 @@ const Pals = ({ user, userProfile }) => {
           };
         })
       );
-      
+
       // Filter out null values (deleted media)
       setSelectedPalMedia(mediaUrls.filter(media => media !== null));
     } catch (error) {
@@ -301,7 +301,7 @@ const Pals = ({ user, userProfile }) => {
                 </div>
                 <span className="pal-type">🌍 Public</span>
               </div>
-              
+
               <div className="pal-actions" onClick={(e) => e.stopPropagation()}>
                 <div className="pal-actions-left">
                   <button 
@@ -369,7 +369,7 @@ const Pals = ({ user, userProfile }) => {
               />
               <input
                 type="number"
-                placeholder="Price ($) *"
+                placeholder="Incentive ($) *"
                 value={inviteData.price}
                 onChange={(e) => setInviteData(prev => ({ ...prev, price: e.target.value }))}
                 required
@@ -390,7 +390,7 @@ const Pals = ({ user, userProfile }) => {
               setShowProfileModal(false);
               setSelectedPalMedia([]);
             }}>×</button>
-            
+
             <div className="profile-modal-header">
               <div className="profile-avatar-large">
                 {selectedPal.profilePicture ? (
@@ -507,7 +507,7 @@ const Pals = ({ user, userProfile }) => {
             <button className="fullscreen-close" onClick={closeFullscreenMedia}>
               ×
             </button>
-            
+
             <div className="fullscreen-nav-indicators">
               <div className="nav-indicator">
                 {currentMediaIndex + 1} / {selectedPalMedia.length}
