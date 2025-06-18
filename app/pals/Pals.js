@@ -282,6 +282,21 @@ const Pals = ({ user, userProfile }) => {
                         )}
                       </div>
                     )}
+                    {pal.languagePreferences && pal.languagePreferences.length > 0 && (
+                      <div className="pal-language-preview">
+                        <span className="language-label">🗣️</span>
+                        {pal.languagePreferences.slice(0, 3).map((language, index) => (
+                          <span key={index} className="pal-language-tag">
+                            {language}
+                          </span>
+                        ))}
+                        {pal.languagePreferences.length > 3 && (
+                          <span className="pal-language-tag">
+                            +{pal.languagePreferences.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <span className="pal-type">🌍 Public</span>
@@ -411,6 +426,19 @@ const Pals = ({ user, userProfile }) => {
                   {selectedPal.activityPreferences.map((activity, index) => (
                     <span key={index} className="modal-activity-tag">
                       {activity}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedPal.languagePreferences && selectedPal.languagePreferences.length > 0 && (
+              <div className="profile-modal-activities">
+                <h3>Languages</h3>
+                <div className="modal-activity-tags">
+                  {selectedPal.languagePreferences.map((language, index) => (
+                    <span key={index} className="modal-activity-tag">
+                      {language}
                     </span>
                   ))}
                 </div>

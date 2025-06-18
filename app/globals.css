@@ -2277,6 +2277,29 @@ textarea {
   font-weight: 500;
 }
 
+.pal-language-preview {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.language-label {
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.pal-language-tag {
+  padding: 4px 8px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .pal-actions {
   display: flex;
   gap: 12px;

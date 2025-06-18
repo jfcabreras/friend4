@@ -15,6 +15,8 @@ const Profile = ({ user, userProfile }) => {
   const [profileType, setProfileType] = useState('public');
   const [activityPreferences, setActivityPreferences] = useState([]);
   const [newActivity, setNewActivity] = useState('');
+  const [languagePreferences, setLanguagePreferences] = useState([]);
+  const [newLanguage, setNewLanguage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
@@ -39,6 +41,7 @@ const Profile = ({ user, userProfile }) => {
       setProfileType(userProfile.profileType || 'public');
       setProfilePicture(userProfile.profilePicture || null);
       setActivityPreferences(userProfile.activityPreferences || []);
+      setLanguagePreferences(userProfile.languagePreferences || []);
       
       loadUserStats();
       loadUserMedia();
@@ -51,6 +54,7 @@ const Profile = ({ user, userProfile }) => {
       setProfilePicture(null);
       setMediaFiles([]);
       setActivityPreferences([]);
+      setLanguagePreferences([]);
       setUserStats({
         sentInvites: 0,
         receivedInvites: 0,
@@ -276,6 +280,17 @@ const Profile = ({ user, userProfile }) => {
     setActivityPreferences(prev => prev.filter(pref => pref !== activity));
   };
 
+  const addLanguage = () => {
+    if (newLanguage.trim() && !languagePreferences.includes(newLanguage.trim())) {
+      setLanguagePreferences(prev => [...prev, newLanguage.trim()]);
+      setNewLanguage('');
+    }
+  };
+
+  const removeLanguage = (language) => {
+    setLanguagePreferences(prev => prev.filter(pref => pref !== language));
+  };
+
   
 
   const handleUpdateProfile = async (e) => {
@@ -312,6 +327,7 @@ const Profile = ({ user, userProfile }) => {
         city: city.trim(),
         profileType: profileType,
         activityPreferences: activityPreferences,
+        languagePreferences: languagePreferences,
         updatedAt: new Date()
       };
 
@@ -443,6 +459,36 @@ const Profile = ({ user, userProfile }) => {
                   ))}
                 </div>
               </div>
+
+              <div className="activity-preferences-section">
+                <label>Languages:</label>
+                <div className="activity-input">
+                  <input
+                    type="text"
+                    value={newLanguage}
+                    onChange={(e) => setNewLanguage(e.target.value)}
+                    placeholder="Add a language (e.g., English, Spanish, French)"
+                    onKeyPress={(e) => e.key === 'Enter' && addLanguage()}
+                  />
+                  <button type="button" onClick={addLanguage} className="add-activity-btn">
+                    Add
+                  </button>
+                </div>
+                <div className="activity-tags">
+                  {languagePreferences.map((language, index) => (
+                    <span key={index} className="activity-tag">
+                      {language}
+                      <button 
+                        type="button" 
+                        onClick={() => removeLanguage(language)}
+                        className="remove-activity"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
               
               <div className="edit-actions">
                 <button onClick={handleUpdateProfile} disabled={loading}>
@@ -458,6 +504,7 @@ const Profile = ({ user, userProfile }) => {
                   setCity(userProfile.city || '');
                   setProfileType(userProfile.profileType || 'public');
                   setActivityPreferences(userProfile.activityPreferences || []);
+                  setLanguagePreferences(userProfile.languagePreferences || []);
                 }}>
                   Cancel
                 </button>
@@ -494,6 +541,23 @@ const Profile = ({ user, userProfile }) => {
             </div>
           ) : (
             <p className="no-activities">No activity preferences set.</p>
+          )}
+        </div>
+      )}
+
+      {!isEditing && (
+        <div className="activity-preferences-display">
+          <h3>Languages</h3>
+          {languagePreferences.length > 0 ? (
+            <div className="activity-tags-display">
+              {languagePreferences.map((language, index) => (
+                <span key={index} className="activity-tag-display">
+                  {language}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="no-activities">No languages set.</p>
           )}
         </div>
       )}
