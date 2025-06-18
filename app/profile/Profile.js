@@ -30,6 +30,7 @@ const Profile = ({ user, userProfile }) => {
     sentInvites: 0,
     receivedInvites: 0,
     acceptedInvites: 0,
+    cancelledInvites: 0,
     favoriteCount: 0
   });
   
@@ -65,6 +66,7 @@ const Profile = ({ user, userProfile }) => {
         sentInvites: 0,
         receivedInvites: 0,
         acceptedInvites: 0,
+        cancelledInvites: 0,
         favoriteCount: 0
       });
       setBalanceData({
@@ -99,10 +101,17 @@ const Profile = ({ user, userProfile }) => {
         ...receivedSnapshot.docs.map(doc => doc.data())
       ].filter(invite => invite.status === 'accepted');
 
+      // Count cancelled invites (both sent and received)
+      const cancelledInvites = [
+        ...sentSnapshot.docs.map(doc => doc.data()),
+        ...receivedSnapshot.docs.map(doc => doc.data())
+      ].filter(invite => invite.status === 'cancelled');
+
       setUserStats({
         sentInvites: sentSnapshot.size,
         receivedInvites: receivedSnapshot.size,
         acceptedInvites: acceptedInvites.length,
+        cancelledInvites: cancelledInvites.length,
         favoriteCount: userProfile.favorites?.length || 0
       });
 
@@ -635,6 +644,10 @@ const Profile = ({ user, userProfile }) => {
         <div className="stat-item">
           <span className="stat-number">{userStats.acceptedInvites}</span>
           <span className="stat-label">Accepted</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{userStats.cancelledInvites}</span>
+          <span className="stat-label">Cancelled</span>
         </div>
         <div className="stat-item">
           <span className="stat-number">{userStats.favoriteCount}</span>
