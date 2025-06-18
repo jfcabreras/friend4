@@ -3383,7 +3383,6 @@ textarea {
 
 /* Mobile-specific profile adjustments */
 @media (max-width: 480px) {
-  ```text
   .profile-section {
     padding: 16px;
     margin: 0;
