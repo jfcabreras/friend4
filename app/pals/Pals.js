@@ -22,8 +22,10 @@ const Pals = ({ user, userProfile }) => {
     title: '',
     description: '',
     meetingLocation: '',
-    date: '',
-    time: '',
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: '',
     price: ''
   });
 
@@ -142,13 +144,24 @@ const Pals = ({ user, userProfile }) => {
   };
 
   const sendInvite = async () => {
-    if (!user || !selectedPal || !inviteData.title || !inviteData.description || !inviteData.meetingLocation || !inviteData.date || !inviteData.time || !inviteData.price) {
-      alert('Please fill in all required fields');
+    if (!inviteData.title || !inviteData.description || !inviteData.meetingLocation || 
+        !inviteData.startDate || !inviteData.startTime || !inviteData.endDate || 
+        !inviteData.endTime || !inviteData.price) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    // Validate that end date/time is after start date/time
+    const startDateTime = new Date(`${inviteData.startDate}T${inviteData.startTime}`);
+    const endDateTime = new Date(`${inviteData.endDate}T${inviteData.endTime}`);
+
+    if (endDateTime <= startDateTime) {
+      alert('End date and time must be after start date and time');
       return;
     }
 
     try {
-      const inviteRef = await addDoc(collection(db, 'planInvitations'), {
+      await addDoc(collection(db, 'planInvitations'), {
         fromUserId: user.uid,
         fromUsername: userProfile.username,
         toUserId: selectedPal.id,
@@ -156,8 +169,10 @@ const Pals = ({ user, userProfile }) => {
         title: inviteData.title,
         description: inviteData.description,
         meetingLocation: inviteData.meetingLocation,
-        date: new Date(inviteData.date),
-        time: inviteData.time,
+        startDate: new Date(inviteData.startDate),
+        startTime: inviteData.startTime,
+        endDate: new Date(inviteData.endDate),
+        endTime: inviteData.endTime,
         price: parseFloat(inviteData.price),
         status: 'pending',
         createdAt: new Date()
@@ -165,8 +180,16 @@ const Pals = ({ user, userProfile }) => {
 
       alert('Invite sent successfully!');
       setShowInviteModal(false);
-      setSelectedPal(null);
-      setInviteData({ title: '', description: '', meetingLocation: '', date: '', time: '', price: '' });
+      setInviteData({
+        title: '',
+        description: '',
+        meetingLocation: '',
+        startDate: '',
+        startTime: '',
+        endDate: '',
+        endTime: '',
+        price: ''
+      });
     } catch (error) {
       console.error('Error sending invite:', error);
       alert('Failed to send invite');
@@ -332,50 +355,125 @@ const Pals = ({ user, userProfile }) => {
         <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowInviteModal(false)}>×</button>
-            <h3>Send Invite to {selectedPal?.username}</h3>
+            <div className="invite-form-header">
+              <h3>Invite {selectedPal?.username}</h3>
+              <p className="invite-form-subtitle">Create a hangout plan and set your incentive</p>
+            </div>
 
             <div className="invite-form">
-              <input
-                type="text"
-                placeholder="Invite title *"
-                value={inviteData.title}
-                onChange={(e) => setInviteData(prev => ({ ...prev, title: e.target.value }))}
-                required
-              />
-              <textarea
-                placeholder="Description *"
-                value={inviteData.description}
-                onChange={(e) => setInviteData(prev => ({ ...prev, description: e.target.value }))}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Meeting location *"
-                value={inviteData.meetingLocation}
-                onChange={(e) => setInviteData(prev => ({ ...prev, meetingLocation: e.target.value }))}
-                required
-              />
-              <input
-                type="date"
-                value={inviteData.date}
-                onChange={(e) => setInviteData(prev => ({ ...prev, date: e.target.value }))}
-                required
-              />
-              <input
-                type="time"
-                value={inviteData.time}
-                onChange={(e) => setInviteData(prev => ({ ...prev, time: e.target.value }))}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Incentive ($) *"
-                value={inviteData.price}
-                onChange={(e) => setInviteData(prev => ({ ...prev, price: e.target.value }))}
-                required
-              />
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label>Event Title *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Coffee & Chat, Movie Night, Gym Session"
+                    value={inviteData.title}
+                    onChange={(e) => setInviteData(prev => ({ ...prev, title: e.target.value }))}
+                    className="form-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label>Description *</label>
+                  <textarea
+                    placeholder="Describe what you'd like to do together..."
+                    value={inviteData.description}
+                    onChange={(e) => setInviteData(prev => ({ ...prev, description: e.target.value }))}
+                    className="form-textarea"
+                    rows="3"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label>Meeting Location *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Central Park, Starbucks on 5th Ave"
+                    value={inviteData.meetingLocation}
+                    onChange={(e) => setInviteData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                    className="form-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="datetime-section">
+                <h4>📅 Event Schedule</h4>
+
+                <div className="form-row">
+                  <div className="form-group half-width">
+                    <label>Start Date *</label>
+                    <input
+                      type="date"
+                      value={inviteData.startDate}
+                      onChange={(e) => setInviteData(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="form-input"
+                      min={new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
+                  <div className="form-group half-width">
+                    <label>Start Time *</label>
+                    <input
+                      type="time"
+                      value={inviteData.startTime}
+                      onChange={(e) => setInviteData(prev => ({ ...prev, startTime: e.target.value }))}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group half-width">
+                    <label>End Date *</label>
+                    <input
+                      type="date"
+                      value={inviteData.endDate}
+                      onChange={(e) => setInviteData(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="form-input"
+                      min={inviteData.startDate || new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
+                  <div className="form-group half-width">
+                    <label>End Time *</label>
+                    <input
+                      type="time"
+                      value={inviteData.endTime}
+                      onChange={(e) => setInviteData(prev => ({ ...prev, endTime: e.target.value }))}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label>💰 Your Incentive ($) *</label>
+                  <input
+                    type="number"
+                    placeholder="How much are you offering?"
+                    value={inviteData.price}
+                    onChange={(e) => setInviteData(prev => ({ ...prev, price: e.target.value }))}
+                    className="form-input"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                  <small className="form-hint">This is what you're willing to pay for their time</small>
+                </div>
+              </div>
+
               <button onClick={sendInvite} className="send-invite-btn">
-                Send Invite
+                🚀 Send Invite
               </button>
             </div>
           </div>
