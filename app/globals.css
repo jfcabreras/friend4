@@ -319,14 +319,14 @@ body {
   z-index: 10;
 }
 
-.wish-details, .invite-details {
+.wish-details, .invite-details, .profile-details {
   display: flex;
   gap: 16px;
   margin-top: 8px;
   flex-wrap: wrap;
 }
 
-.budget, .price, .date, .time {
+.budget, .price, .date, .time, .profile-type, .available {
   background: rgba(255, 255, 255, 0.2);
   padding: 4px 8px;
   border-radius: 12px;

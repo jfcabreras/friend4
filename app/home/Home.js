@@ -24,62 +24,105 @@ const Home = ({ user, userProfile }) => {
       setLoading(true);
       let feedPosts = [];
 
-      if (userProfile.profileType === 'private') {
-        // Load wish invites from all users, then filter for public profiles
-        const wishInvitesQuery = query(
-          collection(db, 'wishInvites'),
-          orderBy('createdAt', 'desc'),
-          limit(100)
-        );
-        const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
-        feedPosts = wishInvitesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          type: 'wishInvite',
-          ...doc.data()
-        })).filter(invite => invite.authorProfileType === 'public').slice(0, 50);
-      } else {
-        // For public users, load both open invites and wish invites
-        
-        // Load open invites - simple query without complex filters
-        const openInvitesQuery = query(
-          collection(db, 'openInvites'),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-        const openInvitesSnapshot = await getDocs(openInvitesQuery);
-        const openInvites = openInvitesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          type: 'openInvite',
-          ...doc.data()
-        })).filter(invite => 
-          invite.status === 'open' && 
-          invite.authorProfileType === 'public'
-        );
+      // First, let's try to get public profiles with media content
+      const publicUsersQuery = query(
+        collection(db, 'users'),
+        where('profileType', '==', 'public')
+      );
+      
+      const publicUsersSnapshot = await getDocs(publicUsersQuery);
+      console.log('Found public users:', publicUsersSnapshot.docs.length);
 
-        // Load wish invites
-        const wishInvitesQuery = query(
-          collection(db, 'wishInvites'),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-        const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
-        const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          type: 'wishInvite',
-          ...doc.data()
-        })).filter(invite => invite.authorProfileType === 'public');
+      // Create mock posts from public profiles with media
+      const publicProfilePosts = publicUsersSnapshot.docs
+        .filter(doc => doc.id !== user?.uid) // Don't show own profile
+        .map(doc => {
+          const userData = doc.data();
+          console.log('Processing user:', userData.username, 'with profile picture:', userData.profilePicture);
+          
+          return {
+            id: `profile_${doc.id}`,
+            type: 'profile',
+            authorUsername: userData.username,
+            creatorUsername: userData.username,
+            authorProfileType: 'public',
+            city: userData.city,
+            country: userData.country,
+            imageUrl: userData.profilePicture,
+            title: `Check out ${userData.username}'s profile`,
+            description: userData.activityPreferences?.length > 0 
+              ? `Interests: ${userData.activityPreferences.join(', ')}` 
+              : 'Available for invites and activities',
+            createdAt: userData.updatedAt || userData.createdAt || new Date(),
+            likes: Math.floor(Math.random() * 20), // Mock data
+            comments: Math.floor(Math.random() * 10) // Mock data
+          };
+        });
 
-        // Combine and sort by creation date
-        feedPosts = [...openInvites, ...wishInvites].sort((a, b) => {
-          const aTime = a.createdAt?.toDate?.() || new Date(0);
-          const bTime = b.createdAt?.toDate?.() || new Date(0);
-          return bTime - aTime;
-        }).slice(0, 50); // Limit final results
+      // Try to load actual invites (with error handling)
+      try {
+        if (userProfile.profileType === 'private') {
+          // Load wish invites for private users
+          const wishInvitesQuery = query(
+            collection(db, 'wishInvites'),
+            limit(20)
+          );
+          const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
+          const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            type: 'wishInvite',
+            ...doc.data()
+          })).filter(invite => invite.authorProfileType === 'public');
+          
+          feedPosts = [...publicProfilePosts, ...wishInvites];
+        } else {
+          // Load both types for public users
+          const openInvitesQuery = query(
+            collection(db, 'openInvites'),
+            limit(20)
+          );
+          const openInvitesSnapshot = await getDocs(openInvitesQuery);
+          const openInvites = openInvitesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            type: 'openInvite',
+            ...doc.data()
+          })).filter(invite => 
+            invite.status === 'open' && 
+            invite.authorProfileType === 'public'
+          );
+
+          const wishInvitesQuery = query(
+            collection(db, 'wishInvites'),
+            limit(20)
+          );
+          const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
+          const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            type: 'wishInvite',
+            ...doc.data()
+          })).filter(invite => invite.authorProfileType === 'public');
+
+          feedPosts = [...publicProfilePosts, ...openInvites, ...wishInvites];
+        }
+      } catch (inviteError) {
+        console.log('Could not load invites:', inviteError.message);
+        // If invites fail to load, just show profile posts
+        feedPosts = publicProfilePosts;
       }
 
+      // Sort by creation date
+      feedPosts = feedPosts.sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+        return bTime - aTime;
+      }).slice(0, 50);
+
+      console.log('Final feed posts:', feedPosts.length);
       setFeed(feedPosts);
     } catch (error) {
       console.error('Error loading feed:', error);
+      // Set empty array on error
+      setFeed([]);
     } finally {
       setLoading(false);
     }
@@ -184,7 +227,8 @@ const Home = ({ user, userProfile }) => {
                   <div className="feed-placeholder">
                     <div className="placeholder-icon">
                       {item.type === 'wishInvite' ? '🙏' : 
-                       item.type === 'openInvite' ? '📅' : '📝'}
+                       item.type === 'openInvite' ? '📅' : 
+                       item.type === 'profile' ? '👤' : '📝'}
                     </div>
                   </div>
                 )}
@@ -214,6 +258,17 @@ const Home = ({ user, userProfile }) => {
                 </div>
 
                 <div className="feed-message">
+                  {item.type === 'profile' && (
+                    <>
+                      <strong>{item.title}</strong>
+                      <p>{item.description}</p>
+                      <div className="profile-details">
+                        <span className="profile-type">Public Profile</span>
+                        <span className="available">Available for invites</span>
+                      </div>
+                    </>
+                  )}
+
                   {item.type === 'wishInvite' && (
                     <>
                       <strong>{item.title}</strong>
