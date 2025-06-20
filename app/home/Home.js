@@ -38,37 +38,35 @@ const Home = ({ user, userProfile }) => {
           ...doc.data()
         }));
       } else {
-        // Load posts from all public profiles
-        const postsQuery = query(
-          collection(db, 'posts'),
-          where('authorProfileType', '==', 'public'),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-        const postsSnapshot = await getDocs(postsQuery);
-        const posts = postsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          type: 'post',
-          ...doc.data()
-        }));
-
-        // Load open invites from public profiles
+        // Load open invites from public profiles (separated queries to avoid index requirements)
         const openInvitesQuery = query(
           collection(db, 'openInvites'),
           where('status', '==', 'open'),
-          where('authorProfileType', '==', 'public'),
           orderBy('createdAt', 'desc'),
-          limit(25)
+          limit(30)
         );
         const openInvitesSnapshot = await getDocs(openInvitesQuery);
         const openInvites = openInvitesSnapshot.docs.map(doc => ({
           id: doc.id,
           type: 'openInvite',
           ...doc.data()
-        }));
+        })).filter(invite => invite.authorProfileType === 'public');
+
+        // Load wish invites as well for public users
+        const wishInvitesQuery = query(
+          collection(db, 'wishInvites'),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        );
+        const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
+        const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          type: 'wishInvite',
+          ...doc.data()
+        })).filter(invite => invite.authorProfileType === 'public');
 
         // Combine and sort by creation date
-        feedPosts = [...posts, ...openInvites].sort((a, b) => {
+        feedPosts = [...openInvites, ...wishInvites].sort((a, b) => {
           const aTime = a.createdAt?.toDate?.() || new Date(0);
           const bTime = b.createdAt?.toDate?.() || new Date(0);
           return bTime - aTime;
@@ -235,12 +233,7 @@ const Home = ({ user, userProfile }) => {
                     </>
                   )}
                   
-                  {item.type === 'post' && (
-                    <>
-                      {item.title && <strong>{item.title}</strong>}
-                      <p>{item.content || item.description}</p>
-                    </>
-                  )}
+                  
                 </div>
 
                 {/* Post Stats */}
