@@ -25,38 +25,42 @@ const Home = ({ user, userProfile }) => {
       let feedPosts = [];
 
       if (userProfile.profileType === 'private') {
-        // Load wish invites from public profiles
+        // Load wish invites from all users, then filter for public profiles
         const wishInvitesQuery = query(
           collection(db, 'wishInvites'),
           orderBy('createdAt', 'desc'),
-          limit(50)
+          limit(100)
         );
         const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
         feedPosts = wishInvitesSnapshot.docs.map(doc => ({
           id: doc.id,
           type: 'wishInvite',
           ...doc.data()
-        }));
+        })).filter(invite => invite.authorProfileType === 'public').slice(0, 50);
       } else {
-        // Load open invites from public profiles (separated queries to avoid index requirements)
+        // For public users, load both open invites and wish invites
+        
+        // Load open invites - simple query without complex filters
         const openInvitesQuery = query(
           collection(db, 'openInvites'),
-          where('status', '==', 'open'),
           orderBy('createdAt', 'desc'),
-          limit(30)
+          limit(50)
         );
         const openInvitesSnapshot = await getDocs(openInvitesQuery);
         const openInvites = openInvitesSnapshot.docs.map(doc => ({
           id: doc.id,
           type: 'openInvite',
           ...doc.data()
-        })).filter(invite => invite.authorProfileType === 'public');
+        })).filter(invite => 
+          invite.status === 'open' && 
+          invite.authorProfileType === 'public'
+        );
 
-        // Load wish invites as well for public users
+        // Load wish invites
         const wishInvitesQuery = query(
           collection(db, 'wishInvites'),
           orderBy('createdAt', 'desc'),
-          limit(20)
+          limit(50)
         );
         const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
         const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
@@ -70,7 +74,7 @@ const Home = ({ user, userProfile }) => {
           const aTime = a.createdAt?.toDate?.() || new Date(0);
           const bTime = b.createdAt?.toDate?.() || new Date(0);
           return bTime - aTime;
-        });
+        }).slice(0, 50); // Limit final results
       }
 
       setFeed(feedPosts);
