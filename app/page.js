@@ -1,19 +1,34 @@
-'use client';
+"use client";
 
 import "./globals.css";
-import Nav from './components/Nav';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Nav from "./components/Nav";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-import Home from './home/Home';
-import Pals from './pals/Pals';
-import Invites from './invites/Invites';
-import Profile from './profile/Profile';
+import Home from "./home/Home";
+import Pals from "./pals/Pals";
+import Invites from "./invites/Invites";
+import Profile from "./profile/Profile";
 
-import { auth, db } from '../lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "../lib/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 
 export default function App() {
   const router = useRouter();
@@ -21,19 +36,19 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('home');
+  const [selectedSection, setSelectedSection] = useState("home");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [country, setCountry] = useState('');
-  const [city, setCity] = useState('');
-  const [profileType, setProfileType] = useState('public');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [profileType, setProfileType] = useState("public");
   const [isLogin, setIsLogin] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [forgotPassword, setForgotPassword] = useState(false);
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -52,34 +67,34 @@ export default function App() {
 
   const loadUserProfile = async (uid) => {
     try {
-      const userDoc = await getDoc(doc(db, 'users', uid));
+      const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
         const profileData = userDoc.data();
         setUserProfile(profileData);
-        
+
         // Check if username setup is needed
         if (!profileData.username || !profileData.usernameSet) {
           setShowUsernameSetup(true);
         }
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error("Error loading user profile:", error);
     }
   };
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMessage('');
+    setErrorMessage("");
 
     if (!email || !password || (!isLogin && (!country || !city))) {
-      setErrorMessage('Please fill in all fields');
+      setErrorMessage("Please fill in all fields");
       setLoading(false);
       return;
     }
 
     if (!isLogin && password !== confirmPassword) {
-      setErrorMessage('Passwords do not match');
+      setErrorMessage("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -88,7 +103,11 @@ export default function App() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
         const newUser = userCredential.user;
 
         if (newUser) {
@@ -102,15 +121,15 @@ export default function App() {
             favorites: [],
             createdAt: new Date(),
             emailVerified: false,
-            usernameSet: false
+            usernameSet: false,
           };
 
-          await setDoc(doc(db, 'users', newUser.uid), userData);
-          setErrorMessage('Please verify your email before proceeding.');
+          await setDoc(doc(db, "users", newUser.uid), userData);
+          setErrorMessage("Please verify your email before proceeding.");
         }
       }
     } catch (error) {
-      console.error('Error authenticating:', error.message);
+      console.error("Error authenticating:", error.message);
       setErrorMessage(error.message);
     } finally {
       setLoading(false);
@@ -119,16 +138,16 @@ export default function App() {
 
   const checkUsernameAvailability = async (usernameToCheck) => {
     if (!usernameToCheck.trim()) return false;
-    
+
     try {
       const usernameQuery = query(
-        collection(db, 'users'),
-        where('username', '==', usernameToCheck.trim())
+        collection(db, "users"),
+        where("username", "==", usernameToCheck.trim()),
       );
       const usernameSnapshot = await getDocs(usernameQuery);
       return usernameSnapshot.empty;
     } catch (error) {
-      console.error('Error checking username:', error);
+      console.error("Error checking username:", error);
       return false;
     }
   };
@@ -136,34 +155,36 @@ export default function App() {
   const handleUsernameSetup = async (e) => {
     e.preventDefault();
     if (!username.trim()) {
-      setErrorMessage('Please enter a username');
+      setErrorMessage("Please enter a username");
       return;
     }
 
     setLoading(true);
-    setErrorMessage('');
+    setErrorMessage("");
 
     try {
       const isAvailable = await checkUsernameAvailability(username);
       if (!isAvailable) {
-        setErrorMessage('Username already exists. Please choose a different username.');
+        setErrorMessage(
+          "Username already exists. Please choose a different username.",
+        );
         setLoading(false);
         return;
       }
 
-      await updateDoc(doc(db, 'users', user.uid), {
+      await updateDoc(doc(db, "users", user.uid), {
         username: username.trim(),
-        usernameSet: true
+        usernameSet: true,
       });
 
       setShowUsernameSetup(false);
-      setUsername('');
-      
+      setUsername("");
+
       // Reload user profile
       await loadUserProfile(user.uid);
     } catch (error) {
-      console.error('Error setting username:', error);
-      setErrorMessage('Failed to set username. Please try again.');
+      console.error("Error setting username:", error);
+      setErrorMessage("Failed to set username. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -172,30 +193,32 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setSelectedSection('home');
+      setSelectedSection("home");
     } catch (error) {
-      console.error('Error signing out:', error.message);
+      console.error("Error signing out:", error.message);
     }
   };
 
   const handleForgotPassword = async () => {
     if (!email) {
-      setErrorMessage('Please enter your email address to reset your password.');
+      setErrorMessage(
+        "Please enter your email address to reset your password.",
+      );
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, email);
-      setErrorMessage('Password reset email sent! Check your inbox.');
+      setErrorMessage("Password reset email sent! Check your inbox.");
       setForgotPassword(false);
     } catch (error) {
-      console.error('Error sending password reset email:', error.message);
-      setErrorMessage('Failed to send reset email. Please try again.');
+      console.error("Error sending password reset email:", error.message);
+      setErrorMessage("Failed to send reset email. Please try again.");
     }
   };
 
   const handleSectionChange = (section) => {
-    if (!user && section !== 'home') {
+    if (!user && section !== "home") {
       setShowLoginModal(true);
       return;
     }
@@ -204,13 +227,13 @@ export default function App() {
 
   const renderSelectedSection = () => {
     switch (selectedSection) {
-      case 'home':
+      case "home":
         return <Home user={user} userProfile={userProfile} />;
-      case 'pals':
+      case "pals":
         return <Pals user={user} userProfile={userProfile} />;
-      case 'invites':
+      case "invites":
         return <Invites user={user} userProfile={userProfile} />;
-      case 'profile':
+      case "profile":
         return <Profile user={user} userProfile={userProfile} />;
       default:
         return <Home user={user} userProfile={userProfile} />;
@@ -219,24 +242,29 @@ export default function App() {
 
   return (
     <div className="page">
-      <Nav 
-        selectedSection={selectedSection} 
-        setSelectedSection={handleSectionChange} 
-        user={user} 
+      <Nav
+        selectedSection={selectedSection}
+        setSelectedSection={handleSectionChange}
+        user={user}
         onLogout={handleLogout}
       />
 
       {showLoginModal && (
         <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowLoginModal(false)}>×</button>
+            <button
+              className="modal-close"
+              onClick={() => setShowLoginModal(false)}
+            >
+              ×
+            </button>
 
-            <div className='main-form'>
+            <div className="main-form">
               <form onSubmit={handleAuth}>
-                <div className='main-form-head'>
-                  <h2>{isLogin ? 'Login or\u00A0' : 'Register or\u00A0'}</h2>
+                <div className="main-form-head">
+                  <h2>{isLogin ? "Login or\u00A0" : "Register or\u00A0"}</h2>
                   <button type="button" onClick={() => setIsLogin(!isLogin)}>
-                    {isLogin ? 'Register' : 'Login'}
+                    {isLogin ? "Register" : "Login"}
                   </button>
                 </div>
 
@@ -247,8 +275,12 @@ export default function App() {
                       onChange={(e) => setProfileType(e.target.value)}
                       required
                     >
-                      <option value="public">Public Profile (Visible for receiving invites)</option>
-                      <option value="private">Private Profile (Not discoverable)</option>
+                      <option value="public">
+                        Public Profile (Visible for receiving invites)
+                      </option>
+                      <option value="private">
+                        Private Profile (Not discoverable)
+                      </option>
                     </select>
                     <input
                       type="text"
@@ -293,7 +325,7 @@ export default function App() {
                 )}
 
                 <button type="submit" disabled={loading}>
-                  {loading ? 'Loading...' : isLogin ? 'Login' : 'Register'}
+                  {loading ? "Loading..." : isLogin ? "Login" : "Register"}
                 </button>
 
                 {isLogin && !forgotPassword && (
@@ -307,13 +339,16 @@ export default function App() {
                     <button type="button" onClick={handleForgotPassword}>
                       Send Reset Link
                     </button>
-                    <button type="button" onClick={() => setForgotPassword(false)}>
+                    <button
+                      type="button"
+                      onClick={() => setForgotPassword(false)}
+                    >
                       Back to Login
                     </button>
                   </div>
                 )}
               </form>
-              {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+              {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
             </div>
           </div>
         </div>
@@ -322,10 +357,10 @@ export default function App() {
       {showUsernameSetup && user && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className='main-form'>
+            <div className="main-form">
               <h2>Complete Your Profile</h2>
               <p>Please choose a username to complete your profile setup:</p>
-              
+
               <form onSubmit={handleUsernameSetup}>
                 <input
                   type="text"
@@ -334,16 +369,13 @@ export default function App() {
                   placeholder="Choose a username"
                   required
                 />
-                
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                >
-                  {loading ? 'Setting Username...' : 'Set Username'}
+
+                <button type="submit" disabled={loading}>
+                  {loading ? "Setting Username..." : "Set Username"}
                 </button>
               </form>
-              
-              {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+
+              {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
             </div>
           </div>
         </div>
@@ -359,27 +391,33 @@ export default function App() {
       </main>
 
       <div className="bottom-nav">
-        <button 
-          onClick={() => handleSectionChange('home')} 
-          className={selectedSection === 'home' ? 'active' : ''}
+        <button
+          onClick={() => handleSectionChange("home")}
+          className={selectedSection === "home" ? "active" : ""}
         >
           🏠 Home
         </button>
-        <button 
-          onClick={() => handleSectionChange('pals')} 
-          className={selectedSection === 'pals' ? 'active' : ''}
+        <button
+          onClick={() => handleSectionChange("pals")}
+          className={selectedSection === "pals" ? "active" : ""}
         >
           👥 Pals
         </button>
-        <button 
-          onClick={() => handleSectionChange('invites')} 
-          className={selectedSection === 'invites' ? 'active' : ''}
+        <button
+          onClick={() => handleSectionChange("newPublication")}
+          className={selectedSection === "newPublication" ? "active" : ""}
+        >
+          + New
+        </button>
+        <button
+          onClick={() => handleSectionChange("invites")}
+          className={selectedSection === "invites" ? "active" : ""}
         >
           📨 Invites
         </button>
-        <button 
-          onClick={() => handleSectionChange('profile')} 
-          className={selectedSection === 'profile' ? 'active' : ''}
+        <button
+          onClick={() => handleSectionChange("profile")}
+          className={selectedSection === "profile" ? "active" : ""}
         >
           👤 Profile
         </button>
