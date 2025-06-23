@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, getDoc, doc } from 'firebase/firestore';
 
 const Home = ({ user, userProfile }) => {
   const [feed, setFeed] = useState([]);
@@ -32,10 +32,32 @@ const Home = ({ user, userProfile }) => {
           limit(50)
         );
         const postsSnapshot = await getDocs(postsQuery);
-        const posts = postsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          type: 'post',
-          ...doc.data()
+        const posts = await Promise.all(postsSnapshot.docs.map(async (postDoc) => {
+          const postData = postDoc.data();
+          let authorProfilePicture = null;
+          let authorUsername = postData.creatorUsername || postData.authorUsername || 'Anonymous';
+          
+          // Fetch the author's profile picture if we have an authorId
+          if (postData.authorId) {
+            try {
+              const authorDoc = await getDoc(doc(db, 'users', postData.authorId));
+              if (authorDoc.exists()) {
+                const authorData = authorDoc.data();
+                authorProfilePicture = authorData.profilePicture;
+                authorUsername = authorData.username || authorUsername;
+              }
+            } catch (error) {
+              console.log('Could not load author profile:', error);
+            }
+          }
+          
+          return {
+            id: postDoc.id,
+            type: 'post',
+            ...postData,
+            authorProfilePicture,
+            authorUsername
+          };
         }));
 
         feedPosts = [...posts];
@@ -134,10 +156,23 @@ const Home = ({ user, userProfile }) => {
               <div className="feed-overlay">
                 <div className="feed-author">
                   <div className="author-avatar">
-                    {item.creatorUsername?.charAt(0).toUpperCase() || item.authorUsername?.charAt(0).toUpperCase() || '?'}
+                    {item.authorProfilePicture ? (
+                      <img 
+                        src={item.authorProfilePicture} 
+                        alt="Author"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      item.authorUsername?.charAt(0).toUpperCase() || '?'
+                    )}
                   </div>
                   <div className="author-info">
-                    <span className="author-name">{item.creatorUsername || item.authorUsername || 'Anonymous'}</span>
+                    <span className="author-name">{item.authorUsername || 'Anonymous'}</span>
                     <span className="post-location">{item.city}, {item.country}</span>
                   </div>
                 </div>
