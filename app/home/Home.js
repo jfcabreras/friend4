@@ -44,7 +44,9 @@ const Home = ({ user, userProfile }) => {
         console.log('Could not load posts:', postsError.message);
       }
 
-      // Also load public profiles with media content as profile posts
+      console.log('Posts loaded from posts collection:', feedPosts.length);
+
+      // Only add profile discovery posts if there are no actual posts, or add them as secondary content
       const publicUsersQuery = query(
         collection(db, 'users'),
         where('profileType', '==', 'public')
@@ -53,7 +55,7 @@ const Home = ({ user, userProfile }) => {
       const publicUsersSnapshot = await getDocs(publicUsersQuery);
       console.log('Found public users:', publicUsersSnapshot.docs.length);
 
-      // Create profile posts from public profiles with media
+      // Create profile discovery posts from public profiles (but don't override actual posts)
       const publicProfilePosts = publicUsersSnapshot.docs
         .filter(doc => doc.id !== user?.uid) // Don't show own profile
         .filter(doc => doc.data().profilePicture) // Only show profiles with pictures
@@ -80,11 +82,13 @@ const Home = ({ user, userProfile }) => {
           };
         });
 
-      // Add profile posts to feed
+      // Add profile posts to feed (prioritize actual posts)
       feedPosts = [...feedPosts, ...publicProfilePosts];
 
-      // Try to load actual invites (with error handling)
+      // Try to load actual invites and add them to the feed (don't override posts)
       try {
+        let invitePosts = [];
+        
         if (userProfile.profileType === 'private') {
           // Load wish invites for private users
           const wishInvitesQuery = query(
@@ -98,7 +102,7 @@ const Home = ({ user, userProfile }) => {
             ...doc.data()
           })).filter(invite => invite.authorProfileType === 'public');
           
-          feedPosts = [...publicProfilePosts, ...wishInvites];
+          invitePosts = wishInvites;
         } else {
           // Load both types for public users
           const openInvitesQuery = query(
@@ -126,12 +130,16 @@ const Home = ({ user, userProfile }) => {
             ...doc.data()
           })).filter(invite => invite.authorProfileType === 'public');
 
-          feedPosts = [...publicProfilePosts, ...openInvites, ...wishInvites];
+          invitePosts = [...openInvites, ...wishInvites];
         }
+
+        // Add invites to the feed (don't override existing posts)
+        feedPosts = [...feedPosts, ...invitePosts];
+        console.log('Added invites to feed:', invitePosts.length);
+        
       } catch (inviteError) {
         console.log('Could not load invites:', inviteError.message);
-        // If invites fail to load, just show profile posts
-        feedPosts = publicProfilePosts;
+        // Continue with existing feed posts
       }
 
       // Sort by creation date
