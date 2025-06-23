@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, addDoc, getDoc, orderBy } from 'firebase/firestore';
-import { ref, listAll, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
+
 
 const Pals = ({ user, userProfile }) => {
   const [pals, setPals] = useState([]);
@@ -14,12 +13,8 @@ const Pals = ({ user, userProfile }) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedPal, setSelectedPal] = useState(null);
-  const [selectedPalMedia, setSelectedPalMedia] = useState([]);
-  const [loadingPalMedia, setLoadingPalMedia] = useState(false);
   const [selectedPalPosts, setSelectedPalPosts] = useState([]);
   const [loadingPalPosts, setLoadingPalPosts] = useState(false);
-  const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [inviteData, setInviteData] = useState({
     title: '',
     description: '',
@@ -105,45 +100,7 @@ const Pals = ({ user, userProfile }) => {
     }
   };
 
-  const loadPalMedia = async (palId) => {
-    if (!palId) return;
-
-    setLoadingPalMedia(true);
-    try {
-      // Get media metadata from Firestore to check deleted status
-      const userMediaRef = doc(db, 'users', palId);
-      const userDoc = await getDoc(userMediaRef);
-      const userData = userDoc.data();
-      const deletedMedia = userData?.deletedMedia || [];
-
-      const mediaRef = ref(storage, `users/${palId}/media`);
-      const mediaList = await listAll(mediaRef);
-
-      const mediaUrls = await Promise.all(
-        mediaList.items.map(async (item) => {
-          // Skip deleted media files
-          if (deletedMedia.includes(item.name)) {
-            return null;
-          }
-
-          const url = await getDownloadURL(item);
-          return {
-            name: item.name,
-            url: url,
-            type: item.name.toLowerCase().includes('.mp4') || item.name.toLowerCase().includes('.mov') ? 'video' : 'image'
-          };
-        })
-      );
-
-      // Filter out null values (deleted media)
-      setSelectedPalMedia(mediaUrls.filter(media => media !== null));
-    } catch (error) {
-      console.error('Error loading pal media:', error);
-      setSelectedPalMedia([]);
-    } finally {
-      setLoadingPalMedia(false);
-    }
-  };
+  
 
   const loadPalPosts = async (palId) => {
     if (!palId) return;
@@ -229,27 +186,7 @@ const Pals = ({ user, userProfile }) => {
     }
   };
 
-  const openFullscreenMedia = (index) => {
-    setCurrentMediaIndex(index);
-    setShowFullscreenMedia(true);
-  };
-
-  const closeFullscreenMedia = () => {
-    setShowFullscreenMedia(false);
-    setCurrentMediaIndex(0);
-  };
-
-  const navigateMedia = (direction) => {
-    if (direction === 'next') {
-      setCurrentMediaIndex((prev) => 
-        prev === selectedPalMedia.length - 1 ? 0 : prev + 1
-      );
-    } else {
-      setCurrentMediaIndex((prev) => 
-        prev === 0 ? selectedPalMedia.length - 1 : prev - 1
-      );
-    }
-  };
+  
 
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return 'Just now';
@@ -327,7 +264,6 @@ const Pals = ({ user, userProfile }) => {
               onClick={() => {
                 setSelectedPal(pal);
                 setShowProfileModal(true);
-                loadPalMedia(pal.id);
                 loadPalPosts(pal.id);
               }}
             >
@@ -538,7 +474,6 @@ const Pals = ({ user, userProfile }) => {
           <div className="modal-content profile-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => {
               setShowProfileModal(false);
-              setSelectedPalMedia([]);
               setSelectedPalPosts([]);
             }}>×</button>
 
@@ -555,6 +490,24 @@ const Pals = ({ user, userProfile }) => {
                 <p className="profile-location-large">📍 {selectedPal.city}, {selectedPal.country}</p>
                 <span className="profile-type-badge">🌍 Public Profile</span>
               </div>
+            </div>
+
+            <div className="profile-modal-actions">
+              <button 
+                onClick={() => toggleFavorite(selectedPal.id)}
+                className={`modal-favorite-btn ${favorites.includes(selectedPal.id) ? 'favorited' : ''}`}
+              >
+                {favorites.includes(selectedPal.id) ? '⭐ Remove from Favorites' : '☆ Add to Favorites'}
+              </button>
+              <button 
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setShowInviteModal(true);
+                }}
+                className="modal-invite-btn"
+              >
+                Send Invite
+              </button>
             </div>
 
             <div className="profile-modal-stats">
@@ -641,123 +594,11 @@ const Pals = ({ user, userProfile }) => {
                 <p className="no-posts">No posts shared by this pal.</p>
               )}
             </div>
-
-            <div className="profile-modal-media">
-              <h3>Media Gallery</h3>
-              {loadingPalMedia ? (
-                <div className="loading">Loading media...</div>
-              ) : selectedPalMedia.length > 0 ? (
-                <div className="modal-media-grid">
-                  {selectedPalMedia.map((media, index) => (
-                    <div 
-                      key={index} 
-                      className="modal-media-item"
-                      onClick={() => openFullscreenMedia(index)}
-                    >
-                      {media.type === 'video' ? (
-                        <video className="modal-media-preview">
-                          <source src={media.url} type="video/mp4" />
-                          Your browser does not support the video tag.
-                        </video>
-                      ) : (
-                        <img src={media.url} alt={`Media ${index + 1}`} className="modal-media-preview" />
-                      )}
-                      <div className="media-overlay">
-                        <span className="media-icon">
-                          {media.type === 'video' ? '▶️' : '🔍'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-media">No media shared by this pal.</p>
-              )}
-            </div>
-
-            <div className="profile-modal-actions">
-              <button 
-                onClick={() => toggleFavorite(selectedPal.id)}
-                className={`modal-favorite-btn ${favorites.includes(selectedPal.id) ? 'favorited' : ''}`}
-              >
-                {favorites.includes(selectedPal.id) ? '⭐ Remove from Favorites' : '☆ Add to Favorites'}
-              </button>
-              <button 
-                onClick={() => {
-                  setShowProfileModal(false);
-                  setShowInviteModal(true);
-                  loadPalMedia(selectedPal.id);
-                  loadPalPosts(selectedPal.id);
-                }}
-                className="modal-invite-btn"
-              >
-                Send Invite
-              </button>
-            </div>
           </div>
         </div>
       )}
 
-      {/* Fullscreen Media Modal */}
-      {showFullscreenMedia && selectedPalMedia.length > 0 && (
-        <div className="fullscreen-modal">
-          <div className="fullscreen-content">
-            <button className="fullscreen-close" onClick={closeFullscreenMedia}>
-              ×
-            </button>
-
-            <div className="fullscreen-nav-indicators">
-              <div className="nav-indicator">
-                {currentMediaIndex + 1} / {selectedPalMedia.length}
-              </div>
-              {selectedPalMedia.length > 1 && (
-                <>
-                  <div className="nav-hint nav-hint-up">← Previous</div>
-                  <div className="nav-hint nav-hint-down">Next →</div>
-                </>
-              )}
-            </div>
-
-            {selectedPalMedia.length > 1 && (
-              <button 
-                className="fullscreen-nav fullscreen-nav-prev" 
-                onClick={() => navigateMedia('prev')}
-              >
-                ‹
-              </button>
-            )}
-
-            <div className="fullscreen-media-container">
-              {selectedPalMedia[currentMediaIndex]?.type === 'video' ? (
-                <video 
-                  controls 
-                  autoPlay 
-                  className="fullscreen-media"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <source src={selectedPalMedia[currentMediaIndex].url} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <img 
-                  src={selectedPalMedia[currentMediaIndex]?.url} 
-                  alt={`Media ${currentMediaIndex + 1}`} 
-                  className="fullscreen-media"
-                />
-              )}
-            </div>
-
-            {selectedPalMedia.length > 1 && (
-              <button 
-                className="fullscreen-nav fullscreen-nav-next" 
-                onClick={() => navigateMedia('next')}
-              >
-                ›
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };
