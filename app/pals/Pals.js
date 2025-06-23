@@ -152,15 +152,20 @@ const Pals = ({ user, userProfile }) => {
     try {
       const postsQuery = query(
         collection(db, 'posts'),
-        where('authorId', '==', palId),
-        orderBy('createdAt', 'desc')
+        where('authorId', '==', palId)
       );
       
       const postsSnapshot = await getDocs(postsQuery);
       const posts = postsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      }))
+      // Sort in JavaScript to avoid composite index requirement
+      .sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+        return bTime - aTime;
+      });
       
       setSelectedPalPosts(posts);
     } catch (error) {
