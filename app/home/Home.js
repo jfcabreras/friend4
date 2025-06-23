@@ -46,102 +46,6 @@ const Home = ({ user, userProfile }) => {
 
       console.log('Posts loaded from posts collection:', feedPosts.length);
 
-      // Only add profile discovery posts if there are no actual posts, or add them as secondary content
-      const publicUsersQuery = query(
-        collection(db, 'users'),
-        where('profileType', '==', 'public')
-      );
-      
-      const publicUsersSnapshot = await getDocs(publicUsersQuery);
-      console.log('Found public users:', publicUsersSnapshot.docs.length);
-
-      // Create profile discovery posts from public profiles (but don't override actual posts)
-      const publicProfilePosts = publicUsersSnapshot.docs
-        .filter(doc => doc.id !== user?.uid) // Don't show own profile
-        .filter(doc => doc.data().profilePicture) // Only show profiles with pictures
-        .map(doc => {
-          const userData = doc.data();
-          console.log('Processing user:', userData.username, 'with profile picture:', userData.profilePicture);
-          
-          return {
-            id: `profile_${doc.id}`,
-            type: 'profile',
-            authorUsername: userData.username,
-            creatorUsername: userData.username,
-            authorProfileType: 'public',
-            city: userData.city,
-            country: userData.country,
-            imageUrl: userData.profilePicture,
-            title: `Check out ${userData.username}'s profile`,
-            description: userData.activityPreferences?.length > 0 
-              ? `Interests: ${userData.activityPreferences.join(', ')}` 
-              : 'Available for invites and activities',
-            createdAt: userData.updatedAt || userData.createdAt || new Date(),
-            likes: Math.floor(Math.random() * 20), // Mock data
-            comments: Math.floor(Math.random() * 10) // Mock data
-          };
-        });
-
-      // Add profile posts to feed (prioritize actual posts)
-      feedPosts = [...feedPosts, ...publicProfilePosts];
-
-      // Try to load actual invites and add them to the feed (don't override posts)
-      try {
-        let invitePosts = [];
-        
-        if (userProfile.profileType === 'private') {
-          // Load wish invites for private users
-          const wishInvitesQuery = query(
-            collection(db, 'wishInvites'),
-            limit(20)
-          );
-          const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
-          const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            type: 'wishInvite',
-            ...doc.data()
-          })).filter(invite => invite.authorProfileType === 'public');
-          
-          invitePosts = wishInvites;
-        } else {
-          // Load both types for public users
-          const openInvitesQuery = query(
-            collection(db, 'openInvites'),
-            limit(20)
-          );
-          const openInvitesSnapshot = await getDocs(openInvitesQuery);
-          const openInvites = openInvitesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            type: 'openInvite',
-            ...doc.data()
-          })).filter(invite => 
-            invite.status === 'open' && 
-            invite.authorProfileType === 'public'
-          );
-
-          const wishInvitesQuery = query(
-            collection(db, 'wishInvites'),
-            limit(20)
-          );
-          const wishInvitesSnapshot = await getDocs(wishInvitesQuery);
-          const wishInvites = wishInvitesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            type: 'wishInvite',
-            ...doc.data()
-          })).filter(invite => invite.authorProfileType === 'public');
-
-          invitePosts = [...openInvites, ...wishInvites];
-        }
-
-        // Add invites to the feed (don't override existing posts)
-        feedPosts = [...feedPosts, ...invitePosts];
-        console.log('Added invites to feed:', invitePosts.length);
-        
-      } catch (inviteError) {
-        console.log('Could not load invites:', inviteError.message);
-        // Continue with existing feed posts
-      }
-
       // Sort by creation date
       feedPosts = feedPosts.sort((a, b) => {
         const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
@@ -220,12 +124,7 @@ const Home = ({ user, userProfile }) => {
           <div className="empty-feed">
             <div className="empty-feed-content">
               <h3>No posts yet</h3>
-              <p>
-                {userProfile?.profileType === 'private' 
-                  ? 'No wish invites available at the moment'
-                  : 'No posts from public profiles available'
-                }
-              </p>
+              <p>No posts available at the moment. Be the first to share something!</p>
             </div>
           </div>
         ) : (
@@ -265,10 +164,7 @@ const Home = ({ user, userProfile }) => {
                 ) : (
                   <div className="feed-placeholder">
                     <div className="placeholder-icon">
-                      {item.type === 'post' ? '📝' :
-                       item.type === 'wishInvite' ? '🙏' : 
-                       item.type === 'openInvite' ? '📅' : 
-                       item.type === 'profile' ? '👤' : '📝'}
+                      📝
                     </div>
                   </div>
                 )}
@@ -298,51 +194,11 @@ const Home = ({ user, userProfile }) => {
                 </div>
 
                 <div className="feed-message">
-                  {item.type === 'post' && (
-                    <>
-                      <strong>{item.title}</strong>
-                      {item.description && <p>{item.description}</p>}
-                      <div className="post-details">
-                        <span className="post-type">📝 User Post</span>
-                      </div>
-                    </>
-                  )}
-
-                  {item.type === 'profile' && (
-                    <>
-                      <strong>{item.title}</strong>
-                      <p>{item.description}</p>
-                      <div className="profile-details">
-                        <span className="profile-type">Public Profile</span>
-                        <span className="available">Available for invites</span>
-                      </div>
-                    </>
-                  )}
-
-                  {item.type === 'wishInvite' && (
-                    <>
-                      <strong>{item.title}</strong>
-                      <p>{item.description}</p>
-                      <div className="wish-details">
-                        <span className="budget">Budget: ${item.budget}</span>
-                        {item.date && <span className="date">Date: {new Date(item.date.toDate()).toLocaleDateString()}</span>}
-                      </div>
-                    </>
-                  )}
-                  
-                  {item.type === 'openInvite' && (
-                    <>
-                      <strong>{item.title}</strong>
-                      <p>{item.description}</p>
-                      <div className="invite-details">
-                        <span className="price">${item.price}</span>
-                        {item.date && <span className="date">{new Date(item.date.toDate()).toLocaleDateString()}</span>}
-                        {item.time && <span className="time">{item.time}</span>}
-                      </div>
-                    </>
-                  )}
-                  
-                  
+                  <strong>{item.title}</strong>
+                  {item.description && <p>{item.description}</p>}
+                  <div className="post-details">
+                    <span className="post-type">📝 User Post</span>
+                  </div>
                 </div>
 
                 {/* Post Stats */}
