@@ -9,6 +9,7 @@ import Home from "./home/Home";
 import Pals from "./pals/Pals";
 import Invites from "./invites/Invites";
 import Profile from "./profile/Profile";
+import New from "./new/New";
 
 import { auth, db } from "../lib/firebase";
 import {
@@ -235,6 +236,8 @@ export default function App() {
         return <Invites user={user} userProfile={userProfile} />;
       case "profile":
         return <Profile user={user} userProfile={userProfile} />;
+      case "newPublication":
+        return <New user={user} userProfile={userProfile} />;
       default:
         return <Home user={user} userProfile={userProfile} />;
     }

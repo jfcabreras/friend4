@@ -24,7 +24,36 @@ const Home = ({ user, userProfile }) => {
       setLoading(true);
       let feedPosts = [];
 
-      // First, let's try to get public profiles with media content
+      // Load actual posts from the posts collection
+      try {
+        const postsQuery = query(
+          collection(db, 'posts'),
+          orderBy('createdAt', 'desc'),
+          limit(50)
+        );
+        const postsSnapshot = await getDocs(postsQuery);
+        const posts = postsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          type: 'post',
+          ...doc.data()
+        })).filter(post => {
+          // Filter based on user profile type and post author profile type
+          if (userProfile.profileType === 'private') {
+            // Private users can see posts from public profiles
+            return post.authorProfileType === 'public';
+          } else {
+            // Public users can see all posts
+            return true;
+          }
+        });
+
+        feedPosts = [...posts];
+        console.log('Loaded posts:', posts.length);
+      } catch (postsError) {
+        console.log('Could not load posts:', postsError.message);
+      }
+
+      // Also load public profiles with media content as profile posts
       const publicUsersQuery = query(
         collection(db, 'users'),
         where('profileType', '==', 'public')
@@ -33,9 +62,10 @@ const Home = ({ user, userProfile }) => {
       const publicUsersSnapshot = await getDocs(publicUsersQuery);
       console.log('Found public users:', publicUsersSnapshot.docs.length);
 
-      // Create mock posts from public profiles with media
+      // Create profile posts from public profiles with media
       const publicProfilePosts = publicUsersSnapshot.docs
         .filter(doc => doc.id !== user?.uid) // Don't show own profile
+        .filter(doc => doc.data().profilePicture) // Only show profiles with pictures
         .map(doc => {
           const userData = doc.data();
           console.log('Processing user:', userData.username, 'with profile picture:', userData.profilePicture);
@@ -58,6 +88,9 @@ const Home = ({ user, userProfile }) => {
             comments: Math.floor(Math.random() * 10) // Mock data
           };
         });
+
+      // Add profile posts to feed
+      feedPosts = [...feedPosts, ...publicProfilePosts];
 
       // Try to load actual invites (with error handling)
       try {
@@ -218,15 +251,23 @@ const Home = ({ user, userProfile }) => {
               {/* Post Image/Media */}
               <div className="feed-image-container">
                 {item.imageUrl ? (
-                  <img 
-                    src={item.imageUrl} 
-                    alt="Post content" 
-                    className="feed-image"
-                  />
+                  item.mediaType === 'video' ? (
+                    <video controls className="feed-image">
+                      <source src={item.imageUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <img 
+                      src={item.imageUrl} 
+                      alt="Post content" 
+                      className="feed-image"
+                    />
+                  )
                 ) : (
                   <div className="feed-placeholder">
                     <div className="placeholder-icon">
-                      {item.type === 'wishInvite' ? '🙏' : 
+                      {item.type === 'post' ? '📝' :
+                       item.type === 'wishInvite' ? '🙏' : 
                        item.type === 'openInvite' ? '📅' : 
                        item.type === 'profile' ? '👤' : '📝'}
                     </div>
@@ -241,13 +282,13 @@ const Home = ({ user, userProfile }) => {
                     className="feed-action-btn"
                     onClick={() => handleLike(item.id)}
                   >
-                    ❤️ Like
+                    ❤️ {item.likes || 0}
                   </button>
                   <button 
                     className="feed-action-btn"
                     onClick={() => handleComment(item.id)}
                   >
-                    💬 Comment
+                    💬 {item.comments || 0}
                   </button>
                   <button 
                     className="feed-action-btn"
@@ -258,6 +299,16 @@ const Home = ({ user, userProfile }) => {
                 </div>
 
                 <div className="feed-message">
+                  {item.type === 'post' && (
+                    <>
+                      <strong>{item.title}</strong>
+                      {item.description && <p>{item.description}</p>}
+                      <div className="post-details">
+                        <span className="post-type">📝 User Post</span>
+                      </div>
+                    </>
+                  )}
+
                   {item.type === 'profile' && (
                     <>
                       <strong>{item.title}</strong>

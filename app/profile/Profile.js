@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { db, storage } from '../../lib/firebase';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
+import UserPosts from './UserPosts';
 
 const Profile = ({ user, userProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -725,6 +726,11 @@ const Profile = ({ user, userProfile }) => {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="user-posts-section">
+        <h3>My Posts</h3>
+        <UserPosts userId={user?.uid} />
       </div>
 
       <div className="media-section">
