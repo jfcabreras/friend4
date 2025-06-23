@@ -20,21 +20,28 @@ const UserPosts = ({ userId }) => {
     
     try {
       setLoading(true);
+      // First, get all posts for this user without ordering
       const postsQuery = query(
         collection(db, 'posts'),
-        where('authorId', '==', userId),
-        orderBy('createdAt', 'desc')
+        where('authorId', '==', userId)
       );
       
       const postsSnapshot = await getDocs(postsQuery);
       const userPosts = postsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      }))
+      // Then sort in JavaScript to avoid composite index requirement
+      .sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+        return bTime - aTime;
+      });
       
       setPosts(userPosts);
     } catch (error) {
       console.error('Error loading user posts:', error);
+      setPosts([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
