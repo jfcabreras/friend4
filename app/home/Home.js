@@ -36,16 +36,7 @@ const Home = ({ user, userProfile }) => {
           id: doc.id,
           type: 'post',
           ...doc.data()
-        })).filter(post => {
-          // Filter based on user profile type and post author profile type
-          if (userProfile.profileType === 'private') {
-            // Private users can see posts from public profiles
-            return post.authorProfileType === 'public';
-          } else {
-            // Public users can see all posts
-            return true;
-          }
-        });
+        }));
 
         feedPosts = [...posts];
         console.log('Loaded posts:', posts.length);
