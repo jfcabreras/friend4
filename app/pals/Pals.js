@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, addDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, addDoc, getDoc, orderBy } from 'firebase/firestore';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../lib/firebase';
 
@@ -16,6 +16,8 @@ const Pals = ({ user, userProfile }) => {
   const [selectedPal, setSelectedPal] = useState(null);
   const [selectedPalMedia, setSelectedPalMedia] = useState([]);
   const [loadingPalMedia, setLoadingPalMedia] = useState(false);
+  const [selectedPalPosts, setSelectedPalPosts] = useState([]);
+  const [loadingPalPosts, setLoadingPalPosts] = useState(false);
   const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [inviteData, setInviteData] = useState({
@@ -143,6 +145,32 @@ const Pals = ({ user, userProfile }) => {
     }
   };
 
+  const loadPalPosts = async (palId) => {
+    if (!palId) return;
+
+    setLoadingPalPosts(true);
+    try {
+      const postsQuery = query(
+        collection(db, 'posts'),
+        where('authorId', '==', palId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const postsSnapshot = await getDocs(postsQuery);
+      const posts = postsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      setSelectedPalPosts(posts);
+    } catch (error) {
+      console.error('Error loading pal posts:', error);
+      setSelectedPalPosts([]);
+    } finally {
+      setLoadingPalPosts(false);
+    }
+  };
+
   const sendInvite = async () => {
     if (!inviteData.title || !inviteData.description || !inviteData.meetingLocation || 
         !inviteData.startDate || !inviteData.startTime || !inviteData.endDate || 
@@ -218,6 +246,24 @@ const Pals = ({ user, userProfile }) => {
     }
   };
 
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    const now = new Date();
+    const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return postTime.toLocaleDateString();
+  };
+
   const filteredPals = showFavoritesOnly 
     ? pals.filter(pal => favorites.includes(pal.id))
     : pals;
@@ -277,6 +323,7 @@ const Pals = ({ user, userProfile }) => {
                 setSelectedPal(pal);
                 setShowProfileModal(true);
                 loadPalMedia(pal.id);
+                loadPalPosts(pal.id);
               }}
             >
               <div className="pal-card-header">
@@ -487,6 +534,7 @@ const Pals = ({ user, userProfile }) => {
             <button className="modal-close" onClick={() => {
               setShowProfileModal(false);
               setSelectedPalMedia([]);
+              setSelectedPalPosts([]);
             }}>×</button>
 
             <div className="profile-modal-header">
@@ -543,6 +591,52 @@ const Pals = ({ user, userProfile }) => {
               </div>
             )}
 
+            <div className="profile-modal-posts">
+              <h3>Recent Posts</h3>
+              {loadingPalPosts ? (
+                <div className="loading">Loading posts...</div>
+              ) : selectedPalPosts.length > 0 ? (
+                <div className="modal-posts-list">
+                  {selectedPalPosts.map((post) => (
+                    <div key={post.id} className="modal-post-item">
+                      <div className="modal-post-header">
+                        <h4>{post.title}</h4>
+                        <span className="modal-post-time">{formatTimeAgo(post.createdAt)}</span>
+                      </div>
+                      
+                      {post.description && (
+                        <p className="modal-post-description">{post.description}</p>
+                      )}
+                      
+                      {post.imageUrl && (
+                        <div className="modal-post-media">
+                          {post.mediaType === 'video' ? (
+                            <video controls className="modal-post-media-content">
+                              <source src={post.imageUrl} type="video/mp4" />
+                              Your browser does not support the video tag.
+                            </video>
+                          ) : (
+                            <img 
+                              src={post.imageUrl} 
+                              alt={post.title} 
+                              className="modal-post-media-content"
+                            />
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="modal-post-stats">
+                        <span>❤️ {post.likes || 0} likes</span>
+                        <span>💬 {post.comments || 0} comments</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-posts">No posts shared by this pal.</p>
+              )}
+            </div>
+
             <div className="profile-modal-media">
               <h3>Media Gallery</h3>
               {loadingPalMedia ? (
@@ -588,6 +682,7 @@ const Pals = ({ user, userProfile }) => {
                   setShowProfileModal(false);
                   setShowInviteModal(true);
                   loadPalMedia(selectedPal.id);
+                  loadPalPosts(selectedPal.id);
                 }}
                 className="modal-invite-btn"
               >
