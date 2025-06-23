@@ -18,8 +18,12 @@ const ProfileModal = ({
   formatTimeAgo,
   onSendInvite 
 }) => {
-  const toggleFavorite = async (palId) => {
-    if (!user?.uid) return;
+  const toggleFavorite = async (palId, event) => {
+    if (!user?.uid || !event) return;
+    
+    // Prevent any automatic triggering
+    event.preventDefault();
+    event.stopPropagation();
 
     try {
       const isFavorite = favorites.includes(palId);
@@ -65,7 +69,7 @@ const ProfileModal = ({
 
         <div className="profile-modal-actions">
           <button 
-            onClick={() => toggleFavorite(selectedPal.id)}
+            onClick={(event) => toggleFavorite(selectedPal.id, event)}
             className={`modal-favorite-btn ${favorites.includes(selectedPal.id) ? 'favorited' : ''}`}
           >
             {favorites.includes(selectedPal.id) ? '⭐ Remove from Favorites' : '☆ Add to Favorites'}
