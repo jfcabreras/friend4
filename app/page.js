@@ -30,8 +30,6 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import ProfileModal from './components/ProfileModal';
-import ShareableProfileIntegrated from './components/ShareableProfileIntegrated';
 
 export default function App() {
   const router = useRouter();
@@ -39,9 +37,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('home');
-  const [profileUserId, setProfileUserId] = useState(null);
-  const [profileUsername, setProfileUsername] = useState(null);
+  const [selectedSection, setSelectedSection] = useState("home");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,42 +52,22 @@ export default function App() {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        loadUserProfile(user);
+        await loadUserProfile(user.uid);
+        setShowLoginModal(false);
       } else {
         setUser(null);
         setUserProfile(null);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Handle URL-based profile viewing
-  useEffect(() => {
-    const path = window.location.pathname;
-    const profileMatch = path.match(/^\/profile\/(.+)$/);
-
-    if (profileMatch) {
-      const usernameOrId = profileMatch[1];
-      setProfileUsername(usernameOrId);
-      setSelectedSection('viewProfile');
-    }
-  }, []);
-
-  const loadUserProfile = async (user) => {
+  const loadUserProfile = async (uid) => {
     try {
-      // Extract uid from user object, handle both string and object cases
-      const uid = typeof user === 'string' ? user : user?.uid;
-      
-      if (!uid || typeof uid !== 'string') {
-        console.error("Invalid user ID:", uid);
-        return;
-      }
-
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
         const profileData = userDoc.data();
@@ -206,7 +182,7 @@ export default function App() {
       setUsername("");
 
       // Reload user profile
-      await loadUserProfile(user);
+      await loadUserProfile(user.uid);
     } catch (error) {
       console.error("Error setting username:", error);
       setErrorMessage("Failed to set username. Please try again.");
@@ -414,31 +390,7 @@ export default function App() {
             <p>📧 Please verify your email to access all features</p>
           </div>
         )}
-        {selectedSection === 'profile' && (
-          <Profile 
-            user={user} 
-            userProfile={userProfile}
-          />
-        )}
-        {selectedSection === 'profileView' && profileUserId && (
-          <ProfileModal
-            userId={profileUserId}
-            onClose={() => {
-              setSelectedSection('home');
-              setProfileUserId(null);
-            }}
-          />
-        )}
-        {selectedSection === 'viewProfile' && profileUsername && (
-          <ShareableProfileIntegrated
-            usernameOrId={profileUsername}
-            onBack={() => {
-              setSelectedSection('home');
-              setProfileUsername(null);
-              window.history.pushState({}, '', '/');
-            }}
-          />
-        )}
+        {renderSelectedSection()}
       </main>
 
       <div className="bottom-nav">
