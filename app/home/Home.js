@@ -56,8 +56,9 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
           const postData = postDoc.data();
           let authorProfilePicture = null;
           let authorUsername = postData.creatorUsername || postData.authorUsername || 'Anonymous';
+          let isPublicProfile = false;
           
-          // Fetch the author's profile picture if we have an authorId
+          // Fetch the author's profile picture and check if profile is public
           if (postData.authorId) {
             try {
               const authorDoc = await getDoc(doc(db, 'users', postData.authorId));
@@ -65,6 +66,7 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
                 const authorData = authorDoc.data();
                 authorProfilePicture = authorData.profilePicture;
                 authorUsername = authorData.username || authorUsername;
+                isPublicProfile = authorData.isPublic === true;
               }
             } catch (error) {
               console.log('Could not load author profile:', error);
@@ -76,12 +78,16 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
             type: 'post',
             ...postData,
             authorProfilePicture,
-            authorUsername
+            authorUsername,
+            isPublicProfile
           };
         }));
 
-        feedPosts = [...posts];
+        // Filter to only show posts from public users
+        const publicPosts = posts.filter(post => post.isPublicProfile === true);
+        feedPosts = [...publicPosts];
         console.log('Loaded posts:', posts.length);
+        console.log('Public posts:', publicPosts.length);
       } catch (postsError) {
         console.log('Could not load posts:', postsError.message);
       }
