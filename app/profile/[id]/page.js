@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,20 +13,20 @@ const ShareableProfile = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       loadProfile(params.id);
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const loadProfile = async (userId) => {
     try {
       setLoading(true);
       console.log('Loading profile for userId:', userId);
-      
+
       // Get user profile
       const userDoc = await getDoc(doc(db, 'users', userId));
       console.log('User document exists:', userDoc.exists());
-      
+
       if (!userDoc.exists()) {
         console.log('User document does not exist for:', userId);
         setError('User not found');
@@ -47,7 +46,7 @@ const ShareableProfile = () => {
             collection(db, 'posts'),
             where('authorId', '==', userId)
           );
-          
+
           const postsSnapshot = await getDocs(postsQuery);
           console.log('Posts found:', postsSnapshot.docs.length);
           const userPosts = postsSnapshot.docs.map(doc => ({
@@ -59,7 +58,7 @@ const ShareableProfile = () => {
             const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
             return bTime - aTime;
           });
-          
+
           setPosts(userPosts);
         } catch (postsError) {
           console.error('Error loading posts:', postsError);
@@ -67,12 +66,12 @@ const ShareableProfile = () => {
           setPosts([]);
         }
       }
-      
+
     } catch (error) {
       console.error('Error loading profile:', error);
       console.error('Error code:', error.code);
       console.error('Error message:', error.message);
-      
+
       if (error.code === 'permission-denied') {
         setError('Permission denied - unable to access this profile');
       } else if (error.code === 'not-found') {
@@ -90,16 +89,16 @@ const ShareableProfile = () => {
     const now = new Date();
     const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
+
     return postTime.toLocaleDateString();
   };
 
@@ -227,11 +226,11 @@ const ShareableProfile = () => {
                     <h4>{post.title}</h4>
                     <span className="post-time-shareable">{formatTimeAgo(post.createdAt)}</span>
                   </div>
-                  
+
                   {post.description && (
                     <p className="post-description-shareable">{post.description}</p>
                   )}
-                  
+
                   {post.imageUrl && (
                     <div className="post-media-shareable">
                       {post.mediaType === 'video' ? (
@@ -248,7 +247,7 @@ const ShareableProfile = () => {
                       )}
                     </div>
                   )}
-                  
+
                   <div className="post-stats-shareable">
                     <span>❤️ {post.likes || 0} likes</span>
                     <span>💬 {post.comments || 0} comments</span>

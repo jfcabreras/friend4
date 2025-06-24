@@ -715,13 +715,13 @@ const Profile = ({ user, userProfile }) => {
         <div className="share-link-input-container">
           <input
             type="text"
-            value={`${window.location.origin}/profile/${user.uid}`}
+            value={`${window.location.origin}/profile/${userProfile.username}`}
             readOnly
             className="share-link-input"
           />
           <button
             onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/profile/${user.uid}`);
+              navigator.clipboard.writeText(`${window.location.origin}/profile/${userProfile.username}`);
               const btn = document.querySelector('.copy-link-btn');
               btn.textContent = 'Copied!';
               btn.classList.add('copied');
