@@ -236,6 +236,8 @@ export default function App() {
         return <Invites user={user} userProfile={userProfile} />;
       case "profile":
         return <Profile user={user} userProfile={userProfile} />;
+      case "shareable-profile":
+        return <ShareableProfileIntegrated onClose={() => setSelectedSection("home")} />;
       case "newPublication":
         return <New user={user} userProfile={userProfile} />;
       default:

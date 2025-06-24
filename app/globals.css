@@ -4204,6 +4204,44 @@ textarea {
   padding: 20px;
 }
 
+.shareable-profile-integrated {
+  min-height: 100vh;
+  background: var(--background);
+  padding: 20px;
+}
+
+.profile-close-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--background);
+  padding: 12px 0 20px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.profile-close-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.profile-close-btn:hover {
+  background: var(--cyber-purple);
+  color: white;
+  border-color: var(--cyber-purple);
+  transform: translateX(-2px);
+}
+
 .loading-container,
 .error-container {
   display: flex;
