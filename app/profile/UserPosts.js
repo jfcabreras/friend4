@@ -59,6 +59,22 @@ const UserPosts = ({ userId }) => {
     }
   };
 
+  const handleSharePost = (postId) => {
+    const shareUrl = `${window.location.origin}/post/${postId}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Check out this post',
+        url: shareUrl
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Post link copied to clipboard!');
+      }).catch(() => {
+        prompt('Copy this link to share:', shareUrl);
+      });
+    }
+  };
+
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return 'Just now';
     const now = new Date();
@@ -131,6 +147,13 @@ const UserPosts = ({ userId }) => {
           <div className="post-stats">
             <span>❤️ {post.likes || 0} likes</span>
             <span>💬 {post.comments || 0} comments</span>
+            <button 
+              className="share-post-link-btn"
+              onClick={() => handleSharePost(post.id)}
+              title="Share post"
+            >
+              📤 Share
+            </button>
           </div>
         </div>
       ))}

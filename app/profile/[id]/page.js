@@ -138,6 +138,22 @@ const ShareableProfile = () => {
     return postTime.toLocaleDateString();
   };
 
+  const handleSharePost = (postId) => {
+    const shareUrl = `${window.location.origin}/post/${postId}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Check out this post',
+        url: shareUrl
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Post link copied to clipboard!');
+      }).catch(() => {
+        prompt('Copy this link to share:', shareUrl);
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="shareable-profile">
@@ -312,6 +328,13 @@ const ShareableProfile = () => {
                   <div className="post-stats-shareable">
                     <span>❤️ {post.likes || 0} likes</span>
                     <span>💬 {post.comments || 0} comments</span>
+                    <button 
+                      className="share-post-link-btn-shareable"
+                      onClick={() => handleSharePost(post.id)}
+                      title="Share post"
+                    >
+                      📤 Share
+                    </button>
                   </div>
                 </div>
               ))}

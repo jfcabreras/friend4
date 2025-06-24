@@ -125,8 +125,20 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
   };
 
   const handleShare = (postId) => {
-    // TODO: Implement share functionality
-    console.log('Share post:', postId);
+    const shareUrl = `${window.location.origin}/post/${postId}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Check out this post',
+        url: shareUrl
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Post link copied to clipboard!');
+      }).catch(() => {
+        // Fallback: show the URL in a prompt
+        prompt('Copy this link to share:', shareUrl);
+      });
+    }
   };
 
   const loadPalPosts = async (palId) => {
