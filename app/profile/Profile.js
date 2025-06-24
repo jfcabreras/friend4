@@ -146,27 +146,21 @@ const Profile = ({ user, userProfile }) => {
         invite.pendingFeesIncluded > 0
       );
 
-      // Check each cancelled service to see if its cancellation fee was paid
-      const unpaidCancelledServices = [];
-      let totalUnpaidCancellationFees = 0;
+      // Calculate total cancellation fees that should have been charged
+      const totalCancellationFeesCharged = userCancelledInvites.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
 
-      userCancelledInvites.forEach(cancelledInvite => {
-        // Check if this specific cancellation fee was paid in any subsequent completed payment
-        const wasCancellationFeePaid = completedPayments.some(completedPayment => {
-          // Check if the completed payment happened after the cancellation
-          // and includes pending fees that would cover this cancellation fee
-          return completedPayment.paymentReceivedAt && 
-                 cancelledInvite.cancelledAt &&
-                 completedPayment.paymentReceivedAt.toDate() > cancelledInvite.cancelledAt.toDate() &&
-                 completedPayment.pendingFeesIncluded >= cancelledInvite.cancellationFee;
-        });
+      // Calculate total cancellation fees that were actually paid through completed services
+      const totalCancellationFeesPaid = completedPayments.reduce((total, invite) => {
+        return total + (invite.pendingFeesIncluded || 0);
+      }, 0);
 
-        // If no payment confirmation found for this cancellation fee, it's unpaid
-        if (!wasCancellationFeePaid) {
-          unpaidCancelledServices.push(cancelledInvite);
-          totalUnpaidCancellationFees += cancelledInvite.cancellationFee;
-        }
-      });
+      // Simple calculation: unpaid = total charged - total paid
+      const totalUnpaidCancellationFees = Math.max(0, totalCancellationFeesCharged - totalCancellationFeesPaid);
+
+      // For display purposes, show individual unpaid cancellation fees
+      const unpaidCancelledServices = totalUnpaidCancellationFees > 0 ? userCancelledInvites : [];
 
       const cancellationFeesOwed = totalUnpaidCancellationFees;
 
