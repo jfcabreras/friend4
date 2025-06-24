@@ -22,6 +22,7 @@ const ProfileModal = ({
   // Reload user profile when modal opens to get fresh data
   useEffect(() => {
     if (showModal && onFavoriteChange) {
+      // Call the refresh function to get fresh data from database
       onFavoriteChange();
     }
   }, [showModal, onFavoriteChange]);
@@ -55,9 +56,9 @@ const ProfileModal = ({
         setFavorites(prev => [...prev, palId]);
       }
 
-      // Notify parent to refresh user profile
+      // Refresh user profile to get updated data from database
       if (onFavoriteChange) {
-        onFavoriteChange();
+        await onFavoriteChange();
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
