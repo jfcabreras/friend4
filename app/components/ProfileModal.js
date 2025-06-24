@@ -27,12 +27,12 @@ const ProfileModal = ({
     }
   }, [showModal, onFavoriteChange]);
 
-  // Update favorites when userProfile changes, but only if we have valid data
+  // Update favorites when userProfile changes, but only when modal first opens
   useEffect(() => {
-    if (userProfile && userProfile.favorites) {
+    if (showModal && userProfile && userProfile.favorites) {
       setFavorites(userProfile.favorites);
     }
-  }, [userProfile?.favorites, setFavorites]);
+  }, [showModal, userProfile?.favorites, setFavorites]);
   const toggleFavorite = async (palId, event) => {
     if (!user?.uid || !event) return;
 
@@ -44,24 +44,36 @@ const ProfileModal = ({
       const isFavorite = favorites.includes(palId);
       const userRef = doc(db, 'users', user.uid);
 
+      // Update database first and wait for completion
       if (isFavorite) {
         await updateDoc(userRef, {
           favorites: arrayRemove(palId)
         });
-        setFavorites(prev => prev.filter(id => id !== palId));
+        console.log('Removed from favorites:', palId);
       } else {
         await updateDoc(userRef, {
           favorites: arrayUnion(palId)
         });
+        console.log('Added to favorites:', palId);
+      }
+
+      // Update local state immediately after successful database update
+      if (isFavorite) {
+        setFavorites(prev => prev.filter(id => id !== palId));
+      } else {
         setFavorites(prev => [...prev, palId]);
       }
 
-      // Refresh user profile to get updated data from database
+      // Refresh user profile after a brief delay to ensure database consistency
       if (onFavoriteChange) {
-        await onFavoriteChange();
+        setTimeout(async () => {
+          await onFavoriteChange();
+        }, 100);
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
+      // Revert local state on error
+      // Don't change local state if database update failed
     }
   };
 
