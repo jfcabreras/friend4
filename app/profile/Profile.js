@@ -123,30 +123,32 @@ const Profile = ({ user, userProfile }) => {
 
       // Get current pending balance from user profile (includes unpaid cancellation fees)
       const currentPendingBalance = userProfile.pendingBalance || 0;
-      const totalEarnings = userProfile.totalEarnings || 0;
+      // Only show total earnings for public users (pals)
+      const totalEarnings = userProfile.profileType === 'public' ? (userProfile.totalEarnings || 0) : 0;
 
       // Calculate incentives owed for accepted invites where user is the sender
       const acceptedSentInvites = allInvites.filter(invite => 
         invite.status === 'accepted' && invite.fromUserId === user.uid
       );
 
-      // Calculate unpaid cancelled invites where user cancelled (30% fee to pal)
+      // Calculate unpaid cancelled invites where user cancelled and fee wasn't paid
       const userCancelledInvites = allInvites.filter(invite => 
         invite.status === 'cancelled' && 
         invite.fromUserId === user.uid &&
         invite.cancelledBy === user.uid &&
-        !invite.cancellationFeePaid
+        !invite.cancellationFeePaid &&
+        invite.cancellationFee && invite.cancellationFee > 0
       );
 
       const cancellationFeesOwed = userCancelledInvites.reduce((total, invite) => {
-        return total + ((invite.price || 0) * 0.30); // 30% to pal for user cancellations
+        return total + (invite.cancellationFee || 0);
       }, 0);
 
       const incentivePaymentsOwed = acceptedSentInvites.reduce((total, invite) => {
         return total + (invite.price || 0);
       }, 0);
 
-      // Total amount user owes (incentives + cancellation fees + any other pending balance)
+      // Total amount user owes (incentives + unpaid cancellation fees + any other pending balance)
       const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + currentPendingBalance;
 
       // Build pending payments list
@@ -163,13 +165,13 @@ const Profile = ({ user, userProfile }) => {
         });
       });
 
-      // Add cancellation fees
+      // Add unpaid cancellation fees
       userCancelledInvites.forEach(invite => {
         pendingPayments.push({
           id: `cancel_${invite.id}`,
           type: 'cancellation_fee',
-          amount: (invite.price || 0) * 0.30,
-          description: `Cancellation fee for "${invite.title}" to ${invite.toUsername}`,
+          amount: invite.cancellationFee || 0,
+          description: `Unpaid cancellation fee for "${invite.title}" to ${invite.toUsername}`,
           date: invite.cancelledAt?.toDate?.() || new Date()
         });
       });
@@ -578,10 +580,12 @@ const Profile = ({ user, userProfile }) => {
               <span className="balance-amount">${(balanceData.totalOwed || 0).toFixed(2)}</span>
               <span className="balance-label">Total to Pay</span>
             </div>
-            <div className="balance-item total-earned">
-              <span className="balance-amount earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
-              <span className="balance-label">Total Earned</span>
-            </div>
+            {userProfile.profileType === 'public' && (
+              <div className="balance-item total-earned">
+                <span className="balance-amount earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
+                <span className="balance-label">Total Earned</span>
+              </div>
+            )}
           </div>
           <div className="balance-breakdown">
             <div className="balance-detail">
@@ -589,13 +593,15 @@ const Profile = ({ user, userProfile }) => {
               <span className="balance-value incentive">${(balanceData.incentivePaymentsOwed || 0).toFixed(2)}</span>
             </div>
             <div className="balance-detail">
-              <span className="balance-type">Cancellation Fees:</span>
+              <span className="balance-type">Unpaid Cancellation Fees:</span>
               <span className="balance-value cancellation">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
             </div>
-            <div className="balance-detail">
-              <span className="balance-type">Your Earnings:</span>
-              <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
-            </div>
+            {userProfile.profileType === 'public' && (
+              <div className="balance-detail">
+                <span className="balance-type">Your Earnings:</span>
+                <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
+              </div>
+            )}
           </div>
         </div>
 
