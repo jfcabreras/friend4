@@ -139,29 +139,51 @@ const Profile = ({ user, userProfile }) => {
         invite.cancellationFee && invite.cancellationFee > 0
       );
 
-      // Get all completed payments to check which cancellation fees were actually paid
+      // Get all completed invites where user paid (including pending fees)
       const completedPayments = allInvites.filter(invite =>
         invite.status === 'completed' && 
         invite.fromUserId === user.uid &&
         invite.pendingFeesIncluded > 0
-      );
+      ).sort((a, b) => (a.paymentReceivedAt?.toDate() || new Date(0)) - (b.paymentReceivedAt?.toDate() || new Date(0)));
 
-      // Calculate total cancellation fees that should have been charged
-      const totalCancellationFeesCharged = userCancelledInvites.reduce((total, invite) => {
+      // Track which cancellation fees have been paid by matching them with completed payments
+      let remainingCancellationFees = [...userCancelledInvites];
+      let totalPaidFees = 0;
+
+      // Go through completed payments chronologically and "pay off" cancellation fees
+      completedPayments.forEach(payment => {
+        let paymentFeesUsed = 0;
+        const availableFees = payment.pendingFeesIncluded - paymentFeesUsed;
+        
+        // Sort remaining fees by date (oldest first) to pay them off in order
+        remainingCancellationFees.sort((a, b) => 
+          (a.cancelledAt?.toDate() || new Date(0)) - (b.cancelledAt?.toDate() || new Date(0))
+        );
+
+        let feesToRemove = [];
+        let remainingPaymentFees = availableFees;
+
+        remainingCancellationFees.forEach((cancelledInvite, index) => {
+          if (remainingPaymentFees >= cancelledInvite.cancellationFee) {
+            // This cancellation fee can be fully paid by this payment
+            remainingPaymentFees -= cancelledInvite.cancellationFee;
+            totalPaidFees += cancelledInvite.cancellationFee;
+            feesToRemove.push(index);
+          }
+        });
+
+        // Remove paid fees from remaining list (reverse order to maintain indices)
+        feesToRemove.reverse().forEach(index => {
+          remainingCancellationFees.splice(index, 1);
+        });
+      });
+
+      // Calculate unpaid cancellation fees
+      const totalUnpaidCancellationFees = remainingCancellationFees.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
 
-      // Calculate total cancellation fees that were actually paid through completed services
-      const totalCancellationFeesPaid = completedPayments.reduce((total, invite) => {
-        return total + (invite.pendingFeesIncluded || 0);
-      }, 0);
-
-      // Simple calculation: unpaid = total charged - total paid
-      const totalUnpaidCancellationFees = Math.max(0, totalCancellationFeesCharged - totalCancellationFeesPaid);
-
-      // For display purposes, show individual unpaid cancellation fees
-      const unpaidCancelledServices = totalUnpaidCancellationFees > 0 ? userCancelledInvites : [];
-
+      const unpaidCancelledServices = remainingCancellationFees;
       const cancellationFeesOwed = totalUnpaidCancellationFees;
 
       const incentivePaymentsOwed = acceptedSentInvites.reduce((total, invite) => {
@@ -186,7 +208,7 @@ const Profile = ({ user, userProfile }) => {
       });
 
       // Add unpaid cancellation fees (only if there are actual unpaid fees)
-      if (totalUnpaidCancellationFees > 0) {
+      if (unpaidCancelledServices.length > 0) {
         // Add each unpaid cancellation fee as a separate line item for clarity
         unpaidCancelledServices.forEach(cancelledInvite => {
           pendingPayments.push({
@@ -194,7 +216,8 @@ const Profile = ({ user, userProfile }) => {
             type: 'cancellation_fee',
             amount: cancelledInvite.cancellationFee,
             description: `Unpaid cancellation fee for "${cancelledInvite.title}" to ${cancelledInvite.toUsername}`,
-            date: cancelledInvite.cancelledAt?.toDate?.() || new Date()
+            date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
+            inviteId: cancelledInvite.id
           });
         });
       }

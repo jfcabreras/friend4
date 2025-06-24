@@ -360,13 +360,48 @@ const Invites = ({ user, userProfile }) => {
         totalPaidAmount: paymentAmount
       });
 
-      // Clear pending fees from user profile since they were paid
+      // Clear pending fees from user profile and mark related cancellation fees as paid
       if (pendingFeesIncluded > 0) {
         const userRef = doc(db, 'users', user.uid);
+        
+        // Get user's current pending balance to calculate remaining balance after this payment
+        const userDoc = await getDoc(userRef);
+        const currentPendingBalance = userDoc.data()?.pendingBalance || 0;
+        const newPendingBalance = Math.max(0, currentPendingBalance - pendingFeesIncluded);
+        
         await updateDoc(userRef, {
-          pendingBalance: 0,
+          pendingBalance: newPendingBalance,
           lastPendingFeePayment: new Date()
         });
+
+        // Get all unpaid cancelled invites by this user to mark them as paid
+        const cancelledInvitesQuery = query(
+          collection(db, 'planInvitations'),
+          where('fromUserId', '==', user.uid),
+          where('status', '==', 'cancelled'),
+          where('cancelledBy', '==', user.uid)
+        );
+        const cancelledInvitesSnapshot = await getDocs(cancelledInvitesQuery);
+        
+        let remainingPaymentFees = pendingFeesIncluded;
+        const unpaidInvites = cancelledInvitesSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(invite => invite.cancellationFee > 0 && !invite.cancellationFeePaid)
+          .sort((a, b) => (a.cancelledAt?.toDate() || new Date(0)) - (b.cancelledAt?.toDate() || new Date(0)));
+
+        // Mark cancellation fees as paid in chronological order
+        for (const cancelledInvite of unpaidInvites) {
+          if (remainingPaymentFees >= cancelledInvite.cancellationFee) {
+            await updateDoc(doc(db, 'planInvitations', cancelledInvite.id), {
+              cancellationFeePaid: true,
+              cancellationFeePaidAt: new Date(),
+              cancellationFeePaidInInvite: selectedInvite.id
+            });
+            remainingPaymentFees -= cancelledInvite.cancellationFee;
+            
+            if (remainingPaymentFees <= 0) break;
+          }
+        }
       }
 
       alert('Payment marked as done! Waiting for recipient confirmation.');
@@ -539,7 +574,10 @@ const Invites = ({ user, userProfile }) => {
                   <span className="invite-location">📍 {invite.meetingLocation}</span>
                   <span className="invite-incentive">💰 ${invite.price}</span>
                   {invite.status === 'cancelled' && invite.cancellationFee && (
-                    <span className="cancellation-fee">❌ Fee: ${invite.cancellationFee.toFixed(2)}</span>
+                    <span className="cancellation-fee">
+                      ❌ Fee: ${invite.cancellationFee.toFixed(2)}
+                      {invite.cancellationFeePaid ? ' (Paid)' : ' (Unpaid)'}
+                    </span>
                   )}
                 </div>
               </div>
@@ -705,7 +743,10 @@ const Invites = ({ user, userProfile }) => {
                   {selectedInvite.status === 'cancelled' && selectedInvite.cancellationFee && (
                     <div className="detail-item">
                       <strong>Cancellation Fee:</strong>
-                      <span className="cancellation-fee-detail">${selectedInvite.cancellationFee.toFixed(2)}</span>
+                      <span className="cancellation-fee-detail">
+                        ${selectedInvite.cancellationFee.toFixed(2)}
+                        {selectedInvite.cancellationFeePaid ? ' (Paid)' : ' (Unpaid)'}
+                      </span>
                     </div>
                   )}
                   {selectedInvite.status === 'cancelled' && selectedInvite.cancelledAt && (
