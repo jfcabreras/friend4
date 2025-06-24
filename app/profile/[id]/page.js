@@ -2,16 +2,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { db } from '../../../lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 const ShareableProfile = () => {
   const params = useParams();
+  const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const handleClose = () => {
+    router.push('/');
+  };
 
   useEffect(() => {
     if (params?.id) {
@@ -136,6 +141,11 @@ const ShareableProfile = () => {
   if (loading) {
     return (
       <div className="shareable-profile">
+        <div className="profile-close-header">
+          <button onClick={handleClose} className="profile-close-btn">
+            ← Back to Home
+          </button>
+        </div>
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>Loading profile...</p>
@@ -147,6 +157,11 @@ const ShareableProfile = () => {
   if (error) {
     return (
       <div className="shareable-profile">
+        <div className="profile-close-header">
+          <button onClick={handleClose} className="profile-close-btn">
+            ← Back to Home
+          </button>
+        </div>
         <div className="error-container">
           <h2>Profile Not Found</h2>
           <p>{error}</p>
@@ -158,6 +173,11 @@ const ShareableProfile = () => {
   if (!profile) {
     return (
       <div className="shareable-profile">
+        <div className="profile-close-header">
+          <button onClick={handleClose} className="profile-close-btn">
+            ← Back to Home
+          </button>
+        </div>
         <div className="error-container">
           <h2>Profile Not Found</h2>
           <p>The requested profile does not exist.</p>
@@ -170,6 +190,11 @@ const ShareableProfile = () => {
   if (profile.profileType === 'private') {
     return (
       <div className="shareable-profile">
+        <div className="profile-close-header">
+          <button onClick={handleClose} className="profile-close-btn">
+            ← Back to Home
+          </button>
+        </div>
         <div className="private-profile-container">
           <div className="private-profile-content">
             <div className="profile-avatar-large">
@@ -198,6 +223,11 @@ const ShareableProfile = () => {
   // Public profile view
   return (
     <div className="shareable-profile">
+      <div className="profile-close-header">
+        <button onClick={handleClose} className="profile-close-btn">
+          ← Back to Home
+        </button>
+      </div>
       <div className="public-profile-container">
         <div className="profile-header-shareable">
           <div className="profile-avatar-large">
