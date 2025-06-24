@@ -7,7 +7,6 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const New = ({ user, userProfile }) => {
-  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [mediaFile, setMediaFile] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
@@ -61,8 +60,8 @@ const New = ({ user, userProfile }) => {
   const handleCreatePost = async (e) => {
     e.preventDefault();
     
-    if (!title.trim()) {
-      setErrorMessage('Please enter a title for your post');
+    if (!description.trim() && !mediaFile) {
+      setErrorMessage('Please add a description or media to your post');
       return;
     }
 
@@ -80,7 +79,6 @@ const New = ({ user, userProfile }) => {
 
       // Create post data
       const postData = {
-        title: title.trim(),
         description: description.trim(),
         authorId: user.uid,
         authorUsername: userProfile.username,
@@ -99,7 +97,6 @@ const New = ({ user, userProfile }) => {
       await addDoc(collection(db, 'posts'), postData);
 
       // Reset form
-      setTitle('');
       setDescription('');
       setMediaFile(null);
       setMediaPreview(null);
@@ -156,33 +153,6 @@ const New = ({ user, userProfile }) => {
 
       <form onSubmit={handleCreatePost} className="new-post-form">
         <div className="form-group">
-          <label htmlFor="title">Title *</label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="What's on your mind?"
-            required
-            maxLength={100}
-          />
-          <small>{title.length}/100 characters</small>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Tell us more about it... (optional)"
-            rows={4}
-            maxLength={500}
-          />
-          <small>{description.length}/500 characters</small>
-        </div>
-
-        <div className="form-group">
           <label htmlFor="media-input">Add Photo or Video</label>
           <input
             id="media-input"
@@ -210,6 +180,19 @@ const New = ({ user, userProfile }) => {
               )}
             </div>
           )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What's on your mind? Share your thoughts..."
+            rows={4}
+            maxLength={500}
+          />
+          <small>{description.length}/500 characters</small>
         </div>
 
         <div className="post-info">
