@@ -30,6 +30,8 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
+import ProfileModal from './components/ProfileModal';
+import ShareableProfileIntegrated from './components/ShareableProfileIntegrated';
 
 export default function App() {
   const router = useRouter();
@@ -37,7 +39,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSection, setSelectedSection] = useState("home");
+  const [selectedSection, setSelectedSection] = useState('home');
+  const [profileUserId, setProfileUserId] = useState(null);
+  const [profileUsername, setProfileUsername] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,18 +56,30 @@ export default function App() {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
-        await loadUserProfile(user.uid);
-        setShowLoginModal(false);
+        loadUserProfile(user);
       } else {
         setUser(null);
         setUserProfile(null);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // Handle URL-based profile viewing
+  useEffect(() => {
+    const path = window.location.pathname;
+    const profileMatch = path.match(/^\/profile\/(.+)$/);
+
+    if (profileMatch) {
+      const usernameOrId = profileMatch[1];
+      setProfileUsername(usernameOrId);
+      setSelectedSection('viewProfile');
+    }
   }, []);
 
   const loadUserProfile = async (uid) => {
@@ -390,7 +406,31 @@ export default function App() {
             <p>📧 Please verify your email to access all features</p>
           </div>
         )}
-        {renderSelectedSection()}
+        {selectedSection === 'profile' && (
+          <Profile 
+            user={user} 
+            userProfile={userProfile}
+          />
+        )}
+        {selectedSection === 'profileView' && profileUserId && (
+          <ProfileModal
+            userId={profileUserId}
+            onClose={() => {
+              setSelectedSection('home');
+              setProfileUserId(null);
+            }}
+          />
+        )}
+        {selectedSection === 'viewProfile' && profileUsername && (
+          <ShareableProfileIntegrated
+            usernameOrId={profileUsername}
+            onBack={() => {
+              setSelectedSection('home');
+              setProfileUsername(null);
+              window.history.pushState({}, '', '/');
+            }}
+          />
+        )}
       </main>
 
       <div className="bottom-nav">
