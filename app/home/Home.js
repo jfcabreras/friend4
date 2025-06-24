@@ -27,19 +27,18 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
   });
 
   useEffect(() => {
+    // Always load the feed, even for non-logged users
+    loadFeed();
+    
+    // Only set favorites if user is logged in
     if (user && userProfile) {
-      loadFeed();
       setFavorites(userProfile.favorites || []);
-    } else {
-      setLoading(false);
     }
   }, [user, userProfile]);
 
   
 
   const loadFeed = async () => {
-    if (!user?.uid || !userProfile) return;
-    
     try {
       setLoading(true);
       let feedPosts = [];
@@ -56,8 +55,9 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
           const postData = postDoc.data();
           let authorProfilePicture = null;
           let authorUsername = postData.creatorUsername || postData.authorUsername || 'Anonymous';
+          let isPublicProfile = false;
           
-          // Fetch the author's profile picture if we have an authorId
+          // Fetch the author's profile to check if it's public
           if (postData.authorId) {
             try {
               const authorDoc = await getDoc(doc(db, 'users', postData.authorId));
@@ -65,23 +65,29 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
                 const authorData = authorDoc.data();
                 authorProfilePicture = authorData.profilePicture;
                 authorUsername = authorData.username || authorUsername;
+                isPublicProfile = authorData.profileType === 'public';
               }
             } catch (error) {
               console.log('Could not load author profile:', error);
             }
           }
           
-          return {
-            id: postDoc.id,
-            type: 'post',
-            ...postData,
-            authorProfilePicture,
-            authorUsername
-          };
+          // Only return posts from public profiles
+          if (isPublicProfile) {
+            return {
+              id: postDoc.id,
+              type: 'post',
+              ...postData,
+              authorProfilePicture,
+              authorUsername
+            };
+          }
+          return null;
         }));
 
-        feedPosts = [...posts];
-        console.log('Loaded posts:', posts.length);
+        // Filter out null entries (posts from private profiles)
+        feedPosts = posts.filter(post => post !== null);
+        console.log('Loaded posts from public profiles:', feedPosts.length);
       } catch (postsError) {
         console.log('Could not load posts:', postsError.message);
       }
@@ -107,16 +113,28 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
   };
 
   const handleLike = async (postId) => {
+    if (!user) {
+      alert('Please login to like posts');
+      return;
+    }
     // TODO: Implement like functionality
     console.log('Like post:', postId);
   };
 
   const handleComment = (postId) => {
+    if (!user) {
+      alert('Please login to comment on posts');
+      return;
+    }
     // TODO: Implement comment functionality
     console.log('Comment on post:', postId);
   };
 
   const handleShare = (postId) => {
+    if (!user) {
+      alert('Please login to share posts');
+      return;
+    }
     // TODO: Implement share functionality
     console.log('Share post:', postId);
   };
@@ -214,6 +232,12 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
   const handleUsernameClick = async (authorId, post) => {
     if (!authorId || authorId === user?.uid) return; // Don't open modal for current user
     
+    // If user is not logged in, show login prompt
+    if (!user) {
+      alert('Please login to view profiles and send invites');
+      return;
+    }
+    
     try {
       const userDoc = await getDoc(doc(db, 'users', authorId));
       if (userDoc.exists()) {
@@ -248,17 +272,7 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
     return postTime.toLocaleDateString();
   };
 
-  if (!user) {
-    return (
-      <div className="home-section">
-        <div className="welcome-message">
-          <h2>Welcome to Social Task & Event Platform</h2>
-          <p>Connect with others, create invites, and explore opportunities!</p>
-          <p>Please login or register to get started.</p>
-        </div>
-      </div>
-    );
-  }
+  // Show welcome message for non-logged users at the top, but still show feed
 
   if (loading) {
     return (
@@ -270,7 +284,20 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
 
   return (
     <div className="main-section">
-      <div className="report-feed">
+      {!user && (
+        <div className="welcome-message" style={{ 
+          background: 'var(--background)', 
+          border: '1px solid var(--border)', 
+          borderRadius: '12px', 
+          padding: '20px', 
+          margin: '0 0 20px 0',
+          textAlign: 'center'
+        }}>
+          <h3>Welcome to Ask a Pal!</h3>
+          <p>Discover posts from the community. Login to interact and connect with others!</p>
+        </div>
+      )}
+      <div className="report-feed"></div>
         {feed.length === 0 ? (
           <div className="empty-feed">
             <div className="empty-feed-content">
