@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRem
 import ProfileModal from '../components/ProfileModal';
 
 
-const Pals = ({ user, userProfile }) => {
+const Pals = ({ user, userProfile, refreshUserProfile }) => {
   const [pals, setPals] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -497,6 +497,7 @@ const Pals = ({ user, userProfile }) => {
         userProfile={userProfile}
         formatTimeAgo={formatTimeAgo}
         onSendInvite={handleSendInvite}
+        onFavoriteChange={refreshUserProfile}
       />
 
       

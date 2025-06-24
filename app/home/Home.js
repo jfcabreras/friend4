@@ -6,7 +6,7 @@ import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit, getDoc, doc, updateDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import ProfileModal from '../components/ProfileModal';
 
-const Home = ({ user, userProfile }) => {
+const Home = ({ user, userProfile, refreshUserProfile }) => {
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -402,6 +402,7 @@ const Home = ({ user, userProfile }) => {
         userProfile={userProfile}
         formatTimeAgo={formatTimeAgo}
         onSendInvite={handleSendInvite}
+        onFavoriteChange={refreshUserProfile}
       />
 
       {/* Invite Modal */}

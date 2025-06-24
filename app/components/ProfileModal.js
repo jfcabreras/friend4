@@ -15,7 +15,8 @@ const ProfileModal = ({
   user, 
   userProfile,
   formatTimeAgo,
-  onSendInvite
+  onSendInvite,
+  onFavoriteChange // Add callback to refresh parent data
 }) => {
   
   // Refresh favorites from userProfile whenever modal opens
@@ -45,6 +46,11 @@ const ProfileModal = ({
           favorites: arrayUnion(palId)
         });
         setFavorites(prev => [...prev, palId]);
+      }
+
+      // Notify parent to refresh user profile
+      if (onFavoriteChange) {
+        onFavoriteChange();
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
