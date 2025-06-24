@@ -402,6 +402,14 @@ const Home = ({ user, userProfile }) => {
         userProfile={userProfile}
         formatTimeAgo={formatTimeAgo}
         onSendInvite={handleSendInvite}
+        onFavoriteChange={(palId, isFavorite) => {
+          // Update local favorites state
+          if (isFavorite) {
+            setFavorites(prev => [...prev, palId]);
+          } else {
+            setFavorites(prev => prev.filter(id => id !== palId));
+          }
+        }}
       />
 
       {/* Invite Modal */}

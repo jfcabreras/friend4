@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -16,11 +15,12 @@ const ProfileModal = ({
   user, 
   userProfile,
   formatTimeAgo,
-  onSendInvite 
+  onSendInvite,
+  onFavoriteChange // Add onFavoriteChange to props
 }) => {
   const toggleFavorite = async (palId, event) => {
     if (!user?.uid || !event) return;
-    
+
     // Prevent any automatic triggering
     event.preventDefault();
     event.stopPropagation();
@@ -39,6 +39,11 @@ const ProfileModal = ({
           favorites: arrayUnion(palId)
         });
         setFavorites(prev => [...prev, palId]);
+      }
+
+      // Notify parent component of the change
+      if (onFavoriteChange) {
+        onFavoriteChange(palId, !isFavorite);
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
@@ -133,11 +138,11 @@ const ProfileModal = ({
                     <h4>{post.title}</h4>
                     <span className="modal-post-time">{formatTimeAgo(post.createdAt)}</span>
                   </div>
-                  
+
                   {post.description && (
                     <p className="modal-post-description">{post.description}</p>
                   )}
-                  
+
                   {post.imageUrl && (
                     <div className="modal-post-media">
                       {post.mediaType === 'video' ? (
@@ -154,7 +159,7 @@ const ProfileModal = ({
                       )}
                     </div>
                   )}
-                  
+
                   <div className="modal-post-stats">
                     <span>❤️ {post.likes || 0} likes</span>
                     <span>💬 {post.comments || 0} comments</span>
