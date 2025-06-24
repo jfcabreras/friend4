@@ -319,14 +319,21 @@ body {
   z-index: 10;
 }
 
-.wish-details, .invite-details, .profile-details {
+.wish-details,
+.invite-details,
+.profile-details {
   display: flex;
   gap: 16px;
   margin-top: 8px;
   flex-wrap: wrap;
 }
 
-.budget, .price, .date, .time, .profile-type, .available {
+.budget,
+.price,
+.date,
+.time,
+.profile-type,
+.available {
   background: rgba(255, 255, 255, 0.2);
   padding: 4px 8px;
   border-radius: 12px;
@@ -345,7 +352,8 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.loading-feed, .empty-feed {
+.loading-feed,
+.empty-feed {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3100,7 +3108,7 @@ textarea {
   background: white;
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
@@ -3247,7 +3255,7 @@ textarea {
   padding: 3rem;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* User Posts Section */
@@ -3256,7 +3264,7 @@ textarea {
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1rem 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .user-posts {
@@ -3425,7 +3433,7 @@ textarea {
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1rem 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Balance Section Styles */
@@ -4217,8 +4225,13 @@ textarea {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .private-profile-container,
@@ -4553,66 +4566,65 @@ textarea {
   .share-link-input-container {
     flex-direction: column;
   }
-  }
+}
 
-  .activity-input input {
-    width: 100%;
-  }
+.activity-input input {
+  width: 100%;
+}
 
-  .edit-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
+.edit-actions {
+  flex-direction: column;
+  gap: 8px;
+}
 
-  .edit-actions button {
-    width: 100%;
-    padding: 12px;
-  }
+.edit-actions button {
+  width: 100%;
+  padding: 12px;
+}
 
-  .detail-section {
-    padding: 16px;
-  }
+.detail-section {
+  padding: 16px;
+}
 
-  .detail-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: 12px 0;
-  }
+.detail-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 0;
+}
 
-  .media-section {
-    padding: 16px;
-    margin-top: 20px;
-  }
+.media-section {
+  padding: 16px;
+  margin-top: 20px;
+}
 
-  .media-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-  }
+.media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
 
-  .media-preview {
-    height: 120px;
-  }
+.media-preview {
+  height: 120px;
+}
 
-  .profile-picture-upload input[type="file"] {
-    width: 100%;
-    font-size: 14px;
-  }
+.profile-picture-upload input[type="file"] {
+  width: 100%;
+  font-size: 14px;
+}
 
-  .activity-preferences-display {
-    padding: 16px;
-  }
+.activity-preferences-display {
+  padding: 16px;
+}
 
-  .activity-tags,
-  .activity-tags-display {
-    gap: 6px;
-  }
+.activity-tags,
+.activity-tags-display {
+  gap: 6px;
+}
 
-  .activity-tag,
-  .activity-tag-display {
-    font-size: 11px;
-    padding: 4px 8px;
-  }
+.activity-tag,
+.activity-tag-display {
+  font-size: 11px;
+  padding: 4px 8px;
 }
 
 .invite-incentive {
