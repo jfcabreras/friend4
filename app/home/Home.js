@@ -2,11 +2,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit, getDoc, doc, updateDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import ProfileModal from '../components/ProfileModal';
 
 const Home = ({ user, userProfile, refreshUserProfile }) => {
+  const router = useRouter();
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -139,6 +141,14 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
         prompt('Copy this link to share:', shareUrl);
       });
     }
+  };
+
+  const handlePostClick = (postId, event) => {
+    // Don't navigate if clicking on buttons or interactive elements
+    if (event.target.closest('button') || event.target.closest('.clickable')) {
+      return;
+    }
+    router.push(`/post/${postId}`);
   };
 
   const loadPalPosts = async (palId) => {
@@ -300,7 +310,11 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
           </div>
         ) : (
           feed.map(item => (
-            <div key={item.id} className="feed-item">
+            <div 
+              key={item.id} 
+              className="feed-item clickable-post" 
+              onClick={(e) => handlePostClick(item.id, e)}
+            >
               {/* Post Header */}
               <div className="feed-overlay">
                 <div className="feed-author">
