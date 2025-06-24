@@ -131,18 +131,35 @@ const Profile = ({ user, userProfile }) => {
         invite.status === 'accepted' && invite.fromUserId === user.uid
       );
 
-      // Calculate unpaid cancelled invites where user cancelled and fee wasn't paid
+      // Get all completed payments to check which cancellation fees were actually paid
+      const completedPayments = allInvites.filter(invite =>
+        invite.status === 'completed' && 
+        invite.fromUserId === user.uid &&
+        invite.pendingFeesIncluded > 0
+      );
+
+      // Calculate total cancellation fees that were actually paid through completed services
+      const paidCancellationFees = completedPayments.reduce((total, invite) => {
+        return total + (invite.pendingFeesIncluded || 0);
+      }, 0);
+
+      // Get all cancelled invites where user was charged a fee
       const userCancelledInvites = allInvites.filter(invite => 
         invite.status === 'cancelled' && 
         invite.fromUserId === user.uid &&
         invite.cancelledBy === user.uid &&
-        !invite.cancellationFeePaid &&
         invite.cancellationFee && invite.cancellationFee > 0
       );
 
-      const cancellationFeesOwed = userCancelledInvites.reduce((total, invite) => {
+      // Calculate total cancellation fees that should have been charged
+      const totalCancellationFeesCharged = userCancelledInvites.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
+
+      // Unpaid cancellation fees = total charged - total actually paid through services
+      const unpaidCancellationFees = Math.max(0, totalCancellationFeesCharged - paidCancellationFees);
+
+      const cancellationFeesOwed = unpaidCancellationFees;
 
       const incentivePaymentsOwed = acceptedSentInvites.reduce((total, invite) => {
         return total + (invite.price || 0);
@@ -165,16 +182,17 @@ const Profile = ({ user, userProfile }) => {
         });
       });
 
-      // Add unpaid cancellation fees
-      userCancelledInvites.forEach(invite => {
+      // Add unpaid cancellation fees (only if there are actual unpaid fees)
+      if (unpaidCancellationFees > 0) {
+        // Show unpaid cancellation fees as a single line item since they accumulate
         pendingPayments.push({
-          id: `cancel_${invite.id}`,
+          id: 'unpaid_cancellation_fees',
           type: 'cancellation_fee',
-          amount: invite.cancellationFee || 0,
-          description: `Unpaid cancellation fee for "${invite.title}" to ${invite.toUsername}`,
-          date: invite.cancelledAt?.toDate?.() || new Date()
+          amount: unpaidCancellationFees,
+          description: `Unpaid cancellation fees (${userCancelledInvites.length} cancellation${userCancelledInvites.length > 1 ? 's' : ''})`,
+          date: userCancelledInvites.length > 0 ? (userCancelledInvites[userCancelledInvites.length - 1].cancelledAt?.toDate?.() || new Date()) : new Date()
         });
-      });
+      }
 
       // Add other pending balance if exists
       if (currentPendingBalance > 0 && currentPendingBalance !== cancellationFeesOwed) {
