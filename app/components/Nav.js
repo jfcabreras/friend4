@@ -6,7 +6,7 @@ const Nav = ({ selectedSection, setSelectedSection, user, onLogout }) => {
   return (
     <nav className="nav">
       <div className="nav-brand">
-        <h1>Book a Pal</h1>
+        <h1>Bukier</h1>
       </div>
 
       <div className="nav-center">
