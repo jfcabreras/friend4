@@ -22,10 +22,7 @@ const Profile = ({ user, userProfile }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
-  const [mediaFiles, setMediaFiles] = useState([]);
-  const [newMediaFile, setNewMediaFile] = useState(null);
   const [uploadingPicture, setUploadingPicture] = useState(false);
-  const [uploadingMedia, setUploadingMedia] = useState(false);
   
   const [userStats, setUserStats] = useState({
     sentInvites: 0,
@@ -52,7 +49,6 @@ const Profile = ({ user, userProfile }) => {
       setLanguagePreferences(userProfile.languagePreferences || []);
       
       loadUserStats();
-      loadUserMedia();
     } else if (!user) {
       // Clear all data when user logs out
       setUsername('');
@@ -60,7 +56,6 @@ const Profile = ({ user, userProfile }) => {
       setCity('');
       setProfileType('public');
       setProfilePicture(null);
-      setMediaFiles([]);
       setActivityPreferences([]);
       setLanguagePreferences([]);
       setUserStats({
@@ -183,42 +178,6 @@ const Profile = ({ user, userProfile }) => {
     }
   };
 
-  const loadUserMedia = async () => {
-    if (!user?.uid) return;
-    
-    try {
-      // Get media metadata from Firestore to check deleted status
-      const userMediaRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userMediaRef);
-      const userData = userDoc.data();
-      const deletedMedia = userData?.deletedMedia || [];
-      
-      const mediaRef = ref(storage, `users/${user.uid}/media`);
-      const mediaList = await listAll(mediaRef);
-      
-      const mediaUrls = await Promise.all(
-        mediaList.items.map(async (item) => {
-          // Skip deleted media files
-          if (deletedMedia.includes(item.name)) {
-            return null;
-          }
-          
-          const url = await getDownloadURL(item);
-          return {
-            name: item.name,
-            url: url,
-            type: item.name.toLowerCase().includes('.mp4') || item.name.toLowerCase().includes('.mov') ? 'video' : 'image'
-          };
-        })
-      );
-      
-      // Filter out null values (deleted media)
-      setMediaFiles(mediaUrls.filter(media => media !== null));
-    } catch (error) {
-      console.error('Error loading user media:', error);
-    }
-  };
-
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -231,21 +190,6 @@ const Profile = ({ user, userProfile }) => {
         return;
       }
       setProfilePictureFile(file);
-    }
-  };
-
-  const handleMediaFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 50 * 1024 * 1024) { // 50MB limit
-        setErrorMessage('Media file must be less than 50MB');
-        return;
-      }
-      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        setErrorMessage('Media file must be an image or video file');
-        return;
-      }
-      setNewMediaFile(file);
     }
   };
 
@@ -268,72 +212,6 @@ const Profile = ({ user, userProfile }) => {
       console.error('Error uploading profile picture:', error);
       setUploadingPicture(false);
       return null;
-    }
-  };
-
-  const uploadMediaFile = async () => {
-    if (!newMediaFile || !user?.uid) return;
-    
-    setUploadingMedia(true);
-    setErrorMessage('');
-    
-    try {
-      const timestamp = Date.now();
-      const fileExtension = newMediaFile.name.split('.').pop();
-      const fileName = `media_${timestamp}.${fileExtension}`;
-      const mediaRef = ref(storage, `users/${user.uid}/media/${fileName}`);
-      
-      await uploadBytes(mediaRef, newMediaFile);
-      const downloadURL = await getDownloadURL(mediaRef);
-      
-      const newMedia = {
-        name: fileName,
-        url: downloadURL,
-        type: newMediaFile.type.startsWith('video/') ? 'video' : 'image'
-      };
-      
-      setMediaFiles(prev => [...prev, newMedia]);
-      setNewMediaFile(null);
-      setSuccessMessage('Media file uploaded successfully!');
-      
-      // Reset file input
-      const fileInput = document.getElementById('media-file-input');
-      if (fileInput) fileInput.value = '';
-      
-    } catch (error) {
-      console.error('Error uploading media file:', error);
-      setErrorMessage('Failed to upload media file. Please try again.');
-    } finally {
-      setUploadingMedia(false);
-    }
-  };
-
-  const deleteMediaFile = async (fileName) => {
-    if (!user?.uid || !fileName) return;
-    
-    try {
-      setErrorMessage('');
-      
-      // Mark file as deleted in user document instead of physically deleting
-      const userRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userRef);
-      const userData = userDoc.data();
-      const currentDeletedMedia = userData?.deletedMedia || [];
-      
-      // Add the file to deleted media list
-      const updatedDeletedMedia = [...currentDeletedMedia, fileName];
-      
-      await updateDoc(userRef, {
-        deletedMedia: updatedDeletedMedia
-      });
-      
-      // Remove from UI
-      setMediaFiles(prev => prev.filter(media => media.name !== fileName));
-      setSuccessMessage('Media file deleted successfully!');
-      
-    } catch (error) {
-      console.error('Error deleting media file:', error);
-      setErrorMessage('Failed to delete media file. Please try again.');
     }
   };
 
@@ -731,62 +609,6 @@ const Profile = ({ user, userProfile }) => {
       <div className="user-posts-section">
         <h3>My Posts</h3>
         <UserPosts userId={user?.uid} />
-      </div>
-
-      <div className="media-section">
-        <h3>Media Gallery</h3>
-        
-        <div className="media-upload">
-          <input
-            id="media-file-input"
-            type="file"
-            accept="image/*,video/*"
-            onChange={handleMediaFileChange}
-            style={{ display: 'none' }}
-          />
-          <label htmlFor="media-file-input" className="upload-btn">
-            📎 Add Photo/Video
-          </label>
-          
-          {newMediaFile && (
-            <div className="media-upload-preview">
-              <p>Selected: {newMediaFile.name}</p>
-              <button 
-                onClick={uploadMediaFile} 
-                disabled={uploadingMedia}
-                className="upload-confirm-btn"
-              >
-                {uploadingMedia ? 'Uploading...' : 'Upload Media'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="media-grid">
-          {mediaFiles.map((media, index) => (
-            <div key={index} className="media-item">
-              {media.type === 'video' ? (
-                <video controls className="media-preview">
-                  <source src={media.url} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <img src={media.url} alt={`Media ${index + 1}`} className="media-preview" />
-              )}
-              <button 
-                className="delete-media-btn"
-                onClick={() => deleteMediaFile(media.name)}
-                title="Delete media"
-              >
-                🗑️
-              </button>
-            </div>
-          ))}
-        </div>
-        
-        {mediaFiles.length === 0 && (
-          <p className="no-media">No media files uploaded yet.</p>
-        )}
       </div>
     </div>
   );
