@@ -3576,6 +3576,11 @@ textarea {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), var(--surface-elevated));
 }
 
+.payment-item.other_fees {
+  border-left-color: #6b7280;
+  background: linear-gradient(90deg, rgba(107, 114, 128, 0.05), var(--surface-elevated));
+}
+
 .payment-info {
   flex: 1;
   display: flex;
@@ -3616,6 +3621,12 @@ textarea {
   color: #10b981;
   background: rgba(16, 185, 129, 0.1);
   border-color: rgba(16, 185, 129, 0.3);
+}
+
+.payment-amount.other_fees {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.1);
+  border-color: rgba(107, 114, 128, 0.3);
 }
 
 .no-pending {

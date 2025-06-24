@@ -33,10 +33,10 @@ const Profile = ({ user, userProfile }) => {
   });
   
   const [balanceData, setBalanceData] = useState({
-    totalCancellationFees: 0,
     totalOwed: 0,
     totalEarnings: 0,
-    platformFeesOwed: 0,
+    cancellationFeesOwed: 0,
+    incentivePaymentsOwed: 0,
     pendingPayments: []
   });
 
@@ -68,8 +68,10 @@ const Profile = ({ user, userProfile }) => {
         favoriteCount: 0
       });
       setBalanceData({
-        totalCancellationFees: 0,
         totalOwed: 0,
+        totalEarnings: 0,
+        cancellationFeesOwed: 0,
+        incentivePaymentsOwed: 0,
         pendingPayments: []
       });
     }
@@ -113,13 +115,13 @@ const Profile = ({ user, userProfile }) => {
         favoriteCount: userProfile.favorites?.length || 0
       });
 
-      // Calculate balance - cancellation fees, pending payments, earnings, and platform fees
+      // Calculate balance - only what users need to pay to pals
       const allInvites = [
         ...sentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
         ...receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       ];
 
-      // Get current pending balance from user profile
+      // Get current pending balance from user profile (includes unpaid cancellation fees)
       const currentPendingBalance = userProfile.pendingBalance || 0;
       const totalEarnings = userProfile.totalEarnings || 0;
 
@@ -128,48 +130,66 @@ const Profile = ({ user, userProfile }) => {
         invite.status === 'accepted' && invite.fromUserId === user.uid
       );
 
-      const totalOwed = acceptedSentInvites.reduce((total, invite) => {
-        return total + (invite.totalPaymentAmount || invite.price || 0);
-      }, 0);
-
-      // Calculate completed invites where user received payment
-      const completedReceivedInvites = allInvites.filter(invite => 
-        invite.status === 'completed' && invite.toUserId === user.uid
+      // Calculate unpaid cancelled invites where user cancelled (30% fee to pal)
+      const userCancelledInvites = allInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.fromUserId === user.uid &&
+        invite.cancelledBy === user.uid &&
+        !invite.cancellationFeePaid
       );
 
-      const platformFeesOwed = completedReceivedInvites.reduce((total, invite) => {
-        return total + (invite.platformFee || (invite.incentiveAmount || invite.price || 0) * 0.05);
+      const cancellationFeesOwed = userCancelledInvites.reduce((total, invite) => {
+        return total + ((invite.price || 0) * 0.30); // 30% to pal for user cancellations
       }, 0);
 
-      const pendingPayments = [
-        ...acceptedSentInvites.map(invite => ({
+      const incentivePaymentsOwed = acceptedSentInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      // Total amount user owes (incentives + cancellation fees + any other pending balance)
+      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + currentPendingBalance;
+
+      // Build pending payments list
+      const pendingPayments = [];
+
+      // Add incentive payments
+      acceptedSentInvites.forEach(invite => {
+        pendingPayments.push({
           id: invite.id,
           type: 'incentive_payment',
-          amount: invite.totalPaymentAmount || invite.price || 0,
-          description: `Total payment for "${invite.title}" to ${invite.toUsername}`,
-          date: invite.respondedAt?.toDate?.() || new Date(),
-          breakdown: {
-            incentive: invite.incentiveAmount || invite.price || 0,
-            pendingFees: invite.pendingFeesIncluded || 0
-          }
-        }))
-      ];
+          amount: invite.price || 0,
+          description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
+          date: invite.respondedAt?.toDate?.() || new Date()
+        });
+      });
 
-      if (currentPendingBalance > 0) {
+      // Add cancellation fees
+      userCancelledInvites.forEach(invite => {
         pendingPayments.push({
-          id: 'pending_balance',
-          type: 'platform_fees',
-          amount: currentPendingBalance,
-          description: 'Platform fees owed',
+          id: `cancel_${invite.id}`,
+          type: 'cancellation_fee',
+          amount: (invite.price || 0) * 0.30,
+          description: `Cancellation fee for "${invite.title}" to ${invite.toUsername}`,
+          date: invite.cancelledAt?.toDate?.() || new Date()
+        });
+      });
+
+      // Add other pending balance if exists
+      if (currentPendingBalance > 0 && currentPendingBalance !== cancellationFeesOwed) {
+        pendingPayments.push({
+          id: 'other_pending',
+          type: 'other_fees',
+          amount: currentPendingBalance - cancellationFeesOwed,
+          description: 'Other pending fees',
           date: new Date()
         });
       }
 
       setBalanceData({
-        totalCancellationFees: 0, // This is now included in pendingBalance
         totalOwed,
         totalEarnings,
-        platformFeesOwed: currentPendingBalance,
+        cancellationFeesOwed,
+        incentivePaymentsOwed,
         pendingPayments: pendingPayments.sort((a, b) => b.date - a.date)
       });
 
@@ -562,23 +582,19 @@ const Profile = ({ user, userProfile }) => {
               <span className="balance-amount earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
               <span className="balance-label">Total Earned</span>
             </div>
-            <div className="balance-item platform-fees">
-              <span className="balance-amount platform">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
-              <span className="balance-label">Platform Fees Owed</span>
-            </div>
           </div>
           <div className="balance-breakdown">
             <div className="balance-detail">
               <span className="balance-type">Incentive Payments:</span>
-              <span className="balance-value incentive">${(balanceData.totalOwed || 0).toFixed(2)}</span>
+              <span className="balance-value incentive">${(balanceData.incentivePaymentsOwed || 0).toFixed(2)}</span>
+            </div>
+            <div className="balance-detail">
+              <span className="balance-type">Cancellation Fees:</span>
+              <span className="balance-value cancellation">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
             </div>
             <div className="balance-detail">
               <span className="balance-type">Your Earnings:</span>
               <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
-            </div>
-            <div className="balance-detail">
-              <span className="balance-type">Platform Fees:</span>
-              <span className="balance-value platform">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
