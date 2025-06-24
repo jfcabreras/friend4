@@ -27,12 +27,12 @@ const ProfileModal = ({
     }
   }, [showModal, onFavoriteChange]);
 
-  // Update favorites when userProfile changes
+  // Update favorites when userProfile changes, but only if we have valid data
   useEffect(() => {
-    if (userProfile) {
-      setFavorites(userProfile.favorites || []);
+    if (userProfile && userProfile.favorites) {
+      setFavorites(userProfile.favorites);
     }
-  }, [userProfile, setFavorites]);
+  }, [userProfile?.favorites, setFavorites]);
   const toggleFavorite = async (palId, event) => {
     if (!user?.uid || !event) return;
 
