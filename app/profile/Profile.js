@@ -35,6 +35,8 @@ const Profile = ({ user, userProfile }) => {
   const [balanceData, setBalanceData] = useState({
     totalCancellationFees: 0,
     totalOwed: 0,
+    totalEarnings: 0,
+    platformFeesOwed: 0,
     pendingPayments: []
   });
 
@@ -553,30 +555,30 @@ const Profile = ({ user, userProfile }) => {
         <div className="balance-summary">
           <div className="balance-grid">
             <div className="balance-item total-owed">
-              <span className="balance-amount">${balanceData.totalOwed.toFixed(2)}</span>
+              <span className="balance-amount">${(balanceData.totalOwed || 0).toFixed(2)}</span>
               <span className="balance-label">Total to Pay</span>
             </div>
             <div className="balance-item total-earned">
-              <span className="balance-amount earnings">${balanceData.totalEarnings.toFixed(2)}</span>
+              <span className="balance-amount earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
               <span className="balance-label">Total Earned</span>
             </div>
             <div className="balance-item platform-fees">
-              <span className="balance-amount platform">${balanceData.platformFeesOwed.toFixed(2)}</span>
+              <span className="balance-amount platform">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
               <span className="balance-label">Platform Fees Owed</span>
             </div>
           </div>
           <div className="balance-breakdown">
             <div className="balance-detail">
               <span className="balance-type">Incentive Payments:</span>
-              <span className="balance-value incentive">${balanceData.totalOwed.toFixed(2)}</span>
+              <span className="balance-value incentive">${(balanceData.totalOwed || 0).toFixed(2)}</span>
             </div>
             <div className="balance-detail">
               <span className="balance-type">Your Earnings:</span>
-              <span className="balance-value earnings">${balanceData.totalEarnings.toFixed(2)}</span>
+              <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
             </div>
             <div className="balance-detail">
               <span className="balance-type">Platform Fees:</span>
-              <span className="balance-value platform">${balanceData.platformFeesOwed.toFixed(2)}</span>
+              <span className="balance-value platform">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -592,7 +594,7 @@ const Profile = ({ user, userProfile }) => {
                     <span className="payment-date">{payment.date.toLocaleDateString()}</span>
                   </div>
                   <span className={`payment-amount ${payment.type}`}>
-                    ${payment.amount.toFixed(2)}
+                    ${(payment.amount || 0).toFixed(2)}
                   </span>
                 </div>
               ))}
