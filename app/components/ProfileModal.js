@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { doc, updateDoc, arrayUnion, arrayRemove, addDoc, collection } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
@@ -15,9 +15,15 @@ const ProfileModal = ({
   user, 
   userProfile,
   formatTimeAgo,
-  onSendInvite,
-  onFavoriteChange // Add onFavoriteChange to props
+  onSendInvite
 }) => {
+  
+  // Refresh favorites from userProfile whenever modal opens
+  useEffect(() => {
+    if (showModal && userProfile) {
+      setFavorites(userProfile.favorites || []);
+    }
+  }, [showModal, userProfile, setFavorites]);
   const toggleFavorite = async (palId, event) => {
     if (!user?.uid || !event) return;
 
@@ -39,11 +45,6 @@ const ProfileModal = ({
           favorites: arrayUnion(palId)
         });
         setFavorites(prev => [...prev, palId]);
-      }
-
-      // Notify parent component of the change
-      if (onFavoriteChange) {
-        onFavoriteChange(palId, !isFavorite);
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
