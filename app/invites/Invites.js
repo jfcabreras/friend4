@@ -10,7 +10,7 @@ const Invites = ({ user, userProfile }) => {
     accepted: [],
     declined: []
   });
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [showInviteDetail, setShowInviteDetail] = useState(false);
@@ -69,6 +69,7 @@ const Invites = ({ user, userProfile }) => {
 
       // Group by status
       const groupedInvites = {
+        all: allInvites,
         pending: allInvites.filter(invite => invite.status === 'pending'),
         accepted: allInvites.filter(invite => invite.status === 'accepted'),
         declined: allInvites.filter(invite => invite.status === 'declined'),
@@ -491,6 +492,12 @@ const Invites = ({ user, userProfile }) => {
         <h2>My Invites</h2>
         <div className="filter-controls">
           <button 
+            onClick={() => setActiveTab('all')}
+            className={`filter-btn ${activeTab === 'all' ? 'active' : ''}`}
+          >
+            All ({invites.all?.length || 0})
+          </button>
+          <button 
             onClick={() => setActiveTab('pending')}
             className={`filter-btn ${activeTab === 'pending' ? 'active' : ''}`}
           >
@@ -548,7 +555,7 @@ const Invites = ({ user, userProfile }) => {
           </div>
         ) : (
           currentInvites.map(invite => (
-            <div key={invite.id} className={`invite-item ${invite.type} ${invite.status}`}>
+            <div key={invite.id} className={`invite-item ${invite.type}`}>
               <div className="invite-header">
                 <h3>{invite.title}</h3>
                 <span className={`invite-type ${invite.type}`}>
