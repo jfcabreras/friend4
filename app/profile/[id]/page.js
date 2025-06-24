@@ -22,43 +22,64 @@ const ShareableProfile = () => {
   const loadProfile = async (userId) => {
     try {
       setLoading(true);
+      console.log('Loading profile for userId:', userId);
       
       // Get user profile
       const userDoc = await getDoc(doc(db, 'users', userId));
+      console.log('User document exists:', userDoc.exists());
       
       if (!userDoc.exists()) {
+        console.log('User document does not exist for:', userId);
         setError('User not found');
         setLoading(false);
         return;
       }
 
       const userData = userDoc.data();
+      console.log('User data loaded:', userData);
       setProfile({ id: userDoc.id, ...userData });
 
       // If profile is public, load their posts
       if (userData.profileType === 'public') {
-        const postsQuery = query(
-          collection(db, 'posts'),
-          where('authorId', '==', userId)
-        );
-        
-        const postsSnapshot = await getDocs(postsQuery);
-        const userPosts = postsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        .sort((a, b) => {
-          const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
-          const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
-          return bTime - aTime;
-        });
-        
-        setPosts(userPosts);
+        console.log('Loading posts for public profile:', userId);
+        try {
+          const postsQuery = query(
+            collection(db, 'posts'),
+            where('authorId', '==', userId)
+          );
+          
+          const postsSnapshot = await getDocs(postsQuery);
+          console.log('Posts found:', postsSnapshot.docs.length);
+          const userPosts = postsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .sort((a, b) => {
+            const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+            const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+            return bTime - aTime;
+          });
+          
+          setPosts(userPosts);
+        } catch (postsError) {
+          console.error('Error loading posts:', postsError);
+          // Don't fail the entire profile load if posts fail
+          setPosts([]);
+        }
       }
       
     } catch (error) {
       console.error('Error loading profile:', error);
-      setError('Failed to load profile');
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      if (error.code === 'permission-denied') {
+        setError('Permission denied - unable to access this profile');
+      } else if (error.code === 'not-found') {
+        setError('User not found');
+      } else {
+        setError(`Failed to load profile: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
