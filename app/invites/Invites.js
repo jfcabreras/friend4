@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, orderBy, addDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, orderBy, addDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
 const Invites = ({ user, userProfile }) => {
   const [invites, setInvites] = useState({
@@ -113,13 +113,15 @@ const Invites = ({ user, userProfile }) => {
 
   const handleCancelInvite = async (inviteId, originalPrice, inviteStatus) => {
     let cancellationFee = 0;
+    let palCompensation = 0;
     let confirmMessage = '';
     let successMessage = '';
 
     if (inviteStatus === 'accepted') {
       // Charge 50% cancellation fee only for accepted invites
       cancellationFee = originalPrice * 0.5;
-      confirmMessage = `Are you sure you want to cancel this accepted invite?\n\n⚠️ CANCELLATION FEE: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\nThis fee will be added to your pending balance.\n\nThis action cannot be undone.`;
+      palCompensation = originalPrice * 0.3; // 30% compensation to pal
+      confirmMessage = `Are you sure you want to cancel this accepted invite?\n\n⚠️ CANCELLATION FEE: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\n💰 PAL COMPENSATION: $${palCompensation.toFixed(2)} (30% will be paid to your pal)\n\nThis fee will be added to your pending balance.\n\nThis action cannot be undone.`;
       successMessage = `Invite cancelled successfully. Cancellation fee of $${cancellationFee.toFixed(2)} has been applied to your account.`;
     } else {
       // No fee for pending invites
@@ -140,6 +142,31 @@ const Invites = ({ user, userProfile }) => {
       // Only add cancellation fee if invite was accepted
       if (inviteStatus === 'accepted') {
         updateData.cancellationFee = cancellationFee;
+        updateData.palCompensation = palCompensation;
+
+        // Add fee to user's pending balance
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        const currentUserPendingBalance = userDoc.data()?.pendingBalance || 0;
+        
+        await updateDoc(userRef, {
+          pendingBalance: currentUserPendingBalance + cancellationFee
+        });
+
+        // Add compensation to pal's earnings and create pending platform fee
+        const invite = [...invites.pending, ...invites.accepted].find(inv => inv.id === inviteId);
+        if (invite) {
+          const palRef = doc(db, 'users', invite.toUserId);
+          const palDoc = await getDoc(palRef);
+          const currentPalEarnings = palDoc.data()?.totalEarnings || 0;
+          const currentPalPendingBalance = palDoc.data()?.pendingBalance || 0;
+          const palPlatformFee = palCompensation * 0.05; // 5% platform fee on compensation
+
+          await updateDoc(palRef, {
+            totalEarnings: currentPalEarnings + (palCompensation - palPlatformFee),
+            pendingBalance: currentPalPendingBalance + palPlatformFee
+          });
+        }
       }
 
       const inviteRef = doc(db, 'planInvitations', inviteId);
@@ -303,12 +330,12 @@ const Invites = ({ user, userProfile }) => {
     }
   };
 
-  const markPaymentDone = async (inviteId, price) => {
+  const markPaymentDone = async (inviteId, totalPaymentAmount) => {
     const invite = [...invites.finished, ...invites.in_progress].find(inv => inv.id === inviteId);
     if (invite) {
       setSelectedInvite(invite);
     }
-    setPaymentAmount(price);
+    setPaymentAmount(totalPaymentAmount || invite.totalPaymentAmount || invite.price);
     setShowPaymentModal(true);
   };
 
@@ -316,12 +343,31 @@ const Invites = ({ user, userProfile }) => {
     if (!selectedInvite) return;
 
     try {
+      const incentiveAmount = selectedInvite.incentiveAmount || selectedInvite.price;
+      const pendingFeesIncluded = selectedInvite.pendingFeesIncluded || 0;
+      const platformFee = incentiveAmount * 0.05; // 5% platform fee
+      const netAmountToPal = incentiveAmount - platformFee;
+
       const inviteRef = doc(db, 'planInvitations', selectedInvite.id);
       await updateDoc(inviteRef, {
         status: 'payment_done',
         paymentDoneAt: new Date(),
-        paymentMethod: 'cash'
+        paymentMethod: 'cash',
+        incentiveAmount: incentiveAmount,
+        pendingFeesIncluded: pendingFeesIncluded,
+        platformFee: platformFee,
+        netAmountToPal: netAmountToPal,
+        totalPaidAmount: paymentAmount
       });
+
+      // Clear pending fees from user profile since they were paid
+      if (pendingFeesIncluded > 0) {
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+          pendingBalance: 0,
+          lastPendingFeePayment: new Date()
+        });
+      }
 
       alert('Payment marked as done! Waiting for recipient confirmation.');
       setShowPaymentModal(false);
@@ -333,7 +379,9 @@ const Invites = ({ user, userProfile }) => {
           ...prev, 
           status: 'payment_done', 
           paymentDoneAt: new Date(),
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
+          platformFee: platformFee,
+          netAmountToPal: netAmountToPal
         }));
       }
     } catch (error) {
@@ -344,11 +392,26 @@ const Invites = ({ user, userProfile }) => {
 
   const confirmPaymentReceived = async (inviteId) => {
     try {
+      const invite = [...invites.payment_done].find(inv => inv.id === inviteId);
+      if (!invite) return;
+
+      const platformFee = invite.platformFee || (invite.incentiveAmount || invite.price) * 0.05;
+
       const inviteRef = doc(db, 'planInvitations', inviteId);
       await updateDoc(inviteRef, {
         status: 'completed',
         paymentReceivedAt: new Date(),
         paymentConfirmed: true
+      });
+
+      // Add platform fee to pal's pending balance
+      const palRef = doc(db, 'users', invite.toUserId);
+      const palDoc = await getDoc(palRef);
+      const currentPendingBalance = palDoc.data()?.pendingBalance || 0;
+      
+      await updateDoc(palRef, {
+        pendingBalance: currentPendingBalance + platformFee,
+        totalEarnings: (palDoc.data()?.totalEarnings || 0) + (invite.netAmountToPal || (invite.incentiveAmount || invite.price) - platformFee)
       });
 
       alert('Payment received confirmed! Invite completed successfully.');
@@ -545,7 +608,7 @@ const Invites = ({ user, userProfile }) => {
 
                 {invite.status === 'finished' && invite.type === 'sent' && (
                   <button 
-                    onClick={() => markPaymentDone(invite.id, invite.price)}
+                    onClick={() => markPaymentDone(invite.id, invite.totalPaymentAmount || invite.price)}
                     className="payment-btn"
                   >
                     💰 Mark Payment Done
@@ -745,7 +808,7 @@ const Invites = ({ user, userProfile }) => {
                 {selectedInvite.status === 'finished' && selectedInvite.type === 'sent' && (
                   <div className="invite-actions-detail">
                     <button 
-                      onClick={() => markPaymentDone(selectedInvite.id, selectedInvite.price)}
+                      onClick={() => markPaymentDone(selectedInvite.id, selectedInvite.totalPaymentAmount || selectedInvite.price)}
                       className="payment-invite-btn"
                     >
                       💰 Mark Payment Done

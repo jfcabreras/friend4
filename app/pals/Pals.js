@@ -153,6 +153,26 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       return;
     }
 
+    // Calculate pending fees from user profile
+    const pendingBalance = userProfile.pendingBalance || 0;
+    const totalPayment = parseFloat(inviteData.price) + pendingBalance;
+
+    // Warn user about pending fees if any exist
+    if (pendingBalance > 0) {
+      const confirmed = window.confirm(
+        `⚠️ PENDING FEES NOTICE\n\n` +
+        `Incentive Amount: $${parseFloat(inviteData.price).toFixed(2)}\n` +
+        `Pending Fees: $${pendingBalance.toFixed(2)}\n` +
+        `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n` +
+        `Your pending fees will be added to this payment.\n\n` +
+        `Do you want to continue?`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+    }
+
     try {
       await addDoc(collection(db, 'planInvitations'), {
         fromUserId: user.uid,
@@ -167,6 +187,9 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         endDate: new Date(inviteData.endDate),
         endTime: inviteData.endTime,
         price: parseFloat(inviteData.price),
+        incentiveAmount: parseFloat(inviteData.price),
+        pendingFeesIncluded: pendingBalance,
+        totalPaymentAmount: totalPayment,
         status: 'pending',
         createdAt: new Date()
       });
