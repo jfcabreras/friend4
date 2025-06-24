@@ -82,8 +82,16 @@ export default function App() {
     }
   }, []);
 
-  const loadUserProfile = async (uid) => {
+  const loadUserProfile = async (user) => {
     try {
+      // Extract uid from user object, handle both string and object cases
+      const uid = typeof user === 'string' ? user : user?.uid;
+      
+      if (!uid || typeof uid !== 'string') {
+        console.error("Invalid user ID:", uid);
+        return;
+      }
+
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
         const profileData = userDoc.data();
@@ -198,7 +206,7 @@ export default function App() {
       setUsername("");
 
       // Reload user profile
-      await loadUserProfile(user.uid);
+      await loadUserProfile(user);
     } catch (error) {
       console.error("Error setting username:", error);
       setErrorMessage("Failed to set username. Please try again.");
