@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,25 +19,55 @@ const ShareableProfile = () => {
     }
   }, [params?.id]);
 
-  const loadProfile = async (userId) => {
+  const loadProfile = async (usernameOrId) => {
     try {
       setLoading(true);
-      console.log('Loading profile for userId:', userId);
+      console.log('Loading profile for username/id:', usernameOrId);
 
-      // Get user profile
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      console.log('User document exists:', userDoc.exists());
+      let userId = null;
+      let userData = null;
 
-      if (!userDoc.exists()) {
-        console.log('User document does not exist for:', userId);
+      // First, try to find user by username
+      try {
+        const usernameQuery = query(
+          collection(db, 'users'),
+          where('username', '==', usernameOrId)
+        );
+        const usernameSnapshot = await getDocs(usernameQuery);
+        
+        if (!usernameSnapshot.empty) {
+          // Found user by username
+          const userDoc = usernameSnapshot.docs[0];
+          userId = userDoc.id;
+          userData = userDoc.data();
+          console.log('Found user by username:', userData);
+        }
+      } catch (usernameError) {
+        console.log('Error searching by username:', usernameError);
+      }
+
+      // If not found by username, try as direct userId (fallback)
+      if (!userData) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', usernameOrId));
+          if (userDoc.exists()) {
+            userId = userDoc.id;
+            userData = userDoc.data();
+            console.log('Found user by userId:', userData);
+          }
+        } catch (userIdError) {
+          console.log('Error searching by userId:', userIdError);
+        }
+      }
+
+      if (!userData || !userId) {
+        console.log('User not found for:', usernameOrId);
         setError('User not found');
         setLoading(false);
         return;
       }
 
-      const userData = userDoc.data();
-      console.log('User data loaded:', userData);
-      setProfile({ id: userDoc.id, ...userData });
+      setProfile({ id: userId, ...userData });
 
       // If profile is public, load their posts
       if (userData.profileType === 'public') {
