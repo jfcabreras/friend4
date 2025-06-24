@@ -4189,6 +4189,286 @@ textarea {
   font-size: 20px;
 }
 
+/* Shareable Profile Styles */
+.shareable-profile {
+  min-height: 100vh;
+  background: var(--background);
+  padding: 20px;
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top: 4px solid var(--cyber-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.private-profile-container,
+.public-profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid var(--border);
+}
+
+.private-profile-content {
+  text-align: center;
+}
+
+.profile-picture-large {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--cyber-purple);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+  margin: 0 auto 20px;
+}
+
+.private-badge,
+.public-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0;
+}
+
+.private-badge {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.public-badge {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.private-message {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+  margin-top: 20px;
+}
+
+.profile-header-shareable {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-info-shareable h1 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 32px;
+}
+
+.profile-location {
+  color: var(--text-secondary);
+  font-size: 18px;
+  margin: 8px 0;
+}
+
+.member-since {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 16px 0 0 0;
+}
+
+.profile-section-shareable {
+  margin: 32px 0;
+  padding: 24px;
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.profile-section-shareable h3 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.activity-tags-shareable {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.activity-tag-shareable {
+  padding: 8px 16px;
+  background: rgba(156, 86, 255, 0.1);
+  color: var(--cyber-purple);
+  border: 1px solid rgba(156, 86, 255, 0.3);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.posts-grid-shareable {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.post-card-shareable {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease;
+}
+
+.post-card-shareable:hover {
+  transform: translateY(-2px);
+}
+
+.post-header-shareable {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.post-header-shareable h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.post-time-shareable {
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.post-description-shareable {
+  color: var(--text-secondary);
+  margin: 12px 0;
+  line-height: 1.5;
+}
+
+.post-media-shareable {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.post-media-content-shareable {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.post-stats-shareable {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.post-stats-shareable span {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.no-posts-shareable {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 40px;
+}
+
+/* Copy URL Button Styles */
+.share-link-container {
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.share-link-container h4 {
+  margin: 0 0 12px 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.share-link-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.copy-link-btn {
+  padding: 8px 16px;
+  background: var(--cyber-purple);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.copy-link-btn:hover {
+  background: #8b5cf6;
+}
+
+.copy-link-btn.copied {
+  background: #10b981;
+}
+
 /* Mobile-specific profile adjustments */
 @media (max-width: 480px) {
   .profile-section {
@@ -4238,6 +4518,41 @@ textarea {
   .activity-input {
     flex-direction: column;
     gap: 8px;
+  }
+
+  /* Shareable profile mobile adjustments */
+  .shareable-profile {
+    padding: 16px;
+  }
+
+  .private-profile-container,
+  .public-profile-container {
+    padding: 20px;
+  }
+
+  .profile-header-shareable {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .avatar-placeholder-large {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+  }
+
+  .profile-info-shareable h1 {
+    font-size: 24px;
+  }
+
+  .posts-grid-shareable {
+    grid-template-columns: 1fr;
+  }
+
+  .share-link-input-container {
+    flex-direction: column;
+  }
   }
 
   .activity-input input {

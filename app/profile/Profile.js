@@ -704,6 +704,39 @@ const Profile = ({ user, userProfile }) => {
         </div>
       </div>
 
+      <div className="share-link-container">
+        <h4>Share Your Profile</h4>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 12px 0' }}>
+          {userProfile.profileType === 'public' 
+            ? 'Share this link to let others view your public profile'
+            : 'Your profile is private - others will see a private profile message'
+          }
+        </p>
+        <div className="share-link-input-container">
+          <input
+            type="text"
+            value={`${window.location.origin}/profile/${user.uid}`}
+            readOnly
+            className="share-link-input"
+          />
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/profile/${user.uid}`);
+              const btn = document.querySelector('.copy-link-btn');
+              btn.textContent = 'Copied!';
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.textContent = 'Copy Link';
+                btn.classList.remove('copied');
+              }, 2000);
+            }}
+            className="copy-link-btn"
+          >
+            Copy Link
+          </button>
+        </div>
+      </div>
+
       <div className="user-posts-section">
         <h3>My Posts</h3>
         <UserPosts userId={user?.uid} />
