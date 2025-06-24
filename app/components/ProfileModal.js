@@ -19,12 +19,19 @@ const ProfileModal = ({
   onFavoriteChange // Add callback to refresh parent data
 }) => {
   
-  // Refresh favorites from userProfile whenever modal opens
+  // Reload user profile when modal opens to get fresh data
   useEffect(() => {
-    if (showModal && userProfile) {
+    if (showModal && onFavoriteChange) {
+      onFavoriteChange();
+    }
+  }, [showModal, onFavoriteChange]);
+
+  // Update favorites when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
       setFavorites(userProfile.favorites || []);
     }
-  }, [showModal, userProfile, setFavorites]);
+  }, [userProfile, setFavorites]);
   const toggleFavorite = async (palId, event) => {
     if (!user?.uid || !event) return;
 

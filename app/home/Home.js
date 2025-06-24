@@ -35,12 +35,7 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
     }
   }, [user, userProfile]);
 
-  // Update favorites when userProfile changes
-  useEffect(() => {
-    if (userProfile) {
-      setFavorites(userProfile.favorites || []);
-    }
-  }, [userProfile?.favorites]);
+  
 
   const loadFeed = async () => {
     if (!user?.uid || !userProfile) return;

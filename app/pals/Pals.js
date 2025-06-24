@@ -34,12 +34,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   }, [user?.uid, userProfile]);
 
-  // Update favorites when userProfile changes
-  useEffect(() => {
-    if (userProfile) {
-      setFavorites(userProfile.favorites || []);
-    }
-  }, [userProfile?.favorites]);
+  
 
   const loadPals = async () => {
     if (!user?.uid) return;
