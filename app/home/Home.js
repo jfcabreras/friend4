@@ -66,7 +66,7 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
                 const authorData = authorDoc.data();
                 authorProfilePicture = authorData.profilePicture;
                 authorUsername = authorData.username || authorUsername;
-                isPublicProfile = authorData.isPublic === true;
+                isPublicProfile = authorData.profileType === 'public';
               } else {
                 console.log('Author document does not exist for:', postData.authorId);
               }
@@ -85,22 +85,11 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
           };
         }));
 
-        // For debugging: log the isPublicProfile values
-        posts.forEach(post => {
-          console.log(`Post ${post.id}: isPublicProfile =`, post.isPublicProfile, 'authorId =', post.authorId);
-        });
-        
         // Filter to only show posts from public users
         const publicPosts = posts.filter(post => post.isPublicProfile === true);
         feedPosts = [...publicPosts];
         console.log('Loaded posts:', posts.length);
         console.log('Public posts:', publicPosts.length);
-        
-        // If no public posts, temporarily show all posts for debugging
-        if (publicPosts.length === 0) {
-          console.log('No public posts found, showing all posts for debugging');
-          feedPosts = [...posts];
-        }
       } catch (postsError) {
         console.log('Could not load posts:', postsError.message);
       }
