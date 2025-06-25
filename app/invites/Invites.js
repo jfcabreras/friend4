@@ -5,15 +5,120 @@ import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, orderBy, addDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
 // Component to show outstanding fees notice for finished invites
-const OutstandingFeesNotice = ({ invite, pendingFeesBreakdown }) => {
+const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
   const [senderFeesBreakdown, setSenderFeesBreakdown] = useState(null);
+  const [ownFeesBreakdown, setOwnFeesBreakdown] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (invite.type === 'received' && (invite.status === 'in_progress' || invite.status === 'finished')) {
       calculateSenderOutstandingFees();
     }
-  }, [invite]);
+    if (invite.type === 'sent' && (invite.status === 'in_progress' || invite.status === 'finished')) {
+      calculateOwnOutstandingFees();
+    }
+  }, [invite, user, userProfile]);
+
+  const calculateOwnOutstandingFees = async () => {
+    if (!user?.uid) return;
+    
+    setLoading(true);
+    try {
+      // Get sent invites to calculate what user owes
+      const sentInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'sent',
+        ...doc.data()
+      }));
+
+      // Get received invites to calculate platform fees owed (for public profiles)
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'received',
+        ...doc.data()
+      }));
+
+      // Calculate platform fees owed (for public profiles only)
+      let platformFeesOwed = 0;
+      if (userProfile?.profileType === 'public') {
+        const completedAsPal = receivedInvites.filter(inv => 
+          inv.status === 'completed' && inv.paymentConfirmed === true
+        );
+
+        const cancelledAsPal = receivedInvites.filter(inv => 
+          inv.status === 'cancelled' && 
+          inv.palCompensation && inv.palCompensation > 0
+        );
+
+        const allEarningInvites = [...completedAsPal, ...cancelledAsPal];
+
+        allEarningInvites.forEach(inv => {
+          const amount = inv.incentiveAmount || inv.palCompensation || inv.price || 0;
+          const platformFee = inv.platformFee || (amount * 0.05);
+          if (!inv.platformFeePaid) {
+            platformFeesOwed += platformFee;
+          }
+        });
+      }
+
+      // Calculate outstanding amounts for sent invites
+      const completedInvites = sentInvites.filter(inv => 
+        ['finished', 'payment_done', 'completed'].includes(inv.status)
+      );
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, inv) => {
+        return total + (inv.price || 0);
+      }, 0);
+
+      const paidCompletedInvites = sentInvites.filter(inv => 
+        inv.status === 'completed' && inv.paymentConfirmed === true
+      );
+      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, inv) => {
+        return total + (inv.price || 0);
+      }, 0);
+
+      const cancelledInvitesWithFees = sentInvites.filter(inv => 
+        inv.status === 'cancelled' && 
+        inv.cancellationFee && inv.cancellationFee > 0
+      );
+      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, inv) => {
+        return total + (inv.cancellationFee || 0);
+      }, 0);
+
+      const paidCancellationFees = cancelledInvitesWithFees.filter(inv => 
+        inv.cancellationFeePaid === true
+      );
+      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, inv) => {
+        return total + (inv.cancellationFee || 0);
+      }, 0);
+
+      const incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
+      const cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
+      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
+
+      setOwnFeesBreakdown({
+        totalAmount: totalOwed,
+        incentivePaymentsOwed,
+        cancellationFeesOwed,
+        platformFeesOwed
+      });
+
+    } catch (error) {
+      console.error('Error calculating own outstanding fees:', error);
+      setOwnFeesBreakdown(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calculateSenderOutstandingFees = async () => {
     if (!invite.fromUserId) return;
@@ -131,24 +236,50 @@ const OutstandingFeesNotice = ({ invite, pendingFeesBreakdown }) => {
   };
 
   if (invite.type === 'sent') {
-    // For senders - use the existing pendingFeesBreakdown
+    // For senders - use the calculated ownFeesBreakdown
+    if (loading) {
+      return (
+        <div className="outstanding-fees-notice">
+          <div className="fees-notice sender">
+            <span className="fees-icon">⏳</span>
+            <span className="fees-text">Checking outstanding fees...</span>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="outstanding-fees-notice">
-        {pendingFeesBreakdown && pendingFeesBreakdown.totalAmount > 0 ? (
+        {ownFeesBreakdown && ownFeesBreakdown.totalAmount > 0 ? (
           <div className="fees-warning sender">
             <span className="fees-icon">⚠️</span>
             <div className="fees-text">
               <strong>Payment will include outstanding fees:</strong>
               <br />
-              Invite: ${invite.price?.toFixed(2)} + Outstanding: ${pendingFeesBreakdown.totalAmount.toFixed(2)} = Total: ${(invite.price + pendingFeesBreakdown.totalAmount).toFixed(2)}
+              Invite: ${invite.price?.toFixed(2)} + Outstanding: ${ownFeesBreakdown.totalAmount.toFixed(2)} = Total: ${(invite.price + ownFeesBreakdown.totalAmount).toFixed(2)}
+              <br />
+              <small className="breakdown-detail">
+                {ownFeesBreakdown.incentivePaymentsOwed > 0 && `• Unpaid incentives: $${ownFeesBreakdown.incentivePaymentsOwed.toFixed(2)} `}
+                {ownFeesBreakdown.cancellationFeesOwed > 0 && `• Cancellation fees: $${ownFeesBreakdown.cancellationFeesOwed.toFixed(2)} `}
+                {ownFeesBreakdown.platformFeesOwed > 0 && `• Platform fees: $${ownFeesBreakdown.platformFeesOwed.toFixed(2)}`}
+              </small>
             </div>
           </div>
-        ) : (
-          <div className="fees-notice sender">
+        ) : ownFeesBreakdown && ownFeesBreakdown.totalAmount === 0 ? (
+          <div className="fees-notice sender success">
             <span className="fees-icon">✅</span>
             <span className="fees-text">No outstanding fees - payment will be ${invite.price?.toFixed(2)}</span>
           </div>
-        )}
+        ) : !ownFeesBreakdown ? (
+          <div className="fees-notice sender neutral">
+            <span className="fees-icon">💰</span>
+            <span className="fees-text">
+              Payment will be ${invite.price?.toFixed(2)}
+              <br />
+              <small>Checking for outstanding fees...</small>
+            </span>
+          </div>
+        ) : null}
       </div>
     );
   } else {
@@ -1210,7 +1341,7 @@ const Invites = ({ user, userProfile }) => {
 
               {/* Outstanding fees notice for in_progress and finished invites */}
               {(invite.status === 'in_progress' || invite.status === 'finished') && (
-                <OutstandingFeesNotice invite={invite} pendingFeesBreakdown={pendingFeesBreakdown} />
+                <OutstandingFeesNotice invite={invite} user={user} userProfile={userProfile} />
               )}
 
               <div className="invite-actions">
@@ -1674,7 +1805,7 @@ const Invites = ({ user, userProfile }) => {
 
                     {/* Outstanding fees notice for recipients */}
                     {!isAuthor && (
-                      <OutstandingFeesNotice invite={invite} pendingFeesBreakdown={null} />
+                      <OutstandingFeesNotice invite={invite} user={user} userProfile={userProfile} />
                     )}
 
                     <h4>Instructions:</h4>
