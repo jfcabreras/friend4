@@ -319,8 +319,103 @@ const Invites = ({ user, userProfile }) => {
     }
   };
 
-  const finishInvite = (inviteId) => {
+  const finishInvite = async (inviteId) => {
     setFinishInviteId(inviteId);
+    
+    // Calculate pending fees to show in finish modal
+    try {
+      // Get sent invites to calculate what user owes
+      const sentInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'sent',
+        ...doc.data()
+      }));
+
+      // Get received invites to calculate platform fees owed (for public profiles)
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'received',
+        ...doc.data()
+      }));
+
+      // Calculate platform fees owed (for public profiles only)
+      let platformFeesOwed = 0;
+      if (userProfile.profileType === 'public') {
+        const completedAsPal = receivedInvites.filter(invite => 
+          invite.status === 'completed' && invite.paymentConfirmed === true
+        );
+
+        const cancelledAsPal = receivedInvites.filter(invite => 
+          invite.status === 'cancelled' && 
+          invite.palCompensation && invite.palCompensation > 0
+        );
+
+        const allEarningInvites = [...completedAsPal, ...cancelledAsPal];
+
+        allEarningInvites.forEach(invite => {
+          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
+          const platformFee = invite.platformFee || (amount * 0.05);
+          if (!invite.platformFeePaid) {
+            platformFeesOwed += platformFee;
+          }
+        });
+      }
+
+      // Calculate outstanding amounts for sent invites
+      const completedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      );
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const paidCompletedInvites = sentInvites.filter(invite => 
+        invite.status === 'completed' && invite.paymentConfirmed === true
+      );
+      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const cancelledInvitesWithFees = sentInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.cancellationFee && invite.cancellationFee > 0
+      );
+      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
+        invite.cancellationFeePaid === true
+      );
+      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      const incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
+      const cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
+      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
+
+      setPendingFeesBreakdown({
+        totalAmount: totalOwed,
+        incentivePaymentsOwed,
+        cancellationFeesOwed,
+        platformFeesOwed
+      });
+    } catch (error) {
+      console.error('Error calculating pending fees for finish modal:', error);
+      setPendingFeesBreakdown(null);
+    }
+
     setShowFinishModal(true);
   };
 
@@ -1321,12 +1416,59 @@ const Invites = ({ user, userProfile }) => {
 
                 return (
                   <>
+                    <h4>Next Steps:</h4>
+                    
+                    {isAuthor && pendingFeesBreakdown && pendingFeesBreakdown.totalAmount > 0 && (
+                      <div className="pending-fees-preview">
+                        <div className="pending-fees-alert">
+                          <h5>⚠️ Outstanding Fees Notice</h5>
+                          <p>You have <strong>${pendingFeesBreakdown.totalAmount.toFixed(2)}</strong> in outstanding fees that will be included in your payment:</p>
+                          
+                          <div className="fees-breakdown-preview">
+                            {pendingFeesBreakdown.incentivePaymentsOwed > 0 && (
+                              <div className="fee-item">
+                                <span>Outstanding Incentive Payments:</span>
+                                <span>${pendingFeesBreakdown.incentivePaymentsOwed.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {pendingFeesBreakdown.cancellationFeesOwed > 0 && (
+                              <div className="fee-item">
+                                <span>Outstanding Cancellation Fees:</span>
+                                <span>${pendingFeesBreakdown.cancellationFeesOwed.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {pendingFeesBreakdown.platformFeesOwed > 0 && (
+                              <div className="fee-item">
+                                <span>Outstanding Platform Fees:</span>
+                                <span>${pendingFeesBreakdown.platformFeesOwed.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="fee-total">
+                              <span>Total Payment Required:</span>
+                              <span>${(invite.price + pendingFeesBreakdown.totalAmount).toFixed(2)}</span>
+                            </div>
+                          </div>
+                          
+                          <p className="payment-note">💡 Your pal will receive ${invite.price.toFixed(2)} (the invite amount), and ${pendingFeesBreakdown.totalAmount.toFixed(2)} will clear your outstanding platform debts.</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {isAuthor && (!pendingFeesBreakdown || pendingFeesBreakdown.totalAmount === 0) && (
+                      <div className="no-fees-notice">
+                        <p>✅ Great! You have no outstanding fees. Your payment will only include the invite amount of ${invite.price.toFixed(2)}.</p>
+                      </div>
+                    )}
+
                     <h4>Instructions:</h4>
                     <ul>
                       {isAuthor ? (
                         <>
                           <li>Ensure both parties are satisfied with the experience</li>
                           <li>After finishing, you will be able to mark payment as done</li>
+                          {pendingFeesBreakdown && pendingFeesBreakdown.totalAmount > 0 && (
+                            <li>Your payment will include the invite amount plus outstanding fees shown above</li>
+                          )}
                           <li>Wait for your pal to confirm payment received to complete the invite</li>
                         </>
                       ) : (
