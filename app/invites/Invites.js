@@ -902,8 +902,7 @@ const Invites = ({ user, userProfile }) => {
                   </div>
                 )}
 
-                {selectedInvite.status === 'finished'<replit_final_file>
- && selectedInvite.type === 'received' && (
+                {selectedInvite.status === 'finished' && selectedInvite.type === 'received' && (
                   <div className="invite-actions-detail">
                     <button 
                       onClick={() => confirmPaymentReceived(selectedInvite.id)}
