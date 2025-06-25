@@ -931,11 +931,11 @@ const Invites = ({ user, userProfile }) => {
         setPendingFeesBreakdown(null);
       }
 
-      // The total owed already includes all unpaid invites (including this one)
-      // So we only charge the outstanding balance, not current invite + outstanding
-      const totalPaymentAmount = totalOwed;
+      // Calculate the total payment amount: current invite + outstanding fees
+      const currentInviteAmount = invite.price || 0;
+      const totalPaymentAmount = currentInviteAmount + totalOwed;
 
-      console.log('Current invite price:', invite.price || 0);
+      console.log('Current invite price:', currentInviteAmount);
       console.log('Total outstanding balance calculated:', totalOwed);
       console.log('Total payment amount:', totalPaymentAmount);
 
@@ -1948,6 +1948,10 @@ const Invites = ({ user, userProfile }) => {
                 return (
                   <>
                     <div className="payment-breakdown">
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">This Invite Amount:</span>
+                        <span className="breakdown-value">${incentiveAmount.toFixed(2)}</span>
+                      </div>
                       {pendingFeesBreakdown && pendingFeesBreakdown.incentivePaymentsOwed > 0 && (
                         <div className="breakdown-item">
                           <span className="breakdown-label">Outstanding Incentive Payments:</span>
@@ -1977,10 +1981,10 @@ const Invites = ({ user, userProfile }) => {
                       <span className="method-value">💵 Cash Payment</span>
                     </div>
 
-                    {paymentAmount > 0 && pendingFeesBreakdown && (
+                    {pendingFees > 0 && pendingFeesBreakdown && (
                       <div className="pending-fees-notice">
                         <h4>⚠️ Outstanding Fees Notice:</h4>
-                        <p>You have ${paymentAmount.toFixed(2)} in outstanding fees that will be included in this payment.</p>
+                        <p>You have ${pendingFees.toFixed(2)} in outstanding fees that will be included in this payment.</p>
 
                         <div className="fees-breakdown-detail">
                           {pendingFeesBreakdown.incentivePaymentsOwed > 0 && (
@@ -2023,7 +2027,7 @@ const Invites = ({ user, userProfile }) => {
                         )}
 
                         <div className="debt-clarification">
-                          <p><strong>💡 Important:</strong> These are <em>your debts to the platform</em>, not to your pal. Your pal will receive only the incentive amount (${(selectedInvite.price || 0).toFixed(2)}). The outstanding fees (${paymentAmount.toFixed(2)}) are settled with the platform administration.</p>
+                          <p><strong>💡 Important:</strong> These are <em>your debts to the platform</em>, not to your pal. Your pal will receive only the incentive amount (${(selectedInvite.price || 0).toFixed(2)}). The outstanding fees (${pendingFees.toFixed(2)}) are settled with the platform administration.</p>
                         </div>
                       </div>
                     )}
