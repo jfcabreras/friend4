@@ -10,7 +10,7 @@ const OutstandingFeesNotice = ({ invite, pendingFeesBreakdown }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (invite.type === 'received' && invite.status === 'finished') {
+    if (invite.type === 'received' && (invite.status === 'in_progress' || invite.status === 'finished')) {
       calculateSenderOutstandingFees();
     }
   }, [invite]);
@@ -1207,8 +1207,8 @@ const Invites = ({ user, userProfile }) => {
                 </div>
               </div>
 
-              {/* Outstanding fees notice for finished invites */}
-              {invite.status === 'finished' && (
+              {/* Outstanding fees notice for in_progress and finished invites */}
+              {(invite.status === 'in_progress' || invite.status === 'finished') && (
                 <OutstandingFeesNotice invite={invite} pendingFeesBreakdown={pendingFeesBreakdown} />
               )}
 
