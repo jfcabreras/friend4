@@ -42,7 +42,7 @@ const Profile = ({ user, userProfile }) => {
     totalIssuedByCancellationFees: 0,
     totalPaidByCancellationFees: 0,
     pendingPayments: [],
-    
+
     // Comprehensive financial tracking
     issuedForIncentivePayments: 0,
     issuedForCancelledInvites: 0,
@@ -50,7 +50,7 @@ const Profile = ({ user, userProfile }) => {
     paidForCancelledInvites: 0,
     pendingPaymentsForIncentives: 0,
     pendingPaymentsForCancelled: 0,
-    
+
     // Payments related to me (as recipient)
     issuedPaymentsForInvitesRelatedToMe: 0,
     issuedPaymentsForCancelledInvitesRelatedToMe: 0,
@@ -58,15 +58,15 @@ const Profile = ({ user, userProfile }) => {
     receivedPaymentsForCancelledInvitesRelatedToMe: 0,
     paymentsForInvitesPendingToReceive: 0,
     paymentsForCancelledInvitesPendingToReceive: 0,
-    
+
     // Payments not related to me (outstanding fees from others)
     receivedPaymentsForInvitesNotRelatedToMe: 0,
     receivedPaymentsForCancelledInvitesNotRelatedToMe: 0,
-    
+
     // Platform fees
     issuedFeesForCancellationsRelatedToMe: 0,
     issuedFeesForInvitesRelatedToMe: 0,
-    
+
     // Final balances
     pendingBalanceToPayToPlatform: 0,
     balanceInFavor: 0
@@ -178,11 +178,11 @@ const Profile = ({ user, userProfile }) => {
 
       // === COMPREHENSIVE FINANCIAL TRACKING ===
       // Use stored database values instead of recalculating
-      
+
       // Get financial data from database stored values
       let totalEarnings = userProfile.totalEarnings || 0;
       let platformFeesOwed = 0;
-      
+
       // 1. ISSUED PAYMENTS (What I owe to others) - from database
       const issuedForIncentivePayments = sentInvites
         .filter(invite => ['finished', 'payment_done', 'completed'].includes(invite.status))
@@ -248,7 +248,7 @@ const Profile = ({ user, userProfile }) => {
               platformFeesOwed += platformFee;
             }
           }
-          
+
           if (invite.status === 'cancelled' && invite.palCompensation && invite.palCompensation > 0) {
             const platformFee = invite.platformFee || ((invite.price || 0) * 0.05);
             issuedFeesForCancellationsRelatedToMe += platformFee;
@@ -262,10 +262,13 @@ const Profile = ({ user, userProfile }) => {
       // 9. FINAL BALANCE CALCULATIONS - only calculate dynamic balances
       const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + platformFeesOwed;
       const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
-      
+
+      // Use stored total earnings directly (platform fees already accounted for in stored values)
+      const totalEarnings = userProfile.totalEarnings || 0;
+
       // Calculate the net balance dynamically
       const netBalance = totalToReceive - totalOwed;
-      
+
       const pendingBalanceToPayToPlatform = Math.max(0, -netBalance);
       const balanceInFavor = Math.max(0, netBalance);
 
@@ -273,7 +276,7 @@ const Profile = ({ user, userProfile }) => {
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
       const currentPendingBalance = userDoc.data()?.pendingBalance || 0;
-      
+
       if (Math.abs(currentPendingBalance - totalOwed) > 0.01) { // Update if difference is more than 1 cent
         await updateDoc(userRef, {
           pendingBalance: totalOwed,
@@ -332,7 +335,7 @@ const Profile = ({ user, userProfile }) => {
         totalIssuedByCancellationFees: issuedForCancelledInvites,
         totalPaidByCancellationFees: paidForCancelledInvites,
         pendingPayments: pendingPayments.sort((a, b) => b.date - a.date),
-        
+
         // Comprehensive financial tracking
         issuedForIncentivePayments,
         issuedForCancelledInvites,
@@ -340,7 +343,7 @@ const Profile = ({ user, userProfile }) => {
         paidForCancelledInvites,
         pendingPaymentsForIncentives,
         pendingPaymentsForCancelled,
-        
+
         // Payments related to me (as recipient)
         issuedPaymentsForInvitesRelatedToMe,
         issuedPaymentsForCancelledInvitesRelatedToMe,
@@ -348,15 +351,15 @@ const Profile = ({ user, userProfile }) => {
         receivedPaymentsForCancelledInvitesRelatedToMe,
         paymentsForInvitesPendingToReceive,
         paymentsForCancelledInvitesPendingToReceive,
-        
+
         // Payments not related to me (outstanding fees from others)
         receivedPaymentsForInvitesNotRelatedToMe,
         receivedPaymentsForCancelledInvitesNotRelatedToMe,
-        
+
         // Platform fees
         issuedFeesForCancellationsRelatedToMe,
         issuedFeesForInvitesRelatedToMe,
-        
+
         // Final balances
         pendingBalanceToPayToPlatform,
         balanceInFavor
@@ -741,7 +744,7 @@ const Profile = ({ user, userProfile }) => {
 
       <div className="balance-section">
         <h3>Financial Summary</h3>
-        
+
         {/* Main Balance Overview */}
         <div className="balance-summary">
           <div className="balance-grid">
@@ -765,7 +768,7 @@ const Profile = ({ user, userProfile }) => {
         {/* Comprehensive Financial Tracking */}
         <div className="comprehensive-financial-tracking">
           <h4>📊 Comprehensive Financial Tracking</h4>
-          
+
           {/* Payments I Issue (What I owe to others) */}
           <div className="financial-category">
             <h5>💸 Payments I Issue (What I owe to others)</h5>
@@ -846,7 +849,7 @@ const Profile = ({ user, userProfile }) => {
             </p>
           </div>
 
-          {/* Platform Fees */}
+          {/*Platform Fees */}
           {userProfile.profileType === 'public' && (
             <div className="financial-category">
               <h5>🏛️ Platform Fees</h5>
