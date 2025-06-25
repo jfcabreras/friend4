@@ -343,6 +343,9 @@ const Invites = ({ user, userProfile }) => {
     const userDoc = await getDoc(userRef);
     const pendingBalance = userDoc.data()?.pendingBalance || 0;
     
+    console.log('User pending balance:', pendingBalance);
+    console.log('User document data:', userDoc.data());
+    
     let breakdown = null;
     
     if (pendingBalance > 0) {
