@@ -1,0 +1,20 @@
+Error: ./app/invites/Invites.js:1:6
+Parsing ecmascript source code failed
+[0m[31m[1m>[22m[39m[90m 1 |[39m [33mThis[39m update modifies the [32m`receivedInvites.forEach`[39m loop to discriminate between [32m`pendingInviteFeesIncluded`[39m and [32m`pendingCancelledInviteFeesIncluded`[39m when calculating outstanding fees[33m,[39m [36mwith[39m a fallback [36mfor[39m older records[33m.[39m[0m
+[0m [90m   |[39m      [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2 |[39m [32m``[39m[32m`[39m[0m
+
+Expected ';', '}' or <eof>
+    at BuildError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:11144:41)
+    at react-stack-bottom-frame (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:14911:24)
+    at renderWithHooksAgain (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:6256:24)
+    at renderWithHooks (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:6207:28)
+    at updateFunctionComponent (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:7543:21)
+    at beginWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:8142:24)
+    at runWithFiberInDEV (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:3073:74)
+    at performUnitOfWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10243:97)
+    at workLoopSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10135:40)
+    at renderRootSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10118:13)
+    at performWorkOnRoot (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:9853:212)
+    at performWorkOnRootViaSchedulerTask (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10826:9)
+    at MessagePort.performWorkUntilDeadline (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:1982:64)
