@@ -865,7 +865,9 @@ const Invites = ({ user, userProfile }) => {
         invite.cancellationFeePaid === true
       );
       const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
-        return total + (invite.cancellationFeeAmountPaid || invite.cancellationFee || 0);
+        // Use cancellationFeeAmountPaid if available, otherwise fall back to cancellationFee
+        const amountPaid = invite.cancellationFeeAmountPaid || invite.cancellationFee || 0;
+        return total + amountPaid;
       }, 0);
 
       // Calculate outstanding amounts
@@ -962,8 +964,9 @@ const Invites = ({ user, userProfile }) => {
       const pendingBalance = userDoc.data()?.pendingBalance || 0;
 
       const incentiveAmount = selectedInvite.incentiveAmount || selectedInvite.price;
-      // Use the calculated total owed amount instead of user's stored pending balance
-      const pendingFeesIncluded = paymentAmount - incentiveAmount;
+      // Calculate the actual outstanding fees based on our breakdown calculation
+      const actualOutstandingFees = pendingFeesBreakdown ? pendingFeesBreakdown.totalAmount : 0;
+      const pendingFeesIncluded = actualOutstandingFees;
       const platformFee = incentiveAmount * 0.05; // 5% platform fee
       const netAmountToPal = incentiveAmount - platformFee;
 
@@ -1329,7 +1332,7 @@ const Invites = ({ user, userProfile }) => {
                   )}
                   {invite.status === 'payment_done' && invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0 && (
                     <span className="pending-fees-included">
-                      ⚠️ Includes ${invite.pendingFeesIncluded.toFixed(2)} outstanding fees
+                      ⚠️ Includes ${(invite.pendingFeesIncluded || 0).toFixed(2)} outstanding fees
                     </span>
                   )}
                   {invite.status === 'finished' && (
