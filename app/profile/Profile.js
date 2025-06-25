@@ -176,139 +176,117 @@ const Profile = ({ user, userProfile }) => {
         ...doc.data()
       }));
 
-      // === COMPREHENSIVE FINANCIAL TRACKING ===
+      // === DATABASE-DRIVEN FINANCIAL TRACKING ===
       
-      // Initialize all tracking variables
+      // Query actual financial transactions from database
+      const paymentsQuery = query(
+        collection(db, 'payments'),
+        where('userId', '==', user.uid)
+      );
+      const paymentsSnapshot = await getDocs(paymentsQuery);
+      const userPayments = paymentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const feesQuery = query(
+        collection(db, 'platformFees'),
+        where('userId', '==', user.uid)
+      );
+      const feesSnapshot = await getDocs(feesQuery);
+      const userFees = feesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Initialize tracking variables
       let totalEarnings = 0;
       let platformFeesOwed = 0;
       
-      // 1. ISSUED PAYMENTS (What I owe to others)
-      const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      // 1. ISSUED PAYMENTS (What I owe to others) - from database
+      const issuedIncentivePayments = userPayments.filter(p => 
+        p.type === 'incentive_payment' && p.payerId === user.uid
       );
-      const issuedForIncentivePayments = completedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
+      const issuedForIncentivePayments = issuedIncentivePayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
+      );
 
-      const cancelledInvitesWithFees = sentInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.cancellationFee && invite.cancellationFee > 0
+      const issuedCancellationPayments = userPayments.filter(p => 
+        p.type === 'cancellation_compensation' && p.payerId === user.uid
       );
-      const issuedForCancelledInvites = cancelledInvitesWithFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
+      const issuedForCancelledInvites = issuedCancellationPayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
+      );
 
-      // 2. PAID PAYMENTS (What I've already paid)
-      const paidCompletedInvites = sentInvites.filter(invite => 
-        invite.status === 'completed' && invite.paymentConfirmed === true
+      // 2. PAID PAYMENTS (What I've already paid) - from database
+      const paidIncentivePayments = issuedIncentivePayments.filter(p => p.status === 'completed');
+      const paidForIncentivePayments = paidIncentivePayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
       );
-      const paidForIncentivePayments = paidCompletedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
 
-      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
-        invite.cancellationFeePaid === true
+      const paidCancellationPayments = issuedCancellationPayments.filter(p => p.status === 'completed');
+      const paidForCancelledInvites = paidCancellationPayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
       );
-      const paidForCancelledInvites = paidCancellationFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
 
       // 3. PENDING PAYMENTS (What I still owe)
       const pendingPaymentsForIncentives = issuedForIncentivePayments - paidForIncentivePayments;
       const pendingPaymentsForCancelled = issuedForCancelledInvites - paidForCancelledInvites;
 
-      // 4. PAYMENTS RELATED TO ME (As recipient - what others should pay me)
-      const finishedReceivedInvites = receivedInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      // 4. PAYMENTS RELATED TO ME (As recipient) - from database
+      const receivedIncentivePayments = userPayments.filter(p => 
+        p.type === 'incentive_payment' && p.recipientId === user.uid
       );
-      const issuedPaymentsForInvitesRelatedToMe = finishedReceivedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
+      const issuedPaymentsForInvitesRelatedToMe = receivedIncentivePayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
+      );
 
-      const cancelledReceivedInvites = receivedInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.palCompensation && invite.palCompensation > 0
+      const receivedCancellationPayments = userPayments.filter(p => 
+        p.type === 'cancellation_compensation' && p.recipientId === user.uid
       );
-      const issuedPaymentsForCancelledInvitesRelatedToMe = cancelledReceivedInvites.reduce((total, invite) => {
-        return total + (invite.palCompensation || 0);
-      }, 0);
+      const issuedPaymentsForCancelledInvitesRelatedToMe = receivedCancellationPayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
+      );
 
       // 5. RECEIVED PAYMENTS (What I've actually received)
-      const completedReceivedInvites = receivedInvites.filter(invite => 
-        invite.status === 'completed' && invite.paymentConfirmed === true
+      const completedReceivedIncentivePayments = receivedIncentivePayments.filter(p => p.status === 'completed');
+      const receivedPaymentsForInvitesRelatedToMe = completedReceivedIncentivePayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
       );
-      const receivedPaymentsForInvitesRelatedToMe = completedReceivedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
 
-      const paidCancelledReceivedInvites = cancelledReceivedInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.palCompensation && invite.palCompensation > 0 &&
-        invite.cancellationFeePaid === true
+      const completedReceivedCancellationPayments = receivedCancellationPayments.filter(p => p.status === 'completed');
+      const receivedPaymentsForCancelledInvitesRelatedToMe = completedReceivedCancellationPayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
       );
-      const receivedPaymentsForCancelledInvitesRelatedToMe = paidCancelledReceivedInvites.reduce((total, invite) => {
-        return total + (invite.palCompensation || 0);
-      }, 0);
 
       // 6. PENDING TO RECEIVE (What others still owe me)
       const paymentsForInvitesPendingToReceive = issuedPaymentsForInvitesRelatedToMe - receivedPaymentsForInvitesRelatedToMe;
       const paymentsForCancelledInvitesPendingToReceive = issuedPaymentsForCancelledInvitesRelatedToMe - receivedPaymentsForCancelledInvitesRelatedToMe;
 
-      // 7. PAYMENTS NOT RELATED TO ME (Outstanding fees from others included in my payments)
-      let receivedPaymentsForInvitesNotRelatedToMe = 0;
-      let receivedPaymentsForCancelledInvitesNotRelatedToMe = 0;
+      // 7. PAYMENTS NOT RELATED TO ME (Outstanding fees from others) - from database
+      const outsideFeesPayments = userPayments.filter(p => 
+        p.type === 'outstanding_fees_collection' && p.recipientId === user.uid
+      );
+      const receivedPaymentsForInvitesNotRelatedToMe = outsideFeesPayments.reduce((total, payment) => 
+        total + (payment.amount || 0), 0
+      );
+      const receivedPaymentsForCancelledInvitesNotRelatedToMe = 0; // Separate if needed
 
-      // Check if I've received payments that included others' outstanding fees
-      completedReceivedInvites.forEach(invite => {
-        if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
-          // This payment included outstanding fees from the sender
-          receivedPaymentsForInvitesNotRelatedToMe += invite.pendingFeesIncluded;
-          
-          // These fees collected from others become a debt to the platform
-          // that should be added to my platform fees owed
-          platformFeesOwed += invite.pendingFeesIncluded;
-        }
-      });
+      // 8. PLATFORM FEES - from database
+      const myPlatformFees = userFees.filter(f => f.userId === user.uid);
+      const issuedFeesForInvitesRelatedToMe = myPlatformFees.filter(f => f.type === 'incentive_fee')
+        .reduce((total, fee) => total + (fee.amount || 0), 0);
+      const issuedFeesForCancellationsRelatedToMe = myPlatformFees.filter(f => f.type === 'cancellation_fee')
+        .reduce((total, fee) => total + (fee.amount || 0), 0);
 
-      // 8. PLATFORM FEES CALCULATION
-      let issuedFeesForInvitesRelatedToMe = 0;
-      let issuedFeesForCancellationsRelatedToMe = 0;
+      // Calculate platform fees owed
+      const unpaidPlatformFees = myPlatformFees.filter(f => f.status !== 'paid');
+      platformFeesOwed = unpaidPlatformFees.reduce((total, fee) => total + (fee.amount || 0), 0);
 
-      if (userProfile.profileType === 'public') {
-        // Platform fees on my earnings (completed invites as pal)
-        completedReceivedInvites.forEach(invite => {
-          const incentiveAmount = invite.incentiveAmount || invite.price || 0;
-          const platformFee = invite.platformFee || (incentiveAmount * 0.05);
-          issuedFeesForInvitesRelatedToMe += platformFee;
-          
-          const netEarning = incentiveAmount - platformFee;
-          totalEarnings += netEarning;
-          
-          if (!invite.platformFeePaid) {
-            platformFeesOwed += platformFee;
-          }
-        });
-
-        // Platform fees on cancellation compensation - CORRECTED LOGIC
-        cancelledReceivedInvites.forEach(invite => {
-          if (invite.palCompensation && invite.palCompensation > 0) {
-            // Platform fee should be 5% of original price, not compensation
-            const originalPrice = invite.price || 0;
-            const platformFee = invite.platformFee || (originalPrice * 0.05);
-            issuedFeesForCancellationsRelatedToMe += platformFee;
-            
-            // Total earnings should be compensation minus platform fee
-            const compensation = invite.palCompensation;
-            const netCompensation = compensation - platformFee;
-            totalEarnings += netCompensation;
-            
-            // For cancellation compensation, if payment was made but platform fee not settled
-            if (invite.cancellationFeePaid && !invite.platformFeePaid) {
-              platformFeesOwed += platformFee;
-            }
-          }
-        });
-      }
+      // Calculate total earnings from actual received payments minus platform fees
+      const allReceivedPayments = [
+        ...completedReceivedIncentivePayments,
+        ...completedReceivedCancellationPayments,
+        ...outsideFeesPayments
+      ];
+      const grossEarnings = allReceivedPayments.reduce((total, payment) => total + (payment.amount || 0), 0);
+      const paidPlatformFees = myPlatformFees.filter(f => f.status === 'paid')
+        .reduce((total, fee) => total + (fee.amount || 0), 0);
+      totalEarnings = grossEarnings - paidPlatformFees - platformFeesOwed;
 
       // 9. FINAL BALANCE CALCULATIONS
       const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + platformFeesOwed;
@@ -317,8 +295,8 @@ const Profile = ({ user, userProfile }) => {
       // Calculate the net balance
       const netBalance = totalToReceive - totalOwed;
       
-      const pendingBalanceToPayToPlatform = Math.max(0, -netBalance); // What I owe to platform
-      const balanceInFavor = Math.max(0, netBalance); // What platform owes me
+      const pendingBalanceToPayToPlatform = Math.max(0, -netBalance);
+      const balanceInFavor = Math.max(0, netBalance);
 
       // Update user's pendingBalance field in database if it differs from calculated amount
       const userRef = doc(db, 'users', user.uid);
