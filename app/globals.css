@@ -2288,6 +2288,160 @@ textarea {
   margin-top: 12px;
 }
 
+/* Pending Payments Warning Styles */
+.pending-payments-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pending-payments-warning.loading {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.pending-payments-warning.success {
+  background: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.warning-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #856404;
+}
+
+.pending-payments-warning.success .warning-content h4 {
+  color: #155724;
+}
+
+.warning-content p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.pending-breakdown {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.breakdown-item span:first-child {
+  color: #6c757d;
+}
+
+.breakdown-item span:last-child {
+  font-weight: 600;
+  color: #dc3545;
+}
+
+.pending-details {
+  margin: 12px 0;
+}
+
+.pending-details summary {
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  color: #495057;
+  padding: 8px 0;
+}
+
+.pending-details summary:hover {
+  color: var(--cyber-purple);
+}
+
+.pending-payments-list {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.pending-payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.pending-payment-item.incentive_payment {
+  background: #ffeaa7;
+}
+
+.pending-payment-item.cancellation_fee {
+  background: #ffcccb;
+}
+
+.payment-info {
+  flex: 1;
+}
+
+.payment-desc {
+  display: block;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 2px;
+}
+
+.payment-date {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.payment-amount {
+  font-weight: 600;
+  color: #dc3545;
+}
+
+.more-items {
+  text-align: center;
+  font-style: italic;
+  color: #6c757d;
+  margin: 8px 0 0 0;
+  font-size: 13px;
+}
+
+.warning-note {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  padding: 10px;
+  margin: 12px 0 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 3px solid #ffc107;
+}
+
 /* Pals Section Styles */
 .pals-section {
   padding: 20px;

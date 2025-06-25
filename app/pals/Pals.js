@@ -26,6 +26,8 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     endTime: '',
     price: ''
   });
+  const [pendingPaymentsData, setPendingPaymentsData] = useState(null);
+  const [loadingPendingPayments, setLoadingPendingPayments] = useState(false);
 
   useEffect(() => {
     if (user?.uid && userProfile) {
@@ -34,7 +36,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   }, [user?.uid, userProfile]);
 
-  
+
 
   const loadPals = async () => {
     if (!user?.uid) return;
@@ -103,7 +105,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   };
 
-  
+
 
   const loadPalPosts = async (palId) => {
     if (!palId) return;
@@ -114,7 +116,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         collection(db, 'posts'),
         where('authorId', '==', palId)
       );
-      
+
       const postsSnapshot = await getDocs(postsQuery);
       const posts = postsSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -126,7 +128,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
         return bTime - aTime;
       });
-      
+
       setSelectedPalPosts(posts);
     } catch (error) {
       console.error('Error loading pal posts:', error);
@@ -298,7 +300,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       confirmMessage += `Current Invite: $${incentiveAmount.toFixed(2)}\n`;
       confirmMessage += `Outstanding Fees: $${totalOwed.toFixed(2)}\n`;
       confirmMessage += `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n`;
-      
+
       confirmMessage += `BREAKDOWN OF OUTSTANDING FEES:\n`;
       if (incentivePaymentsOwed > 0) {
         confirmMessage += `• Unpaid Incentive Payments: $${incentivePaymentsOwed.toFixed(2)}\n`;
@@ -309,7 +311,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       if (platformFeesOwed > 0) {
         confirmMessage += `• Platform Fees Owed: $${platformFeesOwed.toFixed(2)}\n`;
       }
-      
+
       if (pendingPayments.length > 0) {
         confirmMessage += `\nDETAILED PENDING PAYMENTS:\n`;
         pendingPayments.sort((a, b) => b.date - a.date).slice(0, 3).forEach(payment => {
@@ -319,12 +321,12 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
           confirmMessage += `... and ${pendingPayments.length - 3} more items\n`;
         }
       }
-      
+
       confirmMessage += `\n💡 Important: Your outstanding fees will be automatically included in this payment.\n\n`;
       confirmMessage += `Do you want to continue?`;
 
       const confirmed = window.confirm(confirmMessage);
-      
+
       if (!confirmed) {
         return;
       }
@@ -373,25 +375,182 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     setSelectedPal(pal);
     setShowProfileModal(false);
     setShowInviteModal(true);
+
+    // Load pending payments when the invite modal is opened
+    loadPendingPayments();
   };
 
-  
+  const loadPendingPayments = async () => {
+    setLoadingPendingPayments(true);
+    try {
+      // Get sent invites to calculate what user owes
+      const sentInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'sent',
+        ...doc.data()
+      }));
+
+      // Get received invites to calculate platform fees owed (for public profiles)
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'received',
+        ...doc.data()
+      }));
+
+      let totalOwed = 0;
+      let incentivePaymentsOwed = 0;
+      let cancellationFeesOwed = 0;
+      let platformFeesOwed = 0;
+      let pendingPayments = [];
+
+
+      // Calculate platform fees owed (for public profiles only)
+      if (userProfile.profileType === 'public') {
+        // Completed invites where user was the pal
+        const completedAsPal = receivedInvites.filter(invite =>
+          invite.status === 'completed' && invite.paymentConfirmed === true
+        );
+
+        // Cancelled invites where user received compensation as pal
+        const cancelledAsPal = receivedInvites.filter(invite =>
+          invite.status === 'cancelled' &&
+          invite.palCompensation && invite.palCompensation > 0
+        );
+
+        const allEarningInvites = [...completedAsPal, ...cancelledAsPal];
+
+        allEarningInvites.forEach(invite => {
+          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
+          const platformFee = invite.platformFee || (amount * 0.05);
+          // Only add to owed if not already paid to platform
+          if (!invite.platformFeePaid) {
+            platformFeesOwed += platformFee;
+          }
+        });
+      }
+
+      // Calculate outstanding amounts for sent invites
+      // 1. Total issued by completed invites (finished, payment_done, completed status)
+      const completedInvites = sentInvites.filter(invite =>
+        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      );
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      // 2. Total paid by completed invites (only those confirmed by pal)
+      const paidCompletedInvites = sentInvites.filter(invite =>
+        invite.status === 'completed' && invite.paymentConfirmed === true
+      );
+      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      // 3. Total issued by cancellation fees
+      const cancelledInvitesWithFees = sentInvites.filter(invite =>
+        invite.status === 'cancelled' &&
+        invite.cancellationFee && invite.cancellationFee > 0
+      );
+      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // 4. Total paid by cancellation fees (marked as paid)
+      const paidCancellationFees = cancelledInvitesWithFees.filter(invite =>
+        invite.cancellationFeePaid === true
+      );
+      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // Calculate outstanding amounts
+      incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
+      cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
+      platformFeesOwed = platformFeesOwed;
+
+      // Total amount user owes (from sent invites + platform fees from received invites)
+      totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
+
+      // Build pending payments list
+      // Add unpaid incentive payments (completed but not confirmed by pal)
+      const unpaidCompletedInvites = sentInvites.filter(invite =>
+        ['finished', 'payment_done'].includes(invite.status) &&
+        invite.status !== 'completed'
+      );
+      unpaidCompletedInvites.forEach(invite => {
+        pendingPayments.push({
+          id: invite.id,
+          type: 'incentive_payment',
+          amount: invite.price || 0,
+          description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
+          date: invite.finishedAt?.toDate?.() || invite.paymentDoneAt?.toDate?.() || new Date(),
+          status: invite.status
+        });
+      });
+
+      // Add unpaid cancellation fees
+      const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite =>
+        !invite.cancellationFeePaid
+      );
+      unpaidCancellationFees.forEach(cancelledInvite => {
+        pendingPayments.push({
+          id: `cancel_fee_${cancelledInvite.id}`,
+          type: 'cancellation_fee',
+          amount: cancelledInvite.cancellationFee,
+          description: `Unpaid cancellation fee for "${cancelledInvite.title}" to ${cancelledInvite.toUsername}`,
+          date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
+          inviteId: cancelledInvite.id
+        });
+      });
+
+      setPendingPaymentsData({
+        totalOwed,
+        incentivePaymentsOwed,
+        cancellationFeesOwed,
+        platformFeesOwed,
+        pendingPayments
+      });
+
+    } catch (error) {
+      console.error('Error calculating pending payments:', error);
+      setPendingPaymentsData({
+        totalOwed: userProfile.pendingBalance || 0,
+        incentivePaymentsOwed: 0,
+        cancellationFeesOwed: 0,
+        platformFeesOwed: 0,
+        pendingPayments: []
+      });
+    } finally {
+      setLoadingPendingPayments(false);
+    }
+  };
+
 
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return 'Just now';
     const now = new Date();
     const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
+
     return postTime.toLocaleDateString();
   };
 
@@ -537,6 +696,76 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
               <p className="invite-form-subtitle">Create a hangout plan and set your incentive</p>
             </div>
 
+            {/* Pending Payments Warning */}
+            {loadingPendingPayments ? (
+              <div className="pending-payments-warning loading">
+                <div className="warning-icon">⏳</div>
+                <div className="warning-content">
+                  <p>Checking for outstanding fees...</p>
+                </div>
+              </div>
+            ) : pendingPaymentsData && pendingPaymentsData.totalOwed > 0 ? (
+              <div className="pending-payments-warning">
+                <div className="warning-icon">⚠️</div>
+                <div className="warning-content">
+                  <h4>Outstanding Fees Notice</h4>
+                  <p>You have <strong>${pendingPaymentsData.totalOwed.toFixed(2)}</strong> in outstanding fees that will be automatically added to this payment.</p>
+
+                  <div className="pending-breakdown">
+                    {pendingPaymentsData.incentivePaymentsOwed > 0 && (
+                      <div className="breakdown-item">
+                        <span>Unpaid Incentive Payments:</span>
+                        <span>${pendingPaymentsData.incentivePaymentsOwed.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {pendingPaymentsData.cancellationFeesOwed > 0 && (
+                      <div className="breakdown-item">
+                        <span>Unpaid Cancellation Fees:</span>
+                        <span>${pendingPaymentsData.cancellationFeesOwed.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {pendingPaymentsData.platformFeesOwed > 0 && (
+                      <div className="breakdown-item">
+                        <span>Platform Fees Owed:</span>
+                        <span>${pendingPaymentsData.platformFeesOwed.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {pendingPaymentsData.pendingPayments.length > 0 && (
+                    <details className="pending-details">
+                      <summary>View detailed breakdown ({pendingPaymentsData.pendingPayments.length} items)</summary>
+                      <div className="pending-payments-list">
+                        {pendingPaymentsData.pendingPayments.slice(0, 5).map(payment => (
+                          <div key={`${payment.type}-${payment.id}`} className={`pending-payment-item ${payment.type}`}>
+                            <div className="payment-info">
+                              <span className="payment-desc">{payment.description}</span>
+                              <span className="payment-date">{payment.date.toLocaleDateString()}</span>
+                            </div>
+                            <span className="payment-amount">${payment.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
+                        {pendingPaymentsData.pendingPayments.length > 5 && (
+                          <p className="more-items">... and {pendingPaymentsData.pendingPayments.length - 5} more items</p>
+                        )}
+                      </div>
+                    </details>
+                  )}
+
+                  <p className="warning-note">
+                    💡 Your total payment will be: <strong>Invite Amount + ${pendingPaymentsData.totalOwed.toFixed(2)} outstanding fees</strong>
+                  </p>
+                </div>
+              </div>
+            ) : pendingPaymentsData && pendingPaymentsData.totalOwed === 0 ? (
+              <div className="pending-payments-warning success">
+                <div className="warning-icon">✅</div>
+                <div className="warning-content">
+                  <p>Great! You have no outstanding fees. Your payment will only include the invite amount.</p>
+                </div>
+              </div>
+            ) : null}
+
             <div className="invite-form">
               <div className="form-row">
                 <div className="form-group full-width">
@@ -659,7 +888,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
 
       <ProfileModal
         showModal={showProfileModal}
-        onClose={() => {
+        onClose={() =>{
           setShowProfileModal(false);
           setSelectedPalPosts([]);
         }}
@@ -675,7 +904,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         onFavoriteChange={refreshUserProfile}
       />
 
-      
+
     </div>
   );
 };
