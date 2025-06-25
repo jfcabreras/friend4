@@ -513,6 +513,30 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         });
       });
 
+      // Add platform fees as individual pending items if user has public profile
+      if (userProfile.profileType === 'public' && platformFeesOwed > 0) {
+        // Get completed and cancelled invites where user was pal with unpaid platform fees
+        const completedAsPal = receivedInvites.filter(invite =>
+          invite.status === 'completed' && invite.paymentConfirmed === true && !invite.platformFeePaid
+        );
+        const cancelledAsPal = receivedInvites.filter(invite =>
+          invite.status === 'cancelled' && invite.palCompensation && invite.palCompensation > 0 && !invite.platformFeePaid
+        );
+
+        [...completedAsPal, ...cancelledAsPal].forEach(invite => {
+          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
+          const platformFee = invite.platformFee || (amount * 0.05);
+          pendingPayments.push({
+            id: `platform_fee_${invite.id}`,
+            type: 'platform_fee',
+            amount: platformFee,
+            description: `Platform fee (5%) for "${invite.title}" from ${invite.fromUsername}`,
+            date: invite.status === 'completed' ? (invite.completedAt?.toDate?.() || new Date()) : (invite.cancelledAt?.toDate?.() || new Date()),
+            inviteId: invite.id
+          });
+        });
+      }
+
       setPendingPaymentsData({
         totalOwed,
         incentivePaymentsOwed,
