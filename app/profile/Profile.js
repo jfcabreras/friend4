@@ -300,6 +300,11 @@ const Profile = ({ user, userProfile }) => {
         });
       });
 
+      // Get cancelled invites with fees from sent invites
+      const cancelledInvitesWithFees = sentInvites.filter(invite => 
+        invite.status === 'cancelled' && invite.cancellationFee && invite.cancellationFee > 0
+      );
+
       // Add unpaid cancellation fees
       const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite => 
         !invite.cancellationFeePaid
