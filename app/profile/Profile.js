@@ -121,17 +121,15 @@ const Profile = ({ user, userProfile }) => {
         ...receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       ];
 
-      // Get current pending balance from user profile (includes unpaid cancellation fees)
-      const currentPendingBalance = userProfile.pendingBalance || 0;
       // Only show total earnings for public users (pals)
       const totalEarnings = userProfile.profileType === 'public' ? (userProfile.totalEarnings || 0) : 0;
 
-      // Calculate incentives owed for accepted invites where user is the sender
+      // Calculate incentives owed for accepted invites where user is the sender (not yet completed)
       const acceptedSentInvites = allInvites.filter(invite => 
         invite.status === 'accepted' && invite.fromUserId === user.uid
       );
 
-      // Get all cancelled invites where user was charged a fee
+      // Get all cancelled invites where user was charged a fee and check payment status
       const userCancelledInvites = allInvites.filter(invite => 
         invite.status === 'cancelled' && 
         invite.fromUserId === user.uid &&
@@ -153,8 +151,8 @@ const Profile = ({ user, userProfile }) => {
         return total + (invite.price || 0);
       }, 0);
 
-      // Total amount user owes (incentives + unpaid cancellation fees + any other pending balance)
-      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + currentPendingBalance;
+      // Total amount user owes (incentives + unpaid cancellation fees)
+      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed;
 
       // Build pending payments list
       const pendingPayments = [];
@@ -182,17 +180,6 @@ const Profile = ({ user, userProfile }) => {
             date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
             inviteId: cancelledInvite.id
           });
-        });
-      }
-
-      // Add other pending balance if exists
-      if (currentPendingBalance > 0 && currentPendingBalance !== cancellationFeesOwed) {
-        pendingPayments.push({
-          id: 'other_pending',
-          type: 'other_fees',
-          amount: currentPendingBalance - cancellationFeesOwed,
-          description: 'Other pending fees',
-          date: new Date()
         });
       }
 
