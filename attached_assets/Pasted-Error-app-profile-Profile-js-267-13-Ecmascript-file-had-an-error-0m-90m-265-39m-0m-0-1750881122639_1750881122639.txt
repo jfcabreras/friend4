@@ -1,0 +1,23 @@
+Error: ./app/profile/Profile.js:267:13
+Ecmascript file had an error
+[0m [90m 265 |[39m[0m
+[0m [90m 266 |[39m       [90m// Use stored total earnings directly (platform fees already accounted for in stored values)[39m[0m
+[0m[31m[1m>[22m[39m[90m 267 |[39m       [36mconst[39m totalEarnings [33m=[39m userProfile[33m.[39mtotalEarnings [33m||[39m [35m0[39m[33m;[39m[0m
+[0m [90m     |[39m             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 268 |[39m[0m
+[0m [90m 269 |[39m       [90m// Calculate the net balance dynamically[39m[0m
+[0m [90m 270 |[39m       [36mconst[39m netBalance [33m=[39m totalToReceive [33m-[39m totalOwed[33m;[39m[0m
+
+the name `totalEarnings` is defined multiple times
+    at BuildError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/%5Broot-of-the-server%5D__e2c08166._.js:17395:41)
+    at react-stack-bottom-frame (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:13596:24)
+    at renderWithHooks (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:3560:24)
+    at updateFunctionComponent (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:5317:21)
+    at beginWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:5916:24)
+    at runWithFiberInDEV (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:1335:74)
+    at performUnitOfWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:7988:97)
+    at workLoopSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:7880:40)
+    at renderRootSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:7863:13)
+    at performWorkOnRoot (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:7602:212)
+    at performWorkOnRootViaSchedulerTask (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_react-dom_82bb97c6._.js:8566:9)
+    at MessagePort.performWorkUntilDeadline (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_a51498a5._.js:1119:64)
