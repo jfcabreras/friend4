@@ -346,8 +346,8 @@ const Invites = ({ user, userProfile }) => {
     console.log('User pending balance:', pendingBalance);
     console.log('User document data:', userDoc.data());
     
-    // If there's a pending balance, just show it without recalculating
-    // The Profile.js already handles the correct calculation and excludes appropriate items
+    // Use pending balance directly from profile - this already excludes the current invite
+    // and includes only actual outstanding fees (cancellation fees, platform fees, etc.)
     let breakdown = null;
     
     if (pendingBalance > 0) {
@@ -362,7 +362,7 @@ const Invites = ({ user, userProfile }) => {
       setPendingFeesBreakdown(null);
     }
     
-    // Calculate total payment amount including pending fees
+    // Calculate total payment amount: current invite + pending fees from profile
     const incentiveAmount = totalPaymentAmount || invite.totalPaymentAmount || invite.price;
     const totalWithPendingFees = incentiveAmount + pendingBalance;
     
