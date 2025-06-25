@@ -406,10 +406,11 @@ const Invites = ({ user, userProfile }) => {
         });
       }
 
-      // Calculate unpaid incentive payments (same as Profile.js)
+      // Calculate unpaid incentive payments (same as Profile.js) - excluding current invite
       const unpaidCompletedInvites = sentInvites.filter(invite => 
         ['finished', 'payment_done'].includes(invite.status) && 
-        invite.status !== 'completed'
+        invite.status !== 'completed' &&
+        invite.id !== inviteId // Exclude the current invite being processed
       );
 
       // Calculate unpaid cancellation fees (same as Profile.js)
