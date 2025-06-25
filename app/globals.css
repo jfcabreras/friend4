@@ -5558,19 +5558,18 @@ textarea {
   .financial-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .comprehensive-financial-tracking {
     padding: 16px;
   }
-  
+
   .financial-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .financial-value {
     align-self: flex-end;
   }
-}00;
 }
