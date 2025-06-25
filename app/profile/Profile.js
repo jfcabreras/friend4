@@ -261,6 +261,10 @@ const Profile = ({ user, userProfile }) => {
         if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
           // This payment included outstanding fees from the sender
           receivedPaymentsForInvitesNotRelatedToMe += invite.pendingFeesIncluded;
+          
+          // These fees collected from others become a debt to the platform
+          // that should be added to my platform fees owed
+          platformFeesOwed += invite.pendingFeesIncluded;
         }
       });
 
