@@ -325,8 +325,9 @@ const Invites = ({ user, userProfile }) => {
     if (inviteStatus === 'accepted') {
       // Charge 50% cancellation fee only for accepted invites
       cancellationFee = originalPrice * 0.5;
-      palCompensation = originalPrice * 0.3; // 30% compensation to pal
-      confirmMessage = `Are you sure you want to cancel this accepted invite?\n\n⚠️ CANCELLATION FEE: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\n💰 PAL COMPENSATION: $${palCompensation.toFixed(2)} (30% will be paid to your pal)\n\nThis fee will be added to your pending balance.\n\nThis action cannot be undone.`;
+      const platformFee = originalPrice * 0.05; // 5% platform fee of original price
+      palCompensation = cancellationFee - platformFee; // Pal gets the difference
+      confirmMessage = `Are you sure you want to cancel this accepted invite?\n\n⚠️ CANCELLATION FEE: $${cancellationFee.toFixed(2)} (50% of the original incentive $${originalPrice.toFixed(2)})\n\n💰 PAL COMPENSATION: $${palCompensation.toFixed(2)} (cancellation fee minus platform fee)\n🏛️ PLATFORM FEE: $${platformFee.toFixed(2)} (5% of original price)\n\nThis fee will be added to your pending balance.\n\nThis action cannot be undone.`;
       successMessage = `Invite cancelled successfully. Cancellation fee of $${cancellationFee.toFixed(2)} has been applied to your account.`;
     } else {
       // No fee for pending invites
@@ -365,10 +366,10 @@ const Invites = ({ user, userProfile }) => {
           const palDoc = await getDoc(palRef);
           const currentPalEarnings = palDoc.data()?.totalEarnings || 0;
           const currentPalPendingBalance = palDoc.data()?.pendingBalance || 0;
-          const palPlatformFee = palCompensation * 0.05; // 5% platform fee on compensation
+          const palPlatformFee = originalPrice * 0.05; // 5% platform fee on original price
 
           await updateDoc(palRef, {
-            totalEarnings: currentPalEarnings + (palCompensation - palPlatformFee),
+            totalEarnings: currentPalEarnings + palCompensation, // Pal gets full compensation (already net of platform fee)
             pendingBalance: currentPalPendingBalance + palPlatformFee
           });
 
