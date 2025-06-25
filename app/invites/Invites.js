@@ -21,7 +21,7 @@ const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
 
   const calculateOwnOutstandingFees = async () => {
     if (!user?.uid) return;
-    
+
     setLoading(true);
     try {
       // Get sent invites to calculate what user owes
@@ -71,9 +71,9 @@ const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
         });
       }
 
-      // Calculate outstanding amounts for sent invites
+      // Calculate outstanding amounts for sent invites (excluding current invite)
       const completedInvites = sentInvites.filter(inv => 
-        ['finished', 'payment_done', 'completed'].includes(inv.status)
+        ['finished', 'payment_done', 'completed'].includes(inv.status) && inv.id !== invite.id
       );
       const totalIssuedByCompletedInvites = completedInvites.reduce((total, inv) => {
         return total + (inv.price || 0);
@@ -122,7 +122,7 @@ const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
 
   const calculateSenderOutstandingFees = async () => {
     if (!invite.fromUserId) return;
-    
+
     setLoading(true);
     try {
       // Get sender's sent invites
@@ -177,9 +177,9 @@ const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
         });
       }
 
-      // Calculate outstanding amounts for sent invites
+      // Calculate outstanding amounts for sent invites (excluding current invite if applicable)
       const completedInvites = sentInvites.filter(inv => 
-        ['finished', 'payment_done', 'completed'].includes(inv.status)
+        ['finished', 'payment_done', 'completed'].includes(inv.status) && inv.id !== invite.id
       );
       const totalIssuedByCompletedInvites = completedInvites.reduce((total, inv) => {
         return total + (inv.price || 0);
@@ -654,7 +654,7 @@ const Invites = ({ user, userProfile }) => {
 
   const finishInvite = async (inviteId) => {
     setFinishInviteId(inviteId);
-    
+
     // Calculate pending fees to show in finish modal
     try {
       // Get sent invites to calculate what user owes
@@ -704,9 +704,9 @@ const Invites = ({ user, userProfile }) => {
         });
       }
 
-      // Calculate outstanding amounts for sent invites
+      // Calculate outstanding amounts for sent invites (excluding current invite)
       const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status)
+        ['finished', 'payment_done', 'completed'].includes(invite.status) && invite.id !== invite.id
       );
       const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
         return total + (invite.price || 0);
@@ -835,10 +835,10 @@ const Invites = ({ user, userProfile }) => {
         });
       }
 
-      // Calculate outstanding amounts for sent invites
+      // Calculate outstanding amounts for sent invites (excluding current invite if applicable)
       // 1. Total issued by completed invites (finished, payment_done, completed status)
       const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status)
+        ['finished', 'payment_done', 'completed'].includes(invite.status) && inv.id !== invite.id
       );
       const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
         return total + (invite.price || 0);
@@ -1044,7 +1044,7 @@ const Invites = ({ user, userProfile }) => {
                 where('status', '==', 'issued')
               );
               const platformFeesSnapshot = await getDocs(platformFeesQuery);
-              
+
               if (!platformFeesSnapshot.empty) {
                 const platformFeeDoc = platformFeesSnapshot.docs[0];
                 await updateDoc(doc(db, 'platformFees', platformFeeDoc.id), {
@@ -1178,7 +1178,7 @@ const Invites = ({ user, userProfile }) => {
         where('status', '==', 'issued')
       );
       const platformFeesSnapshot = await getDocs(platformFeesQuery);
-      
+
       for (const platformFeeDoc of platformFeesSnapshot.docs) {
         await updateDoc(doc(db, 'platformFees', platformFeeDoc.id), {
           status: 'received_by_platform',
@@ -1714,7 +1714,7 @@ const Invites = ({ user, userProfile }) => {
               />
               <input
                 type="date"
-                value={editFormData.date || ''}
+                value={editFormData.date ||''}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
                 required
               />
@@ -1760,13 +1760,13 @@ const Invites = ({ user, userProfile }) => {
                 return (
                   <>
                     <h4>Next Steps:</h4>
-                    
+
                     {isAuthor && pendingFeesBreakdown && pendingFeesBreakdown.totalAmount > 0 && (
                       <div className="pending-fees-preview">
                         <div className="pending-fees-alert">
                           <h5>⚠️ Outstanding Fees Notice</h5>
                           <p>You have <strong>${pendingFeesBreakdown.totalAmount.toFixed(2)}</strong> in outstanding fees that will be included in your payment:</p>
-                          
+
                           <div className="fees-breakdown-preview">
                             {pendingFeesBreakdown.incentivePaymentsOwed > 0 && (
                               <div className="fee-item">
@@ -1791,12 +1791,12 @@ const Invites = ({ user, userProfile }) => {
                               <span>${(invite.price + pendingFeesBreakdown.totalAmount).toFixed(2)}</span>
                             </div>
                           </div>
-                          
+
                           <p className="payment-note">💡 Your pal will receive ${invite.price.toFixed(2)} (the invite amount), and ${pendingFeesBreakdown.totalAmount.toFixed(2)} will clear your outstanding platform debts.</p>
                         </div>
                       </div>
                     )}
-                    
+
                     {isAuthor && (!pendingFeesBreakdown || pendingFeesBreakdown.totalAmount === 0) && (
                       <div className="no-fees-notice">
                         <p>✅ Great! You have no outstanding fees. Your payment will only include the invite amount of ${invite.price.toFixed(2)}.</p>
@@ -1874,7 +1874,7 @@ const Invites = ({ user, userProfile }) => {
                   <h4>⚠️ Outstanding Fees Included:</h4>
                   <p>This payment includes <strong>${paymentToConfirm.pendingFeesIncluded.toFixed(2)}</strong> in outstanding fees that {paymentToConfirm.fromUsername} owed to the platform.</p>
 
-              
+
                 <div className="payment-breakdown-confirm">
                 <div className="breakdown-row">
                   <span>Your Incentive Amount:</span>
@@ -1889,14 +1889,14 @@ const Invites = ({ user, userProfile }) => {
                   <span>${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)}</span>
                 </div>
               </div>
-              
 
-                  
+
+
                 <div className="important-notice">
                   <p><strong>💡 Important:</strong> The outstanding fees (${(paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)}) are debts that {paymentToConfirm.fromUsername} owed to the platform administration, not to you. You should only receive the incentive amount (${(paymentToConfirm.calculatedBaseAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}) for your time.</p>
                   <p><strong>📋 Confirm Receipt:</strong> By clicking "Yes", you confirm that you received the full payment of ${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)} in cash, which includes both your incentive and {paymentToConfirm.fromUsername}'s outstanding platform fees.</p>
                 </div>
-              
+
                 </div>
               )}
 
