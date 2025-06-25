@@ -292,10 +292,13 @@ const Profile = ({ user, userProfile }) => {
         // Platform fees on cancellation compensation - CORRECTED LOGIC
         cancelledReceivedInvites.forEach(invite => {
           if (invite.palCompensation && invite.palCompensation > 0) {
-            const compensation = invite.palCompensation;
-            const platformFee = invite.platformFee || (compensation * 0.05);
+            // Platform fee should be 5% of original price, not compensation
+            const originalPrice = invite.price || 0;
+            const platformFee = invite.platformFee || (originalPrice * 0.05);
             issuedFeesForCancellationsRelatedToMe += platformFee;
             
+            // Total earnings should be compensation minus platform fee
+            const compensation = invite.palCompensation;
             const netCompensation = compensation - platformFee;
             totalEarnings += netCompensation;
             
