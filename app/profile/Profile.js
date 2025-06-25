@@ -41,7 +41,35 @@ const Profile = ({ user, userProfile }) => {
     totalPaidByCompletedInvites: 0,
     totalIssuedByCancellationFees: 0,
     totalPaidByCancellationFees: 0,
-    pendingPayments: []
+    pendingPayments: [],
+    
+    // Comprehensive financial tracking
+    issuedForIncentivePayments: 0,
+    issuedForCancelledInvites: 0,
+    paidForIncentivePayments: 0,
+    paidForCancelledInvites: 0,
+    pendingPaymentsForIncentives: 0,
+    pendingPaymentsForCancelled: 0,
+    
+    // Payments related to me (as recipient)
+    issuedPaymentsForInvitesRelatedToMe: 0,
+    issuedPaymentsForCancelledInvitesRelatedToMe: 0,
+    receivedPaymentsForInvitesRelatedToMe: 0,
+    receivedPaymentsForCancelledInvitesRelatedToMe: 0,
+    paymentsForInvitesPendingToReceive: 0,
+    paymentsForCancelledInvitesPendingToReceive: 0,
+    
+    // Payments not related to me (outstanding fees from others)
+    receivedPaymentsForInvitesNotRelatedToMe: 0,
+    receivedPaymentsForCancelledInvitesNotRelatedToMe: 0,
+    
+    // Platform fees
+    issuedFeesForCancellationsRelatedToMe: 0,
+    issuedFeesForInvitesRelatedToMe: 0,
+    
+    // Final balances
+    pendingBalanceToPayToPlatform: 0,
+    balanceInFavor: 0
   });
 
   useEffect(() => {
@@ -148,92 +176,134 @@ const Profile = ({ user, userProfile }) => {
         ...doc.data()
       }));
 
-      // Calculate earnings from received invites (as a pal)
+      // === COMPREHENSIVE FINANCIAL TRACKING ===
+      
+      // Initialize all tracking variables
       let totalEarnings = 0;
       let platformFeesOwed = 0;
+      
+      // 1. ISSUED PAYMENTS (What I owe to others)
+      const completedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      );
+      const issuedForIncentivePayments = completedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const cancelledInvitesWithFees = sentInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.cancellationFee && invite.cancellationFee > 0
+      );
+      const issuedForCancelledInvites = cancelledInvitesWithFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // 2. PAID PAYMENTS (What I've already paid)
+      const paidCompletedInvites = sentInvites.filter(invite => 
+        invite.status === 'completed' && invite.paymentConfirmed === true
+      );
+      const paidForIncentivePayments = paidCompletedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
+        invite.cancellationFeePaid === true
+      );
+      const paidForCancelledInvites = paidCancellationFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // 3. PENDING PAYMENTS (What I still owe)
+      const pendingPaymentsForIncentives = issuedForIncentivePayments - paidForIncentivePayments;
+      const pendingPaymentsForCancelled = issuedForCancelledInvites - paidForCancelledInvites;
+
+      // 4. PAYMENTS RELATED TO ME (As recipient - what others should pay me)
+      const finishedReceivedInvites = receivedInvites.filter(invite => 
+        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      );
+      const issuedPaymentsForInvitesRelatedToMe = finishedReceivedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const cancelledReceivedInvites = receivedInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.palCompensation && invite.palCompensation > 0
+      );
+      const issuedPaymentsForCancelledInvitesRelatedToMe = cancelledReceivedInvites.reduce((total, invite) => {
+        return total + (invite.palCompensation || 0);
+      }, 0);
+
+      // 5. RECEIVED PAYMENTS (What I've actually received)
+      const completedReceivedInvites = receivedInvites.filter(invite => 
+        invite.status === 'completed' && invite.paymentConfirmed === true
+      );
+      const receivedPaymentsForInvitesRelatedToMe = completedReceivedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      const paidCancelledReceivedInvites = cancelledReceivedInvites.filter(invite => 
+        invite.cancellationFeePaid === true && invite.palCompensation > 0
+      );
+      const receivedPaymentsForCancelledInvitesRelatedToMe = paidCancelledReceivedInvites.reduce((total, invite) => {
+        return total + (invite.palCompensation || 0);
+      }, 0);
+
+      // 6. PENDING TO RECEIVE (What others still owe me)
+      const paymentsForInvitesPendingToReceive = issuedPaymentsForInvitesRelatedToMe - receivedPaymentsForInvitesRelatedToMe;
+      const paymentsForCancelledInvitesPendingToReceive = issuedPaymentsForCancelledInvitesRelatedToMe - receivedPaymentsForCancelledInvitesRelatedToMe;
+
+      // 7. PAYMENTS NOT RELATED TO ME (Outstanding fees from others included in my payments)
+      let receivedPaymentsForInvitesNotRelatedToMe = 0;
+      let receivedPaymentsForCancelledInvitesNotRelatedToMe = 0;
+
+      // Check if I've received payments that included others' outstanding fees
+      completedReceivedInvites.forEach(invite => {
+        if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
+          // This payment included outstanding fees from the sender
+          receivedPaymentsForInvitesNotRelatedToMe += invite.pendingFeesIncluded;
+        }
+      });
+
+      // 8. PLATFORM FEES CALCULATION
+      let issuedFeesForInvitesRelatedToMe = 0;
+      let issuedFeesForCancellationsRelatedToMe = 0;
 
       if (userProfile.profileType === 'public') {
-        // Completed invites where user was the pal
-        const completedAspal = receivedInvites.filter(invite => 
-          invite.status === 'completed' && invite.paymentConfirmed === true
-        );
-
-        completedAspal.forEach(invite => {
+        // Platform fees on my earnings (completed invites as pal)
+        completedReceivedInvites.forEach(invite => {
           const incentiveAmount = invite.incentiveAmount || invite.price || 0;
           const platformFee = invite.platformFee || (incentiveAmount * 0.05);
+          issuedFeesForInvitesRelatedToMe += platformFee;
+          
           const netEarning = incentiveAmount - platformFee;
           totalEarnings += netEarning;
+          
+          if (!invite.platformFeePaid) {
+            platformFeesOwed += platformFee;
+          }
         });
 
-        // Cancelled invites where user received compensation as pal
-        const cancelledAsPal = receivedInvites.filter(invite => 
-          invite.status === 'cancelled' && 
-          invite.palCompensation && invite.palCompensation > 0
-        );
-
-        cancelledAsPal.forEach(invite => {
+        // Platform fees on cancellation compensation
+        paidCancelledReceivedInvites.forEach(invite => {
           const compensation = invite.palCompensation || 0;
           const platformFee = compensation * 0.05;
+          issuedFeesForCancellationsRelatedToMe += platformFee;
+          
           const netCompensation = compensation - platformFee;
           totalEarnings += netCompensation;
-        });
-
-        // Calculate platform fees owed (5% on earnings)
-        const allEarningInvites = [
-          ...completedAspal,
-          ...cancelledAsPal
-        ];
-
-        allEarningInvites.forEach(invite => {
-          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
-          const platformFee = invite.platformFee || (amount * 0.05);
-          // Only add to owed if not already paid to platform
+          
           if (!invite.platformFeePaid) {
             platformFeesOwed += platformFee;
           }
         });
       }
 
-      // Calculate what user owes from sent invites
-      // 1. Total issued by completed invites (finished, payment_done, completed status)
-      const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status)
-      );
-      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
-
-      // 2. Total paid by completed invites (only those confirmed by pal)
-      const paidCompletedInvites = sentInvites.filter(invite => 
-        invite.status === 'completed' && invite.paymentConfirmed === true
-      );
-      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
-
-      // 3. Total issued by cancellation fees
-      const cancelledInvitesWithFees = sentInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.cancellationFee && invite.cancellationFee > 0
-      );
-      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
-
-      // 4. Total paid by cancellation fees (marked as paid)
-      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
-        invite.cancellationFeePaid === true
-      );
-      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
-
-      // Calculate outstanding amounts for sent invites
-      const incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
-      const cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
-
-      // Total amount user owes (from sent invites + platform fees from received invites)
-      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
+      // 9. FINAL BALANCE CALCULATIONS
+      const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + platformFeesOwed;
+      const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
+      
+      const pendingBalanceToPayToPlatform = Math.max(0, totalOwed);
+      const balanceInFavor = Math.max(0, totalToReceive - totalOwed);
 
       // Update user's pendingBalance field in database if it differs from calculated amount
       const userRef = doc(db, 'users', user.uid);
@@ -284,15 +354,43 @@ const Profile = ({ user, userProfile }) => {
       setBalanceData({
         totalOwed,
         totalEarnings,
-        cancellationFeesOwed,
-        incentivePaymentsOwed,
+        cancellationFeesOwed: pendingPaymentsForCancelled,
+        incentivePaymentsOwed: pendingPaymentsForIncentives,
         platformFeesOwed,
-        // Four specific balances
-        totalIssuedByCompletedInvites,
-        totalPaidByCompletedInvites,
-        totalIssuedByCancellationFees,
-        totalPaidByCancellationFees,
-        pendingPayments: pendingPayments.sort((a, b) => b.date - a.date)
+        // Legacy fields for backward compatibility
+        totalIssuedByCompletedInvites: issuedForIncentivePayments,
+        totalPaidByCompletedInvites: paidForIncentivePayments,
+        totalIssuedByCancellationFees: issuedForCancelledInvites,
+        totalPaidByCancellationFees: paidForCancelledInvites,
+        pendingPayments: pendingPayments.sort((a, b) => b.date - a.date),
+        
+        // Comprehensive financial tracking
+        issuedForIncentivePayments,
+        issuedForCancelledInvites,
+        paidForIncentivePayments,
+        paidForCancelledInvites,
+        pendingPaymentsForIncentives,
+        pendingPaymentsForCancelled,
+        
+        // Payments related to me (as recipient)
+        issuedPaymentsForInvitesRelatedToMe,
+        issuedPaymentsForCancelledInvitesRelatedToMe,
+        receivedPaymentsForInvitesRelatedToMe,
+        receivedPaymentsForCancelledInvitesRelatedToMe,
+        paymentsForInvitesPendingToReceive,
+        paymentsForCancelledInvitesPendingToReceive,
+        
+        // Payments not related to me (outstanding fees from others)
+        receivedPaymentsForInvitesNotRelatedToMe,
+        receivedPaymentsForCancelledInvitesNotRelatedToMe,
+        
+        // Platform fees
+        issuedFeesForCancellationsRelatedToMe,
+        issuedFeesForInvitesRelatedToMe,
+        
+        // Final balances
+        pendingBalanceToPayToPlatform,
+        balanceInFavor
       });
 
     } catch (error) {
@@ -674,11 +772,17 @@ const Profile = ({ user, userProfile }) => {
 
       <div className="balance-section">
         <h3>Financial Summary</h3>
+        
+        {/* Main Balance Overview */}
         <div className="balance-summary">
           <div className="balance-grid">
             <div className="balance-item total-owed">
-              <span className="balance-amount">${(balanceData.totalOwed || 0).toFixed(2)}</span>
-              <span className="balance-label">Total to Pay</span>
+              <span className="balance-amount">${(balanceData.pendingBalanceToPayToPlatform || 0).toFixed(2)}</span>
+              <span className="balance-label">Pending Balance to Pay to Platform</span>
+            </div>
+            <div className="balance-item balance-favor">
+              <span className="balance-amount earnings">${(balanceData.balanceInFavor || 0).toFixed(2)}</span>
+              <span className="balance-label">Balance in Favor</span>
             </div>
             {userProfile.profileType === 'public' && (
               <div className="balance-item total-earned">
@@ -687,56 +791,112 @@ const Profile = ({ user, userProfile }) => {
               </div>
             )}
           </div>
-          <div className="balance-breakdown">
-            <div className="balance-detail">
-              <span className="balance-type">Outstanding Incentive Payments:</span>
-              <span className="balance-value incentive">${(balanceData.incentivePaymentsOwed || 0).toFixed(2)}</span>
+        </div>
+
+        {/* Comprehensive Financial Tracking */}
+        <div className="comprehensive-financial-tracking">
+          <h4>📊 Comprehensive Financial Tracking</h4>
+          
+          {/* Payments I Issue (What I owe to others) */}
+          <div className="financial-category">
+            <h5>💸 Payments I Issue (What I owe to others)</h5>
+            <div className="financial-grid">
+              <div className="financial-item">
+                <span className="financial-label">Issued for Incentive Payments:</span>
+                <span className="financial-value">${(balanceData.issuedForIncentivePayments || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item">
+                <span className="financial-label">Issued for Cancelled Invites:</span>
+                <span className="financial-value">${(balanceData.issuedForCancelledInvites || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item success">
+                <span className="financial-label">Paid for Incentive Payments:</span>
+                <span className="financial-value">${(balanceData.paidForIncentivePayments || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item success">
+                <span className="financial-label">Paid for Cancelled Invites:</span>
+                <span className="financial-value">${(balanceData.paidForCancelledInvites || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item pending">
+                <span className="financial-label">Pending Payments for Incentives:</span>
+                <span className="financial-value">${(balanceData.pendingPaymentsForIncentives || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item pending">
+                <span className="financial-label">Pending Payments for Cancelled:</span>
+                <span className="financial-value">${(balanceData.pendingPaymentsForCancelled || 0).toFixed(2)}</span>
+              </div>
             </div>
-            <div className="balance-detail">
-              <span className="balance-type">Outstanding Cancellation Fees:</span>
-              <span className="balance-value cancellation">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
-            </div>
-            {userProfile.profileType === 'public' && (
-              <>
-                <div className="balance-detail">
-                  <span className="balance-type">Platform Fees Owed:</span>
-                  <span className="balance-value cancellation">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
-                </div>
-                <div className="balance-detail">
-                  <span className="balance-type">Your Earnings:</span>
-                  <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
-                </div>
-              </>
-            )}
           </div>
 
-          <div className="detailed-balance-breakdown">
-            <h4>Detailed Balance Breakdown</h4>
-            <div className="balance-grid-detailed">
-              <div className="balance-category">
-                <h5>Completed Invites</h5>
-                <div className="balance-detail">
-                  <span className="balance-type">Total Issued:</span>
-                  <span className="balance-value">${(balanceData.totalIssuedByCompletedInvites || 0).toFixed(2)}</span>
-                </div>
-                <div className="balance-detail">
-                  <span className="balance-type">Total Paid (Confirmed):</span>
-                  <span className="balance-value earnings">${(balanceData.totalPaidByCompletedInvites || 0).toFixed(2)}</span>
-                </div>
+          {/* Payments Related to Me (As recipient) */}
+          <div className="financial-category">
+            <h5>💰 Payments Related to Me (As recipient)</h5>
+            <div className="financial-grid">
+              <div className="financial-item">
+                <span className="financial-label">Issued Payments for Invites Related to Me:</span>
+                <span className="financial-value">${(balanceData.issuedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
               </div>
-              <div className="balance-category">
-                <h5>Cancellation Fees</h5>
-                <div className="balance-detail">
-                  <span className="balance-type">Total Issued:</span>
-                  <span className="balance-value">${(balanceData.totalIssuedByCancellationFees || 0).toFixed(2)}</span>
-                </div>
-                <div className="balance-detail">
-                  <span className="balance-type">Total Paid:</span>
-                  <span className="balance-value earnings">${(balanceData.totalPaidByCancellationFees || 0).toFixed(2)}</span>
-                </div>
+              <div className="financial-item">
+                <span className="financial-label">Issued Payments for Cancelled Invites Related to Me:</span>
+                <span className="financial-value">${(balanceData.issuedPaymentsForCancelledInvitesRelatedToMe || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item success">
+                <span className="financial-label">Received Payments for Invites Related to Me:</span>
+                <span className="financial-value">${(balanceData.receivedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item success">
+                <span className="financial-label">Received Payments for Cancelled Invites Related to Me:</span>
+                <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesRelatedToMe || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item pending">
+                <span className="financial-label">Payments for Invites Pending to Receive:</span>
+                <span className="financial-value">${(balanceData.paymentsForInvitesPendingToReceive || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item pending">
+                <span className="financial-label">Payments for Cancelled Invites Pending to Receive:</span>
+                <span className="financial-value">${(balanceData.paymentsForCancelledInvitesPendingToReceive || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
+
+          {/* Payments Not Related to Me (Outstanding fees from others) */}
+          <div className="financial-category">
+            <h5>🔄 Payments Not Related to Me (Outstanding fees from others)</h5>
+            <div className="financial-grid">
+              <div className="financial-item special">
+                <span className="financial-label">Received Payments for Invites Not Related to Me:</span>
+                <span className="financial-value">${(balanceData.receivedPaymentsForInvitesNotRelatedToMe || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item special">
+                <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me:</span>
+                <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMe || 0).toFixed(2)}</span>
+              </div>
+            </div>
+            <p className="financial-note">
+              💡 These represent outstanding fees from other users that were included in payments made to you.
+            </p>
+          </div>
+
+          {/* Platform Fees */}
+          {userProfile.profileType === 'public' && (
+            <div className="financial-category">
+              <h5>🏛️ Platform Fees</h5>
+              <div className="financial-grid">
+                <div className="financial-item">
+                  <span className="financial-label">Issued Fees for Invites Related to Me:</span>
+                  <span className="financial-value">${(balanceData.issuedFeesForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                </div>
+                <div className="financial-item">
+                  <span className="financial-label">Issued Fees for Cancellations Related to Me:</span>
+                  <span className="financial-value">${(balanceData.issuedFeesForCancellationsRelatedToMe || 0).toFixed(2)}</span>
+                </div>
+                <div className="financial-item pending">
+                  <span className="financial-label">Platform Fees Owed:</span>
+                  <span className="financial-value">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {balanceData.pendingPayments.length > 0 && (
