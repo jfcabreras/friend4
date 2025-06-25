@@ -230,7 +230,16 @@ const Profile = ({ user, userProfile }) => {
         .filter(invite => invite.status === 'completed' && invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0)
         .reduce((total, invite) => total + (invite.pendingFeesIncluded || 0), 0);
 
-      const receivedPaymentsForCancelledInvitesNotRelatedToMe = 0; // Not implemented yet
+      // Calculate received cancellation fees from other users (when I'm the pal receiving compensation)
+      const receivedPaymentsForCancelledInvitesNotRelatedToMe = receivedInvites
+        .filter(invite => 
+          invite.status === 'cancelled' && 
+          invite.cancellationFeeRecipient === user.uid &&
+          invite.cancellationFeePaid === true &&
+          invite.cancellationFeeAmountPaid && 
+          invite.cancellationFeeAmountPaid > 0
+        )
+        .reduce((total, invite) => total + (invite.cancellationFeeAmountPaid || 0), 0);
 
       // 8. PLATFORM FEES - from database stored values
       let issuedFeesForInvitesRelatedToMe = 0;

@@ -962,7 +962,8 @@ const Invites = ({ user, userProfile }) => {
       const pendingBalance = userDoc.data()?.pendingBalance || 0;
 
       const incentiveAmount = selectedInvite.incentiveAmount || selectedInvite.price;
-      const pendingFeesIncluded = pendingBalance;
+      // Use the calculated total owed amount instead of user's stored pending balance
+      const pendingFeesIncluded = paymentAmount - incentiveAmount;
       const platformFee = incentiveAmount * 0.05; // 5% platform fee
       const netAmountToPal = incentiveAmount - platformFee;
 
@@ -1328,7 +1329,7 @@ const Invites = ({ user, userProfile }) => {
                   )}
                   {invite.status === 'payment_done' && invite.pendingFeesIncluded > 0 && (
                     <span className="pending-fees-included">
-                      ⚠️ Includes ${invite.pendingFeesIncluded.toFixed(2)} outstanding fees
+                      ⚠️ Includes ${(invite.pendingFeesIncluded || 0).toFixed(2)} outstanding fees
                     </span>
                   )}
                   {invite.status === 'finished' && (
