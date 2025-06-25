@@ -338,7 +338,7 @@ const Invites = ({ user, userProfile }) => {
       setSelectedInvite(invite);
     }
     
-    // Get user's current pending balance and calculate detailed breakdown
+    // Get user's current pending balance and calculate detailed breakdown exactly like Profile.js
     const userRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userRef);
     const pendingBalance = userDoc.data()?.pendingBalance || 0;
@@ -349,55 +349,89 @@ const Invites = ({ user, userProfile }) => {
     let breakdown = null;
     
     if (pendingBalance > 0) {
-      // Get all unpaid cancelled invites by this user
-      const cancelledInvitesQuery = query(
-        collection(db, 'planInvitations'),
-        where('fromUserId', '==', user.uid),
-        where('status', '==', 'cancelled')
-      );
-      const cancelledInvitesSnapshot = await getDocs(cancelledInvitesQuery);
-      
-      const unpaidCancellationFees = cancelledInvitesSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(invite => invite.cancellationFee > 0 && !invite.cancellationFeePaid)
-        .sort((a, b) => (a.cancelledAt?.toDate() || new Date(0)) - (b.cancelledAt?.toDate() || new Date(0)));
-
-      // Get platform fees owed from completed invites as pal
-      const receivedInvitesQuery = query(
-        collection(db, 'planInvitations'),
-        where('toUserId', '==', user.uid),
-        where('status', '==', 'completed')
-      );
-      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
-      
-      const unpaidPlatformFees = receivedInvitesSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(invite => !invite.platformFeePaidByPal && (invite.platformFee || 0) > 0);
-
-      // Also check for unpaid incentive payments from finished invites
+      // Get sent invites to calculate what user owes (same as Profile.js)
       const sentInvitesQuery = query(
         collection(db, 'planInvitations'),
         where('fromUserId', '==', user.uid)
       );
       const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'sent',
+        ...doc.data()
+      }));
+
+      // Get received invites to calculate platform fees owed (same as Profile.js)
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'received',
+        ...doc.data()
+      }));
+
+      // Calculate platform fees owed (only for public profiles)
+      let platformFeesOwed = 0;
+      let unpaidPlatformFees = [];
       
-      const unpaidIncentivePayments = sentInvitesSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(invite => 
-          ['finished', 'payment_done'].includes(invite.status) && 
-          invite.status !== 'completed'
+      if (userProfile.profileType === 'public') {
+        // Completed invites where user was the pal
+        const completedAsPal = receivedInvites.filter(invite => 
+          invite.status === 'completed' && invite.paymentConfirmed === true
         );
+
+        // Cancelled invites where user received compensation as pal
+        const cancelledAsPal = receivedInvites.filter(invite => 
+          invite.status === 'cancelled' && 
+          invite.palCompensation && invite.palCompensation > 0
+        );
+
+        // Calculate platform fees owed (5% on earnings)
+        const allEarningInvites = [
+          ...completedAsPal,
+          ...cancelledAsPal
+        ];
+
+        allEarningInvites.forEach(invite => {
+          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
+          const platformFee = invite.platformFee || (amount * 0.05);
+          // Only add to owed if not already paid to platform
+          if (!invite.platformFeePaidByPal) {
+            platformFeesOwed += platformFee;
+            unpaidPlatformFees.push(invite);
+          }
+        });
+      }
+
+      // Calculate unpaid incentive payments (same as Profile.js)
+      const unpaidCompletedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done'].includes(invite.status) && 
+        invite.status !== 'completed'
+      );
+
+      // Calculate unpaid cancellation fees (same as Profile.js)
+      const cancelledInvitesWithFees = sentInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.cancellationFee && invite.cancellationFee > 0
+      );
+      const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite => 
+        !invite.cancellationFeePaid
+      );
 
       breakdown = {
         cancellationFees: unpaidCancellationFees,
         platformFees: unpaidPlatformFees,
-        incentivePayments: unpaidIncentivePayments,
+        incentivePayments: unpaidCompletedInvites,
         totalCancellationFees: unpaidCancellationFees.reduce((sum, inv) => sum + (inv.cancellationFee || 0), 0),
-        totalPlatformFees: unpaidPlatformFees.reduce((sum, inv) => sum + (inv.platformFee || 0), 0),
-        totalIncentivePayments: unpaidIncentivePayments.reduce((sum, inv) => sum + (inv.price || 0), 0)
+        totalPlatformFees: platformFeesOwed,
+        totalIncentivePayments: unpaidCompletedInvites.reduce((sum, inv) => sum + (inv.price || 0), 0)
       };
       
       console.log('Pending fees breakdown:', breakdown);
+      console.log('Total breakdown should equal pending balance:', breakdown.totalCancellationFees + breakdown.totalPlatformFees + breakdown.totalIncentivePayments, 'vs', pendingBalance);
       
       setPendingFeesBreakdown(breakdown);
       setSelectedInvite({...invite, pendingFeesBreakdown: breakdown});
