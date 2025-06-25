@@ -37,6 +37,10 @@ const Profile = ({ user, userProfile }) => {
     totalEarnings: 0,
     cancellationFeesOwed: 0,
     incentivePaymentsOwed: 0,
+    totalIssuedByCompletedInvites: 0,
+    totalPaidByCompletedInvites: 0,
+    totalIssuedByCancellationFees: 0,
+    totalPaidByCancellationFees: 0,
     pendingPayments: []
   });
 
@@ -72,6 +76,10 @@ const Profile = ({ user, userProfile }) => {
         totalEarnings: 0,
         cancellationFeesOwed: 0,
         incentivePaymentsOwed: 0,
+        totalIssuedByCompletedInvites: 0,
+        totalPaidByCompletedInvites: 0,
+        totalIssuedByCancellationFees: 0,
+        totalPaidByCancellationFees: 0,
         pendingPayments: []
       });
     }
@@ -115,79 +123,106 @@ const Profile = ({ user, userProfile }) => {
         favoriteCount: userProfile.favorites?.length || 0
       });
 
-      // Calculate balance - only what users need to pay to pals
-      const allInvites = [
-        ...sentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        ...receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      ];
+      // Get sent invites to calculate what user owes
+      const sentInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'sent',
+        ...doc.data()
+      }));
 
       // Only show total earnings for public users (pals)
       const totalEarnings = userProfile.profileType === 'public' ? (userProfile.totalEarnings || 0) : 0;
 
-      // Calculate incentives owed for accepted invites where user is the sender (not yet completed)
-      const acceptedSentInvites = allInvites.filter(invite => 
-        invite.status === 'accepted' && invite.fromUserId === user.uid
+      // 1. Total issued by completed invites (finished, payment_done, completed status)
+      const completedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done', 'completed'].includes(invite.status)
       );
-
-      // Get all cancelled invites where user was charged a fee and check payment status
-      const userCancelledInvites = allInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.fromUserId === user.uid &&
-        invite.cancelledBy === user.uid &&
-        invite.cancellationFee && invite.cancellationFee > 0
-      );
-
-      // Calculate unpaid cancellation fees by checking cancellationFeePaid field directly
-      const unpaidCancelledServices = userCancelledInvites.filter(invite => 
-        !invite.cancellationFeePaid
-      );
-
-      const totalUnpaidCancellationFees = unpaidCancelledServices.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
-      const cancellationFeesOwed = totalUnpaidCancellationFees;
-
-      const incentivePaymentsOwed = acceptedSentInvites.reduce((total, invite) => {
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
         return total + (invite.price || 0);
       }, 0);
 
-      // Total amount user owes (incentives + unpaid cancellation fees)
+      // 2. Total paid by completed invites (only those confirmed by pal)
+      const paidCompletedInvites = sentInvites.filter(invite => 
+        invite.status === 'completed' && invite.paymentConfirmed === true
+      );
+      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      // 3. Total issued by cancellation fees
+      const cancelledInvites = sentInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.cancelledBy === user.uid &&
+        invite.cancellationFee && invite.cancellationFee > 0
+      );
+      const totalIssuedByCancellationFees = cancelledInvites.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // 4. Total paid by cancellation fees (marked as paid)
+      const paidCancellationFees = cancelledInvites.filter(invite => 
+        invite.cancellationFeePaid === true
+      );
+      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // Calculate outstanding amounts
+      const incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
+      const cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
+
+      // Total amount user owes
       const totalOwed = incentivePaymentsOwed + cancellationFeesOwed;
 
       // Build pending payments list
       const pendingPayments = [];
 
-      // Add incentive payments
-      acceptedSentInvites.forEach(invite => {
+      // Add unpaid incentive payments (completed but not confirmed by pal)
+      const unpaidCompletedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done'].includes(invite.status) && 
+        invite.status !== 'completed'
+      );
+      unpaidCompletedInvites.forEach(invite => {
         pendingPayments.push({
           id: invite.id,
           type: 'incentive_payment',
           amount: invite.price || 0,
           description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
-          date: invite.respondedAt?.toDate?.() || new Date()
+          date: invite.finishedAt?.toDate?.() || invite.paymentDoneAt?.toDate?.() || new Date(),
+          status: invite.status
         });
       });
 
-      // Add unpaid cancellation fees (only if there are actual unpaid fees)
-      if (unpaidCancelledServices.length > 0) {
-        // Add each unpaid cancellation fee as a separate line item for clarity
-        unpaidCancelledServices.forEach(cancelledInvite => {
-          pendingPayments.push({
-            id: `cancel_fee_${cancelledInvite.id}`,
-            type: 'cancellation_fee',
-            amount: cancelledInvite.cancellationFee,
-            description: `Unpaid cancellation fee for "${cancelledInvite.title}" to ${cancelledInvite.toUsername}`,
-            date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
-            inviteId: cancelledInvite.id
-          });
+      // Add unpaid cancellation fees
+      const unpaidCancellationFees = cancelledInvites.filter(invite => 
+        !invite.cancellationFeePaid
+      );
+      unpaidCancellationFees.forEach(cancelledInvite => {
+        pendingPayments.push({
+          id: `cancel_fee_${cancelledInvite.id}`,
+          type: 'cancellation_fee',
+          amount: cancelledInvite.cancellationFee,
+          description: `Unpaid cancellation fee for "${cancelledInvite.title}" to ${cancelledInvite.toUsername}`,
+          date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
+          inviteId: cancelledInvite.id
         });
-      }
+      });
 
       setBalanceData({
         totalOwed,
         totalEarnings,
         cancellationFeesOwed,
         incentivePaymentsOwed,
+        // Four specific balances
+        totalIssuedByCompletedInvites,
+        totalPaidByCompletedInvites,
+        totalIssuedByCancellationFees,
+        totalPaidByCancellationFees,
         pendingPayments: pendingPayments.sort((a, b) => b.date - a.date)
       });
 
@@ -585,11 +620,11 @@ const Profile = ({ user, userProfile }) => {
           </div>
           <div className="balance-breakdown">
             <div className="balance-detail">
-              <span className="balance-type">Incentive Payments:</span>
+              <span className="balance-type">Outstanding Incentive Payments:</span>
               <span className="balance-value incentive">${(balanceData.incentivePaymentsOwed || 0).toFixed(2)}</span>
             </div>
             <div className="balance-detail">
-              <span className="balance-type">Unpaid Cancellation Fees:</span>
+              <span className="balance-type">Outstanding Cancellation Fees:</span>
               <span className="balance-value cancellation">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
             </div>
             {userProfile.profileType === 'public' && (
@@ -598,6 +633,34 @@ const Profile = ({ user, userProfile }) => {
                 <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
               </div>
             )}
+          </div>
+
+          <div className="detailed-balance-breakdown">
+            <h4>Detailed Balance Breakdown</h4>
+            <div className="balance-grid-detailed">
+              <div className="balance-category">
+                <h5>Completed Invites</h5>
+                <div className="balance-detail">
+                  <span className="balance-type">Total Issued:</span>
+                  <span className="balance-value">${(balanceData.totalIssuedByCompletedInvites || 0).toFixed(2)}</span>
+                </div>
+                <div className="balance-detail">
+                  <span className="balance-type">Total Paid (Confirmed):</span>
+                  <span className="balance-value earnings">${(balanceData.totalPaidByCompletedInvites || 0).toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="balance-category">
+                <h5>Cancellation Fees</h5>
+                <div className="balance-detail">
+                  <span className="balance-type">Total Issued:</span>
+                  <span className="balance-value">${(balanceData.totalIssuedByCancellationFees || 0).toFixed(2)}</span>
+                </div>
+                <div className="balance-detail">
+                  <span className="balance-type">Total Paid:</span>
+                  <span className="balance-value earnings">${(balanceData.totalPaidByCancellationFees || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
