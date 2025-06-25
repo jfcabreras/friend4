@@ -176,11 +176,9 @@ const Profile = ({ user, userProfile }) => {
         ...doc.data()
       }));
 
-      // === COMPREHENSIVE FINANCIAL TRACKING ===
       // Use stored database values instead of recalculating
 
       // Get financial data from database stored values
-      let totalEarnings = userProfile.totalEarnings || 0;
       let platformFeesOwed = 0;
 
       // 1. ISSUED PAYMENTS (What I owe to others) - from database
@@ -319,6 +317,9 @@ const Profile = ({ user, userProfile }) => {
           inviteId: cancelledInvite.id
         });
       });
+
+      // Calculate total earnings dynamically from actual received payments
+      const totalEarnings = receivedPaymentsForInvitesRelatedToMe + receivedPaymentsForCancelledInvitesRelatedToMe;
 
       setBalanceData({
         totalOwed,
