@@ -1671,6 +1671,11 @@ const Invites = ({ user, userProfile }) => {
                       </div>
                     )}
 
+                    {/* Outstanding fees notice for recipients */}
+                    {!isAuthor && (
+                      <OutstandingFeesNotice invite={invite} pendingFeesBreakdown={null} />
+                    )}
+
                     <h4>Instructions:</h4>
                     <ul>
                       {isAuthor ? (
