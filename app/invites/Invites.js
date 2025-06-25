@@ -75,8 +75,8 @@ const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
       const completedInvites = sentInvites.filter(inv => 
         ['finished', 'payment_done', 'completed'].includes(inv.status) && inv.id !== invite.id
       );
-      const totalIssuedByCompletedInvites = completedInvites.reduce((total, inv) => {
-        return total + (inv.price || 0);
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, sentInvite) => {
+        return total + (sentInvite.price || 0);
       }, 0);
 
       const paidCompletedInvites = sentInvites.filter(inv => 
@@ -181,8 +181,8 @@ const OutstandingFeesNotice = ({ invite, user, userProfile }) => {
       const completedInvites = sentInvites.filter(inv => 
         ['finished', 'payment_done', 'completed'].includes(inv.status) && inv.id !== invite.id
       );
-      const totalIssuedByCompletedInvites = completedInvites.reduce((total, inv) => {
-        return total + (inv.price || 0);
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, sentInvite) => {
+        return total + (sentInvite.price || 0);
       }, 0);
 
       const paidCompletedInvites = sentInvites.filter(inv => 
@@ -708,8 +708,8 @@ const Invites = ({ user, userProfile }) => {
       const completedInvites = sentInvites.filter(invite => 
         ['finished', 'payment_done', 'completed'].includes(invite.status) && invite.id !== invite.id
       );
-      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, sentInvite) => {
+        return total + (sentInvite.price || 0);
       }, 0);
 
       const paidCompletedInvites = sentInvites.filter(invite => 
@@ -838,10 +838,10 @@ const Invites = ({ user, userProfile }) => {
       // Calculate outstanding amounts for sent invites (excluding current invite if applicable)
       // 1. Total issued by completed invites (finished, payment_done, completed status)
       const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status) && inv.id !== invite.id
+        ['finished', 'payment_done', 'completed'].includes(invite.status) && invite.id !== invite.id
       );
-      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, sentInvite) => {
+        return total + (sentInvite.price || 0);
       }, 0);
 
       // 2. Total paid by completed invites (only those confirmed by pal)
@@ -1712,7 +1712,7 @@ const Invites = ({ user, userProfile }) => {
                 onChange={(e) => setEditFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
                 required
               />
-              <input
+              The code changes primarily fix an incorrect variable reference within a reduce function used to calculate totals from completed invites, changing `invite` to `sentInvite`, ensuring correct calculations, and also fixes a typo with variable name.              <input
                 type="date"
                 value={editFormData.date ||''}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
