@@ -705,30 +705,30 @@ const Invites = ({ user, userProfile }) => {
       }
 
       // Calculate outstanding amounts for sent invites (excluding current invite)
-      const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status) && invite.id !== invite.id
+      const completedInvites = sentInvites.filter(inv => 
+        ['finished', 'payment_done', 'completed'].includes(inv.status) && inv.id !== finishInviteId
       );
       const totalIssuedByCompletedInvites = completedInvites.reduce((total, sentInvite) => {
         return total + (sentInvite.price || 0);
       }, 0);
 
-      const paidCompletedInvites = sentInvites.filter(invite => 
-        invite.status === 'completed' && invite.paymentConfirmed === true
+      const paidCompletedInvites = sentInvites.filter(inv => 
+        inv.status === 'completed' && invite.paymentConfirmed === true
       );
       const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
         return total + (invite.price || 0);
       }, 0);
 
-      const cancelledInvitesWithFees = sentInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.cancellationFee && invite.cancellationFee > 0
+      const cancelledInvitesWithFees = sentInvites.filter(inv => 
+        inv.status === 'cancelled' && 
+        inv.cancellationFee && inv.cancellationFee > 0
       );
       const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
 
-      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
-        invite.cancellationFeePaid === true
+      const paidCancellationFees = cancelledInvitesWithFees.filter(inv => 
+        inv.cancellationFeePaid === true
       );
       const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
@@ -837,7 +837,7 @@ const Invites = ({ user, userProfile }) => {
       // Calculate outstanding amounts for sent invites (excluding current invite if applicable)
       // 1. Total issued by completed invites (finished, payment_done, completed status)
       const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status) && invite.id !== invite.id
+        ['finished', 'payment_done', 'completed'].includes(invite.status) && invite.id !== inviteId
       );
       const totalIssuedByCompletedInvites = completedInvites.reduce((total, sentInvite) => {
         return total + (sentInvite.price || 0);
@@ -882,7 +882,7 @@ const Invites = ({ user, userProfile }) => {
       const unpaidCompletedInvites = sentInvites.filter(inv => 
         ['finished', 'payment_done'].includes(inv.status) && 
         inv.status !== 'completed' && 
-        inv.id !== invite.id
+        inv.id !== inviteId
       );
       unpaidCompletedInvites.forEach(inv => {
         pendingPayments.push({
