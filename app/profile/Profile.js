@@ -235,6 +235,18 @@ const Profile = ({ user, userProfile }) => {
       // Total amount user owes (from sent invites + platform fees from received invites)
       const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
 
+      // Update user's pendingBalance field in database if it differs from calculated amount
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      const currentPendingBalance = userDoc.data()?.pendingBalance || 0;
+      
+      if (Math.abs(currentPendingBalance - totalOwed) > 0.01) { // Update if difference is more than 1 cent
+        await updateDoc(userRef, {
+          pendingBalance: totalOwed,
+          lastBalanceUpdate: new Date()
+        });
+      }
+
       // Build pending payments list
       const pendingPayments = [];
 

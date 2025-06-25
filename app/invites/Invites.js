@@ -338,7 +338,7 @@ const Invites = ({ user, userProfile }) => {
       setSelectedInvite(invite);
     }
     
-    // Calculate pending fees from user's profile and get detailed breakdown
+    // Get user's current pending balance and calculate detailed breakdown
     const userRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userRef);
     const pendingBalance = userDoc.data()?.pendingBalance || 0;
@@ -374,12 +374,30 @@ const Invites = ({ user, userProfile }) => {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(invite => !invite.platformFeePaidByPal && (invite.platformFee || 0) > 0);
 
+      // Also check for unpaid incentive payments from finished invites
+      const sentInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      
+      const unpaidIncentivePayments = sentInvitesSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(invite => 
+          ['finished', 'payment_done'].includes(invite.status) && 
+          invite.status !== 'completed'
+        );
+
       breakdown = {
         cancellationFees: unpaidCancellationFees,
         platformFees: unpaidPlatformFees,
+        incentivePayments: unpaidIncentivePayments,
         totalCancellationFees: unpaidCancellationFees.reduce((sum, inv) => sum + (inv.cancellationFee || 0), 0),
-        totalPlatformFees: unpaidPlatformFees.reduce((sum, inv) => sum + (inv.platformFee || 0), 0)
+        totalPlatformFees: unpaidPlatformFees.reduce((sum, inv) => sum + (inv.platformFee || 0), 0),
+        totalIncentivePayments: unpaidIncentivePayments.reduce((sum, inv) => sum + (inv.price || 0), 0)
       };
+      
+      console.log('Pending fees breakdown:', breakdown);
       
       setPendingFeesBreakdown(breakdown);
       setSelectedInvite({...invite, pendingFeesBreakdown: breakdown});
@@ -1150,6 +1168,21 @@ const Invites = ({ user, userProfile }) => {
                         
                         {selectedInvite?.pendingFeesBreakdown && (
                           <div className="fees-breakdown">
+                            {selectedInvite.pendingFeesBreakdown.incentivePayments?.length > 0 && (
+                              <div className="fee-category">
+                                <h5>💰 Outstanding Incentive Payments:</h5>
+                                {selectedInvite.pendingFeesBreakdown.incentivePayments.map(invite => (
+                                  <div key={invite.id} className="fee-item">
+                                    <span>• "${invite.title}" to {invite.toUsername}</span>
+                                    <span>${(invite.price || 0).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                                <div className="fee-subtotal">
+                                  <strong>Subtotal: ${(selectedInvite.pendingFeesBreakdown.totalIncentivePayments || 0).toFixed(2)}</strong>
+                                </div>
+                              </div>
+                            )}
+                            
                             {selectedInvite.pendingFeesBreakdown.cancellationFees.length > 0 && (
                               <div className="fee-category">
                                 <h5>📋 Cancellation Fees (Your Debt to Platform):</h5>
