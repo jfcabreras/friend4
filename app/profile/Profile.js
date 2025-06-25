@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -23,7 +22,7 @@ const Profile = ({ user, userProfile }) => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [uploadingPicture, setUploadingPicture] = useState(false);
-  
+
   const [userStats, setUserStats] = useState({
     sentInvites: 0,
     receivedInvites: 0,
@@ -31,7 +30,7 @@ const Profile = ({ user, userProfile }) => {
     cancelledInvites: 0,
     favoriteCount: 0
   });
-  
+
   const [balanceData, setBalanceData] = useState({
     totalOwed: 0,
     totalEarnings: 0,
@@ -54,7 +53,7 @@ const Profile = ({ user, userProfile }) => {
       setProfilePicture(userProfile.profilePicture || null);
       setActivityPreferences(userProfile.activityPreferences || []);
       setLanguagePreferences(userProfile.languagePreferences || []);
-      
+
       loadUserStats();
     } else if (!user) {
       // Clear all data when user logs out
@@ -158,7 +157,7 @@ const Profile = ({ user, userProfile }) => {
         const completedAspal = receivedInvites.filter(invite => 
           invite.status === 'completed' && invite.paymentConfirmed === true
         );
-        
+
         completedAspal.forEach(invite => {
           const incentiveAmount = invite.incentiveAmount || invite.price || 0;
           const platformFee = invite.platformFee || (incentiveAmount * 0.05);
@@ -171,7 +170,7 @@ const Profile = ({ user, userProfile }) => {
           invite.status === 'cancelled' && 
           invite.palCompensation && invite.palCompensation > 0
         );
-        
+
         cancelledAsPal.forEach(invite => {
           const compensation = invite.palCompensation || 0;
           const platformFee = compensation * 0.05;
@@ -184,7 +183,7 @@ const Profile = ({ user, userProfile }) => {
           ...completedAspal,
           ...cancelledAsPal
         ];
-        
+
         allEarningInvites.forEach(invite => {
           const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
           const platformFee = invite.platformFee || (amount * 0.05);
@@ -212,9 +211,10 @@ const Profile = ({ user, userProfile }) => {
         return total + (invite.price || 0);
       }, 0);
 
-      // 3. Total issued by cancellation fees (all cancelled invites sent by user with fees)
+      // 3. Total issued by cancellation fees
       const cancelledInvitesWithFees = sentInvites.filter(invite => 
         invite.status === 'cancelled' && 
+        invite.cancelledBy === user.uid &&
         invite.cancellationFee && invite.cancellationFee > 0
       );
       const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
@@ -257,7 +257,7 @@ const Profile = ({ user, userProfile }) => {
 
       // Add unpaid cancellation fees
       const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite => 
-        invite.cancellationFeePaid !== true
+        !invite.cancellationFeePaid
       );
       unpaidCancellationFees.forEach(cancelledInvite => {
         pendingPayments.push({
@@ -291,7 +291,7 @@ const Profile = ({ user, userProfile }) => {
 
   const checkUsernameAvailability = async (usernameToCheck) => {
     if (!usernameToCheck.trim()) return false;
-    
+
     try {
       const usernameQuery = query(
         collection(db, 'users'),
@@ -322,17 +322,17 @@ const Profile = ({ user, userProfile }) => {
 
   const uploadProfilePicture = async () => {
     if (!profilePictureFile || !user?.uid) return null;
-    
+
     setUploadingPicture(true);
     try {
       const timestamp = Date.now();
       const fileExtension = profilePictureFile.name.split('.').pop();
       const fileName = `profile_${timestamp}.${fileExtension}`;
       const profilePicRef = ref(storage, `users/${user.uid}/profile/${fileName}`);
-      
+
       await uploadBytes(profilePicRef, profilePictureFile);
       const downloadURL = await getDownloadURL(profilePicRef);
-      
+
       setUploadingPicture(false);
       return downloadURL;
     } catch (error) {
@@ -364,7 +364,7 @@ const Profile = ({ user, userProfile }) => {
     setLanguagePreferences(prev => prev.filter(pref => pref !== language));
   };
 
-  
+
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -413,10 +413,10 @@ const Profile = ({ user, userProfile }) => {
       setSuccessMessage('Profile updated successfully!');
       setIsEditing(false);
       setProfilePictureFile(null);
-      
+
       // Reload stats after update
       loadUserStats();
-      
+
       // Refresh the page to update userProfile
       window.location.reload();
     } catch (error) {
@@ -443,7 +443,7 @@ const Profile = ({ user, userProfile }) => {
     );
   }
 
-  
+
 
   return (
     <div className="profile-section">
@@ -488,7 +488,7 @@ const Profile = ({ user, userProfile }) => {
                 <option value="public">Public Profile (Visible for receiving invites)</option>
                 <option value="private">Private Profile (Not discoverable)</option>
               </select>
-              
+
               <div className="profile-picture-upload">
                 <label htmlFor="profile-picture-input">Profile Picture:</label>
                 <input
@@ -562,7 +562,7 @@ const Profile = ({ user, userProfile }) => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="edit-actions">
                 <button onClick={handleUpdateProfile} disabled={loading}>
                   {loading ? 'Saving...' : 'Save'}

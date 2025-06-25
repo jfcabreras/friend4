@@ -337,10 +337,49 @@ const Invites = ({ user, userProfile }) => {
       setSelectedInvite(invite);
     }
     
-    // Calculate pending fees from user's profile
+    // Calculate pending fees from user's profile and get detailed breakdown
     const userRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userRef);
     const pendingBalance = userDoc.data()?.pendingBalance || 0;
+    
+    // Get detailed breakdown of pending fees
+    const [pendingFeesBreakdown, setPendingFeesBreakdown] = useState(null);
+    
+    if (pendingBalance > 0) {
+      // Get all unpaid cancelled invites by this user
+      const cancelledInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid),
+        where('status', '==', 'cancelled')
+      );
+      const cancelledInvitesSnapshot = await getDocs(cancelledInvitesQuery);
+      
+      const unpaidCancellationFees = cancelledInvitesSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(invite => invite.cancellationFee > 0 && !invite.cancellationFeePaid)
+        .sort((a, b) => (a.cancelledAt?.toDate() || new Date(0)) - (b.cancelledAt?.toDate() || new Date(0)));
+
+      // Get platform fees owed from completed invites as pal
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid),
+        where('status', '==', 'completed')
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      
+      const unpaidPlatformFees = receivedInvitesSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(invite => !invite.platformFeePaidByPal && (invite.platformFee || 0) > 0);
+
+      const breakdown = {
+        cancellationFees: unpaidCancellationFees,
+        platformFees: unpaidPlatformFees,
+        totalCancellationFees: unpaidCancellationFees.reduce((sum, inv) => sum + (inv.cancellationFee || 0), 0),
+        totalPlatformFees: unpaidPlatformFees.reduce((sum, inv) => sum + (inv.platformFee || 0), 0)
+      };
+      
+      setSelectedInvite({...invite, pendingFeesBreakdown: breakdown});
+    }
     
     // Calculate total payment amount including pending fees
     const incentiveAmount = totalPaymentAmount || invite.totalPaymentAmount || invite.price;
@@ -1101,7 +1140,45 @@ const Invites = ({ user, userProfile }) => {
                     {pendingFees > 0 && (
                       <div className="pending-fees-notice">
                         <h4>⚠️ Outstanding Fees Notice:</h4>
-                        <p>You have ${pendingFees.toFixed(2)} in outstanding fees (cancellation fees, platform fees, etc.) that will be included in this payment.</p>
+                        <p>You have ${pendingFees.toFixed(2)} in outstanding fees that will be included in this payment:</p>
+                        
+                        {selectedInvite?.pendingFeesBreakdown && (
+                          <div className="fees-breakdown">
+                            {selectedInvite.pendingFeesBreakdown.cancellationFees.length > 0 && (
+                              <div className="fee-category">
+                                <h5>📋 Cancellation Fees (Your Debt to Platform):</h5>
+                                {selectedInvite.pendingFeesBreakdown.cancellationFees.map(invite => (
+                                  <div key={invite.id} className="fee-item">
+                                    <span>• "${invite.title}" to {invite.toUsername}</span>
+                                    <span>${(invite.cancellationFee || 0).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                                <div className="fee-subtotal">
+                                  <strong>Subtotal: ${selectedInvite.pendingFeesBreakdown.totalCancellationFees.toFixed(2)}</strong>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {selectedInvite.pendingFeesBreakdown.platformFees.length > 0 && (
+                              <div className="fee-category">
+                                <h5>💼 Platform Fees (Your Debt as Pal to Platform):</h5>
+                                {selectedInvite.pendingFeesBreakdown.platformFees.map(invite => (
+                                  <div key={invite.id} className="fee-item">
+                                    <span>• "${invite.title}" from {invite.fromUsername}</span>
+                                    <span>${(invite.platformFee || 0).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                                <div className="fee-subtotal">
+                                  <strong>Subtotal: ${selectedInvite.pendingFeesBreakdown.totalPlatformFees.toFixed(2)}</strong>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="debt-clarification">
+                          <p><strong>💡 Important:</strong> These are <em>your debts to the platform</em>, not to your pal. Your pal will receive only the incentive amount (${incentiveAmount.toFixed(2)}). The outstanding fees (${pendingFees.toFixed(2)}) are settled with the platform administration.</p>
+                        </div>
                       </div>
                     )}
 
