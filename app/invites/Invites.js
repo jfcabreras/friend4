@@ -533,7 +533,7 @@ const Invites = ({ user, userProfile }) => {
         totalPaidAmount: paymentAmount
       });
 
-      // Clear pending fees from user profile and mark related cancellation fees as paid
+      // Clear pending fees from user profile and mark related fees as paid
       if (pendingFeesIncluded > 0) {
         const userRef = doc(db, 'users', user.uid);
 
@@ -547,32 +547,52 @@ const Invites = ({ user, userProfile }) => {
           lastPendingFeePayment: new Date()
         });
 
-        // Get all unpaid cancelled invites by this user to mark them as paid
-        const cancelledInvitesQuery = query(
-          collection(db, 'planInvitations'),
-          where('fromUserId', '==', user.uid),
-          where('status', '==', 'cancelled'),
-          where('cancelledBy', '==', user.uid)
-        );
-        const cancelledInvitesSnapshot = await getDocs(cancelledInvitesQuery);
+        // Mark specific fees as paid based on the pending payments breakdown
+        if (pendingFeesBreakdown && pendingFeesBreakdown.pendingPayments) {
+          let remainingPaymentAmount = pendingFeesIncluded;
 
-        let remainingPaymentFees = pendingFeesIncluded;
-        const unpaidInvites = cancelledInvitesSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(invite => invite.cancellationFee > 0 && !invite.cancellationFeePaid)
-          .sort((a, b) => (a.cancelledAt?.toDate() || new Date(0)) - (b.cancelledAt?.toDate() || new Date(0)));
+          // Process fees in chronological order (oldest first)
+          const sortedPendingPayments = pendingFeesBreakdown.pendingPayments.sort((a, b) => a.date - b.date);
 
-        // Mark cancellation fees as paid in chronological order
-        for (const cancelledInvite of unpaidInvites) {
-          if (remainingPaymentFees >= cancelledInvite.cancellationFee) {
-            await updateDoc(doc(db, 'planInvitations', cancelledInvite.id), {
-              cancellationFeePaid: true,
-              cancellationFeePaidAt: new Date(),
-              cancellationFeePaidInInvite: selectedInvite.id
-            });
-            remainingPaymentFees -= cancelledInvite.cancellationFee;
+          for (const payment of sortedPendingPayments) {
+            if (remainingPaymentAmount <= 0) break;
 
-            if (remainingPaymentFees <= 0) break;
+            const paymentAmount = Math.min(payment.amount, remainingPaymentAmount);
+
+            if (payment.type === 'cancellation_fee') {
+              // Mark cancellation fee as paid
+              await updateDoc(doc(db, 'planInvitations', payment.inviteId), {
+                cancellationFeePaid: true,
+                cancellationFeePaidAt: new Date(),
+                cancellationFeePaidInInvite: selectedInvite.id,
+                cancellationFeeRecipient: selectedInvite.toUserId,
+                cancellationFeeRecipientUsername: selectedInvite.toUsername,
+                cancellationFeePaymentReceived: false, // Will be confirmed by recipient
+                cancellationFeeAmountPaid: paymentAmount
+              });
+            } else if (payment.type === 'incentive_payment') {
+              // Mark incentive payment as paid
+              await updateDoc(doc(db, 'planInvitations', payment.id), {
+                incentivePaymentPaid: true,
+                incentivePaymentPaidAt: new Date(),
+                incentivePaymentPaidInInvite: selectedInvite.id,
+                incentivePaymentRecipient: payment.id === selectedInvite.id ? selectedInvite.toUserId : null,
+                incentivePaymentPaymentReceived: false, // Will be confirmed by recipient
+                incentivePaymentAmountPaid: paymentAmount
+              });
+            } else if (payment.type === 'platform_fee') {
+              // Mark platform fee as paid
+              await updateDoc(doc(db, 'planInvitations', payment.inviteId), {
+                platformFeePaid: true,
+                platformFeePaidAt: new Date(),
+                platformFeePaidInInvite: selectedInvite.id,
+                platformFeeRecipient: 'platform',
+                platformFeePaymentReceived: true, // Platform fees are automatically confirmed
+                platformFeeAmountPaid: paymentAmount
+              });
+            }
+
+            remainingPaymentAmount -= paymentAmount;
           }
         }
       }
@@ -621,6 +641,37 @@ const Invites = ({ user, userProfile }) => {
         pendingBalance: currentPendingBalance + platformFee,
         totalEarnings: (palDoc.data()?.totalEarnings || 0) + (invite.netAmountToPal || (invite.incentiveAmount || invite.price) - platformFee)
       });
+
+      // Mark any fee payments that were paid through this invite as received
+      const allInvitesQuery = query(collection(db, 'planInvitations'));
+      const allInvitesSnapshot = await getDocs(allInvitesQuery);
+      const allInvites = allInvitesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Find invites where fees were paid through this invite and mark as received
+      for (const otherInvite of allInvites) {
+        let updateData = {};
+
+        // Mark cancellation fee payment as received
+        if (otherInvite.cancellationFeePaidInInvite === inviteId && 
+            otherInvite.cancellationFeeRecipient === user.uid && 
+            !otherInvite.cancellationFeePaymentReceived) {
+          updateData.cancellationFeePaymentReceived = true;
+          updateData.cancellationFeePaymentReceivedAt = new Date();
+        }
+
+        // Mark incentive payment as received
+        if (otherInvite.incentivePaymentPaidInInvite === inviteId && 
+            otherInvite.incentivePaymentRecipient === user.uid && 
+            !otherInvite.incentivePaymentPaymentReceived) {
+          updateData.incentivePaymentPaymentReceived = true;
+          updateData.incentivePaymentPaymentReceivedAt = new Date();
+        }
+
+        // Update if there are changes
+        if (Object.keys(updateData).length > 0) {
+          await updateDoc(doc(db, 'planInvitations', otherInvite.id), updateData);
+        }
+      }
 
       alert('Payment received confirmed! Invite completed successfully.');
       loadInvites();

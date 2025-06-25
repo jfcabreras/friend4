@@ -82,8 +82,8 @@ const InviteModal = ({
         allEarningInvites.forEach(invite => {
           const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
           const platformFee = invite.platformFee || (amount * 0.05);
-          // Only add to owed if not already paid to platform
-          if (!invite.platformFeePaid) {
+          // Only add to owed if not already paid to platform OR paid but not received
+          if (!invite.platformFeePaid || (invite.platformFeePaid && !invite.platformFeePaymentReceived)) {
             platformFeesOwed += platformFee;
           }
         });
@@ -147,9 +147,9 @@ const InviteModal = ({
         });
       });
 
-      // Add unpaid cancellation fees
+      // Add unpaid cancellation fees (not paid OR paid but not received)
       const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite =>
-        !invite.cancellationFeePaid
+        !invite.cancellationFeePaid || (invite.cancellationFeePaid && !invite.cancellationFeePaymentReceived)
       );
       unpaidCancellationFees.forEach(cancelledInvite => {
         pendingPayments.push({
