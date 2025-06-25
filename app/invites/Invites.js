@@ -626,6 +626,8 @@ const Invites = ({ user, userProfile }) => {
 
     // Check if this payment included pending fees and show warning
     if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
+      // Calculate base amount correctly
+      invite.calculatedBaseAmount = invite.totalPaidAmount - invite.pendingFeesIncluded;
       setPaymentToConfirm(invite);
       setShowPaymentConfirmModal(true);
     } else {
@@ -954,7 +956,6 @@ const Invites = ({ user, userProfile }) => {
             <div className="invite-detail-header">
               <h2>{selectedInvite.title}</h2>
               <span className={`status-badge ${selectedInvite.status}`}>
-```text
                 {selectedInvite.status === 'pending' && '⏳ Pending'}
                 {selectedInvite.status === 'accepted' && '✅ Accepted'}
                 {selectedInvite.status === 'declined' && '❌ Declined'}
@@ -1313,25 +1314,29 @@ const Invites = ({ user, userProfile }) => {
                 <div className="pending-fees-notice">
                   <h4>⚠️ Outstanding Fees Included:</h4>
                   <p>This payment includes <strong>${paymentToConfirm.pendingFeesIncluded.toFixed(2)}</strong> in outstanding fees that {paymentToConfirm.fromUsername} owed to the platform.</p>
-                  
-                  <div className="payment-breakdown-confirm">
-                    <div className="breakdown-row">
-                      <span>Your Incentive Amount:</span>
-                      <span>${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</span>
-                    </div>
-                    <div className="breakdown-row outstanding">
-                      <span>Outstanding Fees (Platform):</span>
-                      <span>${paymentToConfirm.pendingFeesIncluded.toFixed(2)}</span>
-                    </div>
-                    <div className="breakdown-total">
-                      <span>Total Payment Amount:</span>
-                      <span>${paymentToConfirm.totalPaidAmount.toFixed(2)}</span>
-                    </div>
-                  </div>
 
-                  <div className="important-notice">
-                    <p><strong>💡 Important:</strong> The outstanding fees (${paymentToConfirm.pendingFeesIncluded.toFixed(2)}) are debts that {paymentToConfirm.fromUsername} owed to the platform administration, not to you. You should only receive the incentive amount (${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}) for your time.</p>
-                  </div>
+              
+                <div className="payment-breakdown-confirm">
+                <div className="breakdown-row">
+                  <span>Your Incentive Amount:</span>
+                  <span>${(paymentToConfirm.calculatedBaseAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</span>
+                </div>
+                <div className="breakdown-row outstanding">
+                  <span>Outstanding Fees (Platform):</span>
+                  <span>${(paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)}</span>
+                </div>
+                <div className="breakdown-total">
+                  <span>Total Payment Amount:</span>
+                  <span>${(paymentToConfirm.totalPaidAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</span>
+                </div>
+              </div>
+              
+
+                  
+                <div className="important-notice">
+                  <p><strong>💡 Important:</strong> The outstanding fees (${(paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)}) are debts that {paymentToConfirm.fromUsername} owed to the platform administration, not to you. You should only receive the incentive amount (${(paymentToConfirm.calculatedBaseAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}) for your time.</p>
+                </div>
+              
                 </div>
               )}
 
