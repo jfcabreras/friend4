@@ -336,7 +336,17 @@ const Invites = ({ user, userProfile }) => {
     if (invite) {
       setSelectedInvite(invite);
     }
-    setPaymentAmount(totalPaymentAmount || invite.totalPaymentAmount || invite.price);
+    
+    // Calculate pending fees from user's profile
+    const userRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userRef);
+    const pendingBalance = userDoc.data()?.pendingBalance || 0;
+    
+    // Calculate total payment amount including pending fees
+    const incentiveAmount = totalPaymentAmount || invite.totalPaymentAmount || invite.price;
+    const totalWithPendingFees = incentiveAmount + pendingBalance;
+    
+    setPaymentAmount(totalWithPendingFees);
     setShowPaymentModal(true);
   };
 
@@ -344,8 +354,13 @@ const Invites = ({ user, userProfile }) => {
     if (!selectedInvite) return;
 
     try {
+      // Get current pending balance
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      const pendingBalance = userDoc.data()?.pendingBalance || 0;
+      
       const incentiveAmount = selectedInvite.incentiveAmount || selectedInvite.price;
-      const pendingFeesIncluded = selectedInvite.pendingFeesIncluded || 0;
+      const pendingFeesIncluded = pendingBalance;
       const platformFee = incentiveAmount * 0.05; // 5% platform fee
       const netAmountToPal = incentiveAmount - platformFee;
 
@@ -1055,25 +1070,56 @@ const Invites = ({ user, userProfile }) => {
             </div>
 
             <div className="payment-details">
-              <div className="payment-amount">
-                <span className="amount-label">Amount to Pay:</span>
-                <span className="amount-value">${paymentAmount.toFixed(2)}</span>
-              </div>
-              
-              <div className="payment-method">
-                <span className="method-label">Payment Method:</span>
-                <span className="method-value">💵 Cash Payment</span>
-              </div>
+              {(() => {
+                const incentiveAmount = selectedInvite?.price || 0;
+                const pendingFees = paymentAmount - incentiveAmount;
+                
+                return (
+                  <>
+                    <div className="payment-breakdown">
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">Incentive Payment:</span>
+                        <span className="breakdown-value">${incentiveAmount.toFixed(2)}</span>
+                      </div>
+                      {pendingFees > 0 && (
+                        <div className="breakdown-item pending-fees">
+                          <span className="breakdown-label">Outstanding Fees:</span>
+                          <span className="breakdown-value">${pendingFees.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="breakdown-total">
+                        <span className="amount-label">Total Amount to Pay:</span>
+                        <span className="amount-value">${paymentAmount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="payment-method">
+                      <span className="method-label">Payment Method:</span>
+                      <span className="method-value">💵 Cash Payment</span>
+                    </div>
 
-              <div className="payment-instructions">
-                <h4>Instructions:</h4>
-                <ul>
-                  <li>Please pay the amount in cash to your pal</li>
-                  <li>Ensure both parties are satisfied with the experience</li>
-                  <li>Mark payment as done only after completing the cash transaction</li>
-                  <li>Your pal will then confirm they received the payment</li>
-                </ul>
-              </div>
+                    {pendingFees > 0 && (
+                      <div className="pending-fees-notice">
+                        <h4>⚠️ Outstanding Fees Notice:</h4>
+                        <p>You have ${pendingFees.toFixed(2)} in outstanding fees (cancellation fees, platform fees, etc.) that will be included in this payment.</p>
+                      </div>
+                    )}
+
+                    <div className="payment-instructions">
+                      <h4>Instructions:</h4>
+                      <ul>
+                        <li>Please pay the total amount in cash to your pal</li>
+                        <li>Ensure both parties are satisfied with the experience</li>
+                        <li>Mark payment as done only after completing the cash transaction</li>
+                        <li>Your pal will then confirm they received the payment</li>
+                        {pendingFees > 0 && (
+                          <li>Outstanding fees will be automatically cleared after this payment</li>
+                        )}
+                      </ul>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             <div className="payment-actions">
