@@ -24,6 +24,8 @@ const Invites = ({ user, userProfile }) => {
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [finishInviteId, setFinishInviteId] = useState(null);
   const [pendingFeesBreakdown, setPendingFeesBreakdown] = useState(null);
+  const [showPaymentConfirmModal, setShowPaymentConfirmModal] = useState(false);
+  const [paymentToConfirm, setPaymentToConfirm] = useState(null);
 
   useEffect(() => {
     if (user && userProfile) {
@@ -619,6 +621,20 @@ const Invites = ({ user, userProfile }) => {
   };
 
   const confirmPaymentReceived = async (inviteId) => {
+    const invite = [...invites.payment_done].find(inv => inv.id === inviteId);
+    if (!invite) return;
+
+    // Check if this payment included pending fees and show warning
+    if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
+      setPaymentToConfirm(invite);
+      setShowPaymentConfirmModal(true);
+    } else {
+      // Proceed directly if no pending fees were included
+      await processPaymentConfirmation(inviteId);
+    }
+  };
+
+  const processPaymentConfirmation = async (inviteId) => {
     try {
       const invite = [...invites.payment_done].find(inv => inv.id === inviteId);
       if (!invite) return;
@@ -673,6 +689,8 @@ const Invites = ({ user, userProfile }) => {
         }
       }
 
+      setShowPaymentConfirmModal(false);
+      setPaymentToConfirm(null);
       alert('Payment received confirmed! Invite completed successfully.');
       loadInvites();
 
@@ -807,6 +825,11 @@ const Invites = ({ user, userProfile }) => {
                     <span className="cancellation-fee">
                       ❌ Fee: ${invite.cancellationFee.toFixed(2)}
                       {invite.cancellationFeePaid ? ' (Paid)' : ' (Unpaid)'}
+                    </span>
+                  )}
+                  {invite.status === 'payment_done' && invite.pendingFeesIncluded > 0 && (
+                    <span className="pending-fees-included">
+                      ⚠️ Includes ${invite.pendingFeesIncluded.toFixed(2)} outstanding fees
                     </span>
                   )}
                 </div>
@@ -1259,6 +1282,80 @@ const Invites = ({ user, userProfile }) => {
               <button 
                 onClick={() => setShowFinishModal(false)}
                 className="cancel-finish-btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Received Confirmation Modal */}
+      {showPaymentConfirmModal && paymentToConfirm && (
+        <div className="modal-overlay" onClick={() => setShowPaymentConfirmModal(false)}>
+          <div className="modal-content payment-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowPaymentConfirmModal(false)}>×</button>
+
+            <div className="payment-confirm-header">
+              <h2>💰 Payment Received Confirmation</h2>
+              <p>Please review the payment details before confirming</p>
+            </div>
+
+            <div className="payment-confirm-details">
+              <div className="invite-summary">
+                <h4>📋 Invite Details:</h4>
+                <p><strong>Title:</strong> {paymentToConfirm.title}</p>
+                <p><strong>From:</strong> {paymentToConfirm.fromUsername}</p>
+                <p><strong>Base Incentive:</strong> ${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</p>
+              </div>
+
+              {paymentToConfirm.pendingFeesIncluded > 0 && (
+                <div className="pending-fees-notice">
+                  <h4>⚠️ Outstanding Fees Included:</h4>
+                  <p>This payment includes <strong>${paymentToConfirm.pendingFeesIncluded.toFixed(2)}</strong> in outstanding fees that {paymentToConfirm.fromUsername} owed to the platform.</p>
+                  
+                  <div className="payment-breakdown-confirm">
+                    <div className="breakdown-row">
+                      <span>Your Incentive Amount:</span>
+                      <span>${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</span>
+                    </div>
+                    <div className="breakdown-row outstanding">
+                      <span>Outstanding Fees (Platform):</span>
+                      <span>${paymentToConfirm.pendingFeesIncluded.toFixed(2)}</span>
+                    </div>
+                    <div className="breakdown-total">
+                      <span>Total Payment Amount:</span>
+                      <span>${paymentToConfirm.totalPaidAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="important-notice">
+                    <p><strong>💡 Important:</strong> The outstanding fees (${paymentToConfirm.pendingFeesIncluded.toFixed(2)}) are debts that {paymentToConfirm.fromUsername} owed to the platform administration, not to you. You should only receive the incentive amount (${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}) for your time.</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="confirmation-instructions">
+                <h4>✅ Confirmation Instructions:</h4>
+                <ul>
+                  <li>Verify you received the correct cash amount: <strong>${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</strong></li>
+                  <li>The additional fees shown above are administrative and don't affect your payment</li>
+                  <li>Only confirm if you have physically received your incentive payment</li>
+                  <li>This action will mark the invite as completed</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="payment-confirm-actions">
+              <button 
+                onClick={() => processPaymentConfirmation(paymentToConfirm.id)}
+                className="confirm-received-btn"
+              >
+                ✅ Yes, I Received ${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}
+              </button>
+              <button 
+                onClick={() => setShowPaymentConfirmModal(false)}
+                className="cancel-confirm-btn"
               >
                 Cancel
               </button>
