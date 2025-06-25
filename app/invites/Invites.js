@@ -338,7 +338,7 @@ const Invites = ({ user, userProfile }) => {
       setSelectedInvite(invite);
     }
 
-    // Get user's current pending balance directly from profile calculation
+    // Get user's current pending balance - this matches Profile.js calculation exactly
     const userRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userRef);
     const pendingBalance = userDoc.data()?.pendingBalance || 0;
@@ -346,10 +346,14 @@ const Invites = ({ user, userProfile }) => {
     console.log('User pending balance from profile:', pendingBalance);
     console.log('User document data:', userDoc.data());
 
-    // Use ONLY the pending balance from profile - this is the authoritative source
-    // The Profile.js calculation is comprehensive and excludes the current invite
-    let breakdown = null;
+    // The pendingBalance from the user document is the authoritative source
+    // It's calculated in Profile.js and includes all outstanding amounts:
+    // - Incentive payments owed (completed invites not confirmed by pal)
+    // - Cancellation fees owed (unpaid cancellation fees) 
+    // - Platform fees owed (for public profiles)
+    // This pendingBalance EXCLUDES the current invite being paid
 
+    let breakdown = null;
     if (pendingBalance > 0) {
       breakdown = {
         note: "Outstanding fees from your profile",
@@ -360,7 +364,7 @@ const Invites = ({ user, userProfile }) => {
       setPendingFeesBreakdown(null);
     }
 
-    // Calculate total payment: ONLY current invite price + pending balance from profile
+    // Calculate total payment: current invite price + pending balance from profile
     const incentiveAmount = invite.price || 0;
     const totalWithPendingFees = incentiveAmount + pendingBalance;
 
