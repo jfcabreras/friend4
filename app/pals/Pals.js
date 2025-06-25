@@ -153,177 +153,20 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       return;
     }
 
-    // Calculate detailed pending balance the same way as in Profile.js
-    let totalOwed = 0;
-    let incentivePaymentsOwed = 0;
-    let cancellationFeesOwed = 0;
-    let platformFeesOwed = 0;
-    let pendingPayments = [];
-
-    try {
-      // Get sent invites to calculate what user owes
-      const sentInvitesQuery = query(
-        collection(db, 'planInvitations'),
-        where('fromUserId', '==', user.uid)
-      );
-      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
-      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        type: 'sent',
-        ...doc.data()
-      }));
-
-      // Get received invites to calculate platform fees owed (for public profiles)
-      const receivedInvitesQuery = query(
-        collection(db, 'planInvitations'),
-        where('toUserId', '==', user.uid)
-      );
-      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
-      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        type: 'received',
-        ...doc.data()
-      }));
-
-      // Calculate platform fees owed (for public profiles only)
-      if (userProfile.profileType === 'public') {
-        // Completed invites where user was the pal
-        const completedAsPal = receivedInvites.filter(invite => 
-          invite.status === 'completed' && invite.paymentConfirmed === true
-        );
-
-        // Cancelled invites where user received compensation as pal
-        const cancelledAsPal = receivedInvites.filter(invite => 
-          invite.status === 'cancelled' && 
-          invite.palCompensation && invite.palCompensation > 0
-        );
-
-        const allEarningInvites = [...completedAsPal, ...cancelledAsPal];
-
-        allEarningInvites.forEach(invite => {
-          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
-          const platformFee = invite.platformFee || (amount * 0.05);
-          // Only add to owed if not already paid to platform
-          if (!invite.platformFeePaid) {
-            platformFeesOwed += platformFee;
-          }
-        });
-      }
-
-      // Calculate outstanding amounts for sent invites
-      // 1. Total issued by completed invites (finished, payment_done, completed status)
-      const completedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done', 'completed'].includes(invite.status)
-      );
-      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
-
-      // 2. Total paid by completed invites (only those confirmed by pal)
-      const paidCompletedInvites = sentInvites.filter(invite => 
-        invite.status === 'completed' && invite.paymentConfirmed === true
-      );
-      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
-        return total + (invite.price || 0);
-      }, 0);
-
-      // 3. Total issued by cancellation fees
-      const cancelledInvitesWithFees = sentInvites.filter(invite => 
-        invite.status === 'cancelled' && 
-        invite.cancellationFee && invite.cancellationFee > 0
-      );
-      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
-
-      // 4. Total paid by cancellation fees (marked as paid)
-      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
-        invite.cancellationFeePaid === true
-      );
-      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
-      }, 0);
-
-      // Calculate outstanding amounts
-      incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
-      cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
-
-      // Total amount user owes (from sent invites + platform fees from received invites)
-      totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
-
-      // Build pending payments list
-      // Add unpaid incentive payments (completed but not confirmed by pal)
-      const unpaidCompletedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done'].includes(invite.status) && 
-        invite.status !== 'completed'
-      );
-      unpaidCompletedInvites.forEach(invite => {
-        pendingPayments.push({
-          id: invite.id,
-          type: 'incentive_payment',
-          amount: invite.price || 0,
-          description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
-          date: invite.finishedAt?.toDate?.() || invite.paymentDoneAt?.toDate?.() || new Date(),
-          status: invite.status
-        });
-      });
-
-      // Add unpaid cancellation fees
-      const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite => 
-        !invite.cancellationFeePaid
-      );
-      unpaidCancellationFees.forEach(cancelledInvite => {
-        pendingPayments.push({
-          id: `cancel_fee_${cancelledInvite.id}`,
-          type: 'cancellation_fee',
-          amount: cancelledInvite.cancellationFee,
-          description: `Unpaid cancellation fee for "${cancelledInvite.title}" to ${cancelledInvite.toUsername}`,
-          date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
-          inviteId: cancelledInvite.id
-        });
-      });
-
-    } catch (error) {
-      console.error('Error calculating pending balance:', error);
-      // Fallback to simple calculation
-      totalOwed = userProfile.pendingBalance || 0;
-    }
-
-    const incentiveAmount = parseFloat(inviteData.price);
-    const totalPayment = incentiveAmount + totalOwed;
+    // Calculate pending fees from user profile
+    const pendingBalance = userProfile.pendingBalance || 0;
+    const totalPayment = parseFloat(inviteData.price) + pendingBalance;
 
     // Warn user about pending fees if any exist
-    if (totalOwed > 0) {
-      let confirmMessage = `⚠️ OUTSTANDING FEES NOTICE\n\n`;
-      confirmMessage += `Current Invite: $${incentiveAmount.toFixed(2)}\n`;
-      confirmMessage += `Outstanding Fees: $${totalOwed.toFixed(2)}\n`;
-      confirmMessage += `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n`;
-      
-      confirmMessage += `BREAKDOWN OF OUTSTANDING FEES:\n`;
-      if (incentivePaymentsOwed > 0) {
-        confirmMessage += `• Unpaid Incentive Payments: $${incentivePaymentsOwed.toFixed(2)}\n`;
-      }
-      if (cancellationFeesOwed > 0) {
-        confirmMessage += `• Unpaid Cancellation Fees: $${cancellationFeesOwed.toFixed(2)}\n`;
-      }
-      if (platformFeesOwed > 0) {
-        confirmMessage += `• Platform Fees Owed: $${platformFeesOwed.toFixed(2)}\n`;
-      }
-      
-      if (pendingPayments.length > 0) {
-        confirmMessage += `\nDETAILED PENDING PAYMENTS:\n`;
-        pendingPayments.sort((a, b) => b.date - a.date).slice(0, 3).forEach(payment => {
-          confirmMessage += `• ${payment.description}: $${payment.amount.toFixed(2)}\n`;
-        });
-        if (pendingPayments.length > 3) {
-          confirmMessage += `... and ${pendingPayments.length - 3} more items\n`;
-        }
-      }
-      
-      confirmMessage += `\n💡 Important: Your outstanding fees will be automatically included in this payment.\n\n`;
-      confirmMessage += `Do you want to continue?`;
-
-      const confirmed = window.confirm(confirmMessage);
+    if (pendingBalance > 0) {
+      const confirmed = window.confirm(
+        `⚠️ PENDING FEES NOTICE\n\n` +
+        `Incentive Amount: $${parseFloat(inviteData.price).toFixed(2)}\n` +
+        `Pending Fees: $${pendingBalance.toFixed(2)}\n` +
+        `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n` +
+        `Your pending fees will be added to this payment.\n\n` +
+        `Do you want to continue?`
+      );
       
       if (!confirmed) {
         return;
@@ -345,7 +188,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         endTime: inviteData.endTime,
         price: parseFloat(inviteData.price),
         incentiveAmount: parseFloat(inviteData.price),
-        pendingFeesIncluded: totalOwed,
+        pendingFeesIncluded: pendingBalance,
         totalPaymentAmount: totalPayment,
         status: 'pending',
         createdAt: new Date()
