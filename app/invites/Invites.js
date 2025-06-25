@@ -106,6 +106,15 @@ const OutstandingFeesNotice = ({ invite, pendingFeesBreakdown }) => {
       const cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
       const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
 
+      console.log('Calculated sender fees for invite recipient:', {
+        senderUserId: invite.fromUserId,
+        senderUsername: invite.fromUsername,
+        totalOwed,
+        incentivePaymentsOwed,
+        cancellationFeesOwed,
+        platformFeesOwed
+      });
+
       setSenderFeesBreakdown({
         totalAmount: totalOwed,
         incentivePaymentsOwed,
@@ -149,7 +158,7 @@ const OutstandingFeesNotice = ({ invite, pendingFeesBreakdown }) => {
         <div className="outstanding-fees-notice">
           <div className="fees-notice receiver">
             <span className="fees-icon">⏳</span>
-            <span className="fees-text">Checking sender's outstanding fees...</span>
+            <span className="fees-text">Checking {invite.fromUsername}'s outstanding fees...</span>
           </div>
         </div>
       );
@@ -161,30 +170,36 @@ const OutstandingFeesNotice = ({ invite, pendingFeesBreakdown }) => {
           <div className="fees-warning receiver">
             <span className="fees-icon">💰</span>
             <div className="fees-text">
-              <strong>Payment will include sender's outstanding fees:</strong>
+              <strong>⚠️ {invite.fromUsername} has outstanding platform fees!</strong>
               <br />
-              Your Incentive: ${invite.price?.toFixed(2)} + {invite.fromUsername}'s Outstanding: ${senderFeesBreakdown.totalAmount.toFixed(2)} = Total: ${(invite.price + senderFeesBreakdown.totalAmount).toFixed(2)}
+              Your Incentive: ${invite.price?.toFixed(2)} + {invite.fromUsername}'s Outstanding: ${senderFeesBreakdown.totalAmount.toFixed(2)} = <strong>Total Payment: ${(invite.price + senderFeesBreakdown.totalAmount).toFixed(2)}</strong>
               <br />
-              <small>💡 You'll receive the full amount (${(invite.price + senderFeesBreakdown.totalAmount).toFixed(2)}) but ${senderFeesBreakdown.totalAmount.toFixed(2)} goes to clear {invite.fromUsername}'s platform debts</small>
+              <small>💡 You'll receive the full cash amount (${(invite.price + senderFeesBreakdown.totalAmount).toFixed(2)}), but ${senderFeesBreakdown.totalAmount.toFixed(2)} will clear {invite.fromUsername}'s platform debts</small>
+              <br />
+              <small className="breakdown-detail">
+                {senderFeesBreakdown.incentivePaymentsOwed > 0 && `• Unpaid incentives: $${senderFeesBreakdown.incentivePaymentsOwed.toFixed(2)} `}
+                {senderFeesBreakdown.cancellationFeesOwed > 0 && `• Cancellation fees: $${senderFeesBreakdown.cancellationFeesOwed.toFixed(2)} `}
+                {senderFeesBreakdown.platformFeesOwed > 0 && `• Platform fees: $${senderFeesBreakdown.platformFeesOwed.toFixed(2)}`}
+              </small>
             </div>
           </div>
         ) : senderFeesBreakdown && senderFeesBreakdown.totalAmount === 0 ? (
-          <div className="fees-notice receiver">
+          <div className="fees-notice receiver success">
             <span className="fees-icon">✅</span>
             <span className="fees-text">
-              {invite.fromUsername} has no outstanding fees - you'll receive ${invite.price?.toFixed(2)}
+              <strong>Great!</strong> {invite.fromUsername} has no outstanding fees - you'll receive exactly ${invite.price?.toFixed(2)}
             </span>
           </div>
-        ) : (
-          <div className="fees-notice receiver">
+        ) : !senderFeesBreakdown ? (
+          <div className="fees-notice receiver neutral">
             <span className="fees-icon">💰</span>
             <span className="fees-text">
               You will receive ${invite.price?.toFixed(2)} for this invite
               <br />
-              <small>Payment may include sender's outstanding platform fees</small>
+              <small>Checking if payment includes sender's outstanding platform fees...</small>
             </span>
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
