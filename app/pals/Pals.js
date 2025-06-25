@@ -374,10 +374,11 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
   const handleSendInvite = (pal) => {
     setSelectedPal(pal);
     setShowProfileModal(false);
-    setShowInviteModal(true);
-
-    // Load pending payments when the invite modal is opened
-    loadPendingPayments();
+    
+    // Load pending payments before showing the modal
+    loadPendingPayments().then(() => {
+      setShowInviteModal(true);
+    });
   };
 
   const loadPendingPayments = async () => {
@@ -476,7 +477,6 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       // Calculate outstanding amounts
       incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
       cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
-      platformFeesOwed = platformFeesOwed;
 
       // Total amount user owes (from sent invites + platform fees from received invites)
       totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
@@ -698,7 +698,9 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
                 <button 
                   onClick={() => {
                     setSelectedPal(pal);
-                    setShowInviteModal(true);
+                    loadPendingPayments().then(() => {
+                      setShowInviteModal(true);
+                    });
                   }}
                   className="invite-btn"
                 >
