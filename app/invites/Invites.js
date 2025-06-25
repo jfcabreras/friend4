@@ -23,6 +23,7 @@ const Invites = ({ user, userProfile }) => {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [finishInviteId, setFinishInviteId] = useState(null);
+  const [pendingFeesBreakdown, setPendingFeesBreakdown] = useState(null);
 
   useEffect(() => {
     if (user && userProfile) {
@@ -342,8 +343,7 @@ const Invites = ({ user, userProfile }) => {
     const userDoc = await getDoc(userRef);
     const pendingBalance = userDoc.data()?.pendingBalance || 0;
     
-    // Get detailed breakdown of pending fees
-    const [pendingFeesBreakdown, setPendingFeesBreakdown] = useState(null);
+    let breakdown = null;
     
     if (pendingBalance > 0) {
       // Get all unpaid cancelled invites by this user
@@ -371,14 +371,17 @@ const Invites = ({ user, userProfile }) => {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(invite => !invite.platformFeePaidByPal && (invite.platformFee || 0) > 0);
 
-      const breakdown = {
+      breakdown = {
         cancellationFees: unpaidCancellationFees,
         platformFees: unpaidPlatformFees,
         totalCancellationFees: unpaidCancellationFees.reduce((sum, inv) => sum + (inv.cancellationFee || 0), 0),
         totalPlatformFees: unpaidPlatformFees.reduce((sum, inv) => sum + (inv.platformFee || 0), 0)
       };
       
+      setPendingFeesBreakdown(breakdown);
       setSelectedInvite({...invite, pendingFeesBreakdown: breakdown});
+    } else {
+      setPendingFeesBreakdown(null);
     }
     
     // Calculate total payment amount including pending fees
