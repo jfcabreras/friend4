@@ -155,17 +155,17 @@ const Profile = ({ user, userProfile }) => {
       }, 0);
 
       // 3. Total issued by cancellation fees
-      const cancelledInvites = sentInvites.filter(invite => 
+      const cancelledInvitesWithFees = sentInvites.filter(invite => 
         invite.status === 'cancelled' && 
         invite.cancelledBy === user.uid &&
         invite.cancellationFee && invite.cancellationFee > 0
       );
-      const totalIssuedByCancellationFees = cancelledInvites.reduce((total, invite) => {
+      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
 
       // 4. Total paid by cancellation fees (marked as paid)
-      const paidCancellationFees = cancelledInvites.filter(invite => 
+      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
         invite.cancellationFeePaid === true
       );
       const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
@@ -199,7 +199,7 @@ const Profile = ({ user, userProfile }) => {
       });
 
       // Add unpaid cancellation fees
-      const unpaidCancellationFees = cancelledInvites.filter(invite => 
+      const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite => 
         !invite.cancellationFeePaid
       );
       unpaidCancellationFees.forEach(cancelledInvite => {
