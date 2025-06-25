@@ -880,6 +880,7 @@ const Invites = ({ user, userProfile }) => {
             <div className="invite-detail-header">
               <h2>{selectedInvite.title}</h2>
               <span className={`status-badge ${selectedInvite.status}`}>
+```text
                 {selectedInvite.status === 'pending' && '⏳ Pending'}
                 {selectedInvite.status === 'accepted' && '✅ Accepted'}
                 {selectedInvite.status === 'declined' && '❌ Declined'}
