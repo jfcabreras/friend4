@@ -1310,7 +1310,7 @@ const Invites = ({ user, userProfile }) => {
                         )}
 
                         <div className="debt-clarification">
-                          <p><strong>💡 Important:</strong> These are <em>your debts to the platform</em>, not to your pal. Your pal will receive only the incentive amount (${(invite.price || 0).toFixed(2)}). The outstanding fees (${paymentAmount.toFixed(2)}) are settled with the platform administration.</p>
+                          <p><strong>💡 Important:</strong> These are <em>your debts to the platform</em>, not to your pal. Your pal will receive only the incentive amount (${(selectedInvite.price || 0).toFixed(2)}). The outstanding fees (${paymentAmount.toFixed(2)}) are settled with the platform administration.</p>
                         </div>
                       </div>
                     )}
