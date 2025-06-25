@@ -1,0 +1,24 @@
+Error: ./app/invites/Invites.js:1712:105
+Parsing ecmascript source code failed
+[0m [90m 1710 |[39m                 placeholder[33m=[39m[32m"Meeting location *"[39m[0m
+[0m [90m 1711 |[39m                 value[33m=[39m{editFormData[33m.[39mmeetingLocation [33m||[39m [32m''[39m}[0m
+[0m[31m[1m>[22m[39m[90m 1712 |[39m                 onChange[33m=[39m{(e) [33m=>[39m setEditFormData(prev [33m=>[39m ({ [33m...[39mprev[33m,[39m meetingLocation[33m:[39m e[33m.[39mtarget[33m.[39mvalue }))required[0m
+[0m [90m      |[39m                                                                                                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 1713 |[39m               [33m/[39m[33m>[39m[0m
+[0m [90m 1714 |[39m               [33m<[39m[33minput[39m[0m
+[0m [90m 1715 |[39m                 type[33m=[39m[32m"date"[39m[0m
+
+Expected '}', got 'required'
+    at BuildError (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:11144:41)
+    at react-stack-bottom-frame (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:14911:24)
+    at renderWithHooksAgain (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:6256:24)
+    at renderWithHooks (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:6207:28)
+    at updateFunctionComponent (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:7543:21)
+    at beginWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:8142:24)
+    at runWithFiberInDEV (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:3073:74)
+    at performUnitOfWork (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10243:97)
+    at workLoopSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10135:40)
+    at renderRootSync (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10118:13)
+    at performWorkOnRoot (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:9853:212)
+    at performWorkOnRootViaSchedulerTask (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:10826:9)
+    at MessagePort.performWorkUntilDeadline (https://47ebb3b6-ca82-4f09-8863-578a1e0acf3b-00-lp3dqtmx58mp.worf.replit.dev/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:1982:64)
