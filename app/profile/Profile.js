@@ -139,51 +139,14 @@ const Profile = ({ user, userProfile }) => {
         invite.cancellationFee && invite.cancellationFee > 0
       );
 
-      // Get all completed invites where user paid (including pending fees)
-      const completedPayments = allInvites.filter(invite =>
-        invite.status === 'completed' && 
-        invite.fromUserId === user.uid &&
-        invite.pendingFeesIncluded > 0
-      ).sort((a, b) => (a.paymentReceivedAt?.toDate() || new Date(0)) - (b.paymentReceivedAt?.toDate() || new Date(0)));
+      // Calculate unpaid cancellation fees by checking cancellationFeePaid field directly
+      const unpaidCancelledServices = userCancelledInvites.filter(invite => 
+        !invite.cancellationFeePaid
+      );
 
-      // Track which cancellation fees have been paid by matching them with completed payments
-      let remainingCancellationFees = [...userCancelledInvites];
-      let totalPaidFees = 0;
-
-      // Go through completed payments chronologically and "pay off" cancellation fees
-      completedPayments.forEach(payment => {
-        let paymentFeesUsed = 0;
-        const availableFees = payment.pendingFeesIncluded - paymentFeesUsed;
-        
-        // Sort remaining fees by date (oldest first) to pay them off in order
-        remainingCancellationFees.sort((a, b) => 
-          (a.cancelledAt?.toDate() || new Date(0)) - (b.cancelledAt?.toDate() || new Date(0))
-        );
-
-        let feesToRemove = [];
-        let remainingPaymentFees = availableFees;
-
-        remainingCancellationFees.forEach((cancelledInvite, index) => {
-          if (remainingPaymentFees >= cancelledInvite.cancellationFee) {
-            // This cancellation fee can be fully paid by this payment
-            remainingPaymentFees -= cancelledInvite.cancellationFee;
-            totalPaidFees += cancelledInvite.cancellationFee;
-            feesToRemove.push(index);
-          }
-        });
-
-        // Remove paid fees from remaining list (reverse order to maintain indices)
-        feesToRemove.reverse().forEach(index => {
-          remainingCancellationFees.splice(index, 1);
-        });
-      });
-
-      // Calculate unpaid cancellation fees
-      const totalUnpaidCancellationFees = remainingCancellationFees.reduce((total, invite) => {
+      const totalUnpaidCancellationFees = unpaidCancelledServices.reduce((total, invite) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
-
-      const unpaidCancelledServices = remainingCancellationFees;
       const cancellationFeesOwed = totalUnpaidCancellationFees;
 
       const incentivePaymentsOwed = acceptedSentInvites.reduce((total, invite) => {
