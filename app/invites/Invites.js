@@ -1709,7 +1709,8 @@ const Invites = ({ user, userProfile }) => {
                 type="text"
                 placeholder="Meeting location *"
                 value={editFormData.meetingLocation || ''}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, meetingLocation: e.target.value }))required
+                onChange={(e) => setEditFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                required
               />
               <input
                 type="date"
