@@ -818,8 +818,7 @@ const Invites = ({ user, userProfile }) => {
         );
 
         // Cancelled invites where user received compensation as pal
-        const cancelledAsPal = receivedInvites.filter(invite => 
-          invite.status === 'cancelled' && 
+        const cancelledAsPal = receivedInvites.filter(invite =>           inv.status === 'cancelled' && 
           invite.palCompensation && invite.palCompensation > 0
         );
 
@@ -879,19 +878,20 @@ const Invites = ({ user, userProfile }) => {
       // Build pending payments list just like in Profile.js
       const pendingPayments = [];
 
-      // Add unpaid incentive payments (completed but not confirmed by pal)
-      const unpaidCompletedInvites = sentInvites.filter(invite => 
-        ['finished', 'payment_done'].includes(invite.status) && 
-        invite.status !== 'completed'
+      // Add unpaid incentive payments (completed but not confirmed by pal) - EXCLUDING current invite
+      const unpaidCompletedInvites = sentInvites.filter(inv => 
+        ['finished', 'payment_done'].includes(inv.status) && 
+        inv.status !== 'completed' && 
+        inv.id !== invite.id
       );
-      unpaidCompletedInvites.forEach(invite => {
+      unpaidCompletedInvites.forEach(inv => {
         pendingPayments.push({
-          id: invite.id,
+          id: inv.id,
           type: 'incentive_payment',
-          amount: invite.price || 0,
-          description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
-          date: invite.finishedAt?.toDate?.() || invite.paymentDoneAt?.toDate?.() || new Date(),
-          status: invite.status
+          amount: inv.price || 0,
+          description: `Incentive payment for "${inv.title}" to ${inv.toUsername}`,
+          date: inv.finishedAt?.toDate?.() || inv.paymentDoneAt?.toDate?.() || new Date(),
+          status: inv.status
         });
       });
 
@@ -1090,7 +1090,7 @@ const Invites = ({ user, userProfile }) => {
     // Check if this payment included pending fees and show warning
     if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
       // Calculate the base incentive amount (what the pal should actually receive)
-      const baseIncentiveAmount = invite.incentiveAmount || invite.price;
+      const baseIncentiveAmount = invite.incentiveAmount || selectedInvite.price;
       invite.calculatedBaseAmount = baseIncentiveAmount;
       invite.calculatedTotalReceived = invite.totalPaidAmount || (baseIncentiveAmount + invite.pendingFeesIncluded);
       setPaymentToConfirm(invite);
@@ -1709,10 +1709,9 @@ const Invites = ({ user, userProfile }) => {
                 type="text"
                 placeholder="Meeting location *"
                 value={editFormData.meetingLocation || ''}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
-                required
+                onChange={(e) => setEditFormData(prev => ({ ...prev, meetingLocation: e.target.value }))required
               />
-              The code changes primarily fix an incorrect variable reference within a reduce function used to calculate totals from completed invites, changing `invite` to `sentInvite`, ensuring correct calculations, and also fixes a typo with variable name.              <input
+              <input
                 type="date"
                 value={editFormData.date ||''}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
