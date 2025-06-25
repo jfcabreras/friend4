@@ -214,7 +214,6 @@ const Profile = ({ user, userProfile }) => {
       // 3. Total issued by cancellation fees
       const cancelledInvitesWithFees = sentInvites.filter(invite => 
         invite.status === 'cancelled' && 
-        invite.cancelledBy === user.uid &&
         invite.cancellationFee && invite.cancellationFee > 0
       );
       const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
