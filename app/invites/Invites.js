@@ -966,7 +966,12 @@ const Invites = ({ user, userProfile }) => {
       const incentiveAmount = selectedInvite.incentiveAmount || selectedInvite.price;
       // Calculate the actual outstanding fees based on our breakdown calculation
       const actualOutstandingFees = pendingFeesBreakdown ? pendingFeesBreakdown.totalAmount : 0;
-      const pendingFeesIncluded = actualOutstandingFees;
+      
+      // Separate pending fees into invite and cancellation categories
+      const pendingInviteFeesIncluded = pendingFeesBreakdown ? (pendingFeesBreakdown.incentivePaymentsOwed + pendingFeesBreakdown.platformFeesOwed) : 0;
+      const pendingCancelledInviteFeesIncluded = pendingFeesBreakdown ? pendingFeesBreakdown.cancellationFeesOwed : 0;
+      const totalPendingFeesIncluded = pendingInviteFeesIncluded + pendingCancelledInviteFeesIncluded;
+      
       const platformFee = incentiveAmount * 0.05; // 5% platform fee
       const netAmountToPal = incentiveAmount - platformFee;
 
@@ -976,20 +981,22 @@ const Invites = ({ user, userProfile }) => {
         paymentDoneAt: new Date(),
         paymentMethod: 'cash',
         incentiveAmount: incentiveAmount,
-        pendingFeesIncluded: pendingFeesIncluded,
+        pendingFeesIncluded: totalPendingFeesIncluded, // Keep for backward compatibility
+        pendingInviteFeesIncluded: pendingInviteFeesIncluded,
+        pendingCancelledInviteFeesIncluded: pendingCancelledInviteFeesIncluded,
         platformFee: platformFee,
         netAmountToPal: netAmountToPal,
         totalPaidAmount: paymentAmount
       });
 
       // Clear pending fees from user profile and mark related fees as paid
-      if (pendingFeesIncluded > 0) {
+      if (totalPendingFeesIncluded > 0) {
         const userRef = doc(db, 'users', user.uid);
 
         // Get user's current pending balance to calculate remaining balance after this payment
         const userDoc = await getDoc(userRef);
         const currentPendingBalance = userDoc.data()?.pendingBalance || 0;
-        const newPendingBalance = Math.max(0, currentPendingBalance - pendingFeesIncluded);
+        const newPendingBalance = Math.max(0, currentPendingBalance - totalPendingFeesIncluded);
 
         await updateDoc(userRef, {
           pendingBalance: newPendingBalance,
@@ -998,7 +1005,7 @@ const Invites = ({ user, userProfile }) => {
 
         // Mark specific fees as paid based on the pending payments breakdown
         if (pendingFeesBreakdown && pendingFeesBreakdown.pendingPayments) {
-          let remainingPaymentAmount = pendingFeesIncluded;
+          let remainingPaymentAmount = totalPendingFeesIncluded;
 
           // Process fees in chronological order (oldest first)
           const sortedPendingPayments = pendingFeesBreakdown.pendingPayments.sort((a, b) => a.date - b.date);
