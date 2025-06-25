@@ -267,7 +267,10 @@ const Profile = ({ user, userProfile }) => {
       }
 
       // 9. FINAL BALANCE CALCULATIONS - only calculate dynamic balances
-      const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + platformFeesOwed;
+      // Adjust platform fees by subtracting fees already collected from other users
+      const adjustedPlatformFeesOwed = Math.max(0, platformFeesOwed - receivedPaymentsForInvitesNotRelatedToMe - receivedPaymentsForCancelledInvitesNotRelatedToMe);
+      
+      const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + adjustedPlatformFeesOwed;
       const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
 
       // Calculate the net balance dynamically
@@ -335,7 +338,7 @@ const Profile = ({ user, userProfile }) => {
         totalEarnings,
         cancellationFeesOwed: pendingPaymentsForCancelled,
         incentivePaymentsOwed: pendingPaymentsForIncentives,
-        platformFeesOwed,
+        platformFeesOwed: adjustedPlatformFeesOwed,
         // Legacy fields for backward compatibility
         totalIssuedByCompletedInvites: issuedForIncentivePayments,
         totalPaidByCompletedInvites: paidForIncentivePayments,
