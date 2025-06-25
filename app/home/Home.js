@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit, getDoc, doc, updateDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import ProfileModal from '../components/ProfileModal';
+import InviteModal from '../components/InviteModal';
 
 const Home = ({ user, userProfile, refreshUserProfile }) => {
   const router = useRouter();
@@ -17,16 +18,6 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
   const [loadingPalPosts, setLoadingPalPosts] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteData, setInviteData] = useState({
-    title: '',
-    description: '',
-    meetingLocation: '',
-    startDate: '',
-    startTime: '',
-    endDate: '',
-    endTime: '',
-    price: ''
-  });
 
   useEffect(() => {
     if (user && userProfile) {
@@ -182,58 +173,7 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
     }
   };
 
-  const sendInvite = async () => {
-    if (!inviteData.title || !inviteData.description || !inviteData.meetingLocation || 
-        !inviteData.startDate || !inviteData.startTime || !inviteData.endDate || 
-        !inviteData.endTime || !inviteData.price) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    // Validate that end date/time is after start date/time
-    const startDateTime = new Date(`${inviteData.startDate}T${inviteData.startTime}`);
-    const endDateTime = new Date(`${inviteData.endDate}T${inviteData.endTime}`);
-
-    if (endDateTime <= startDateTime) {
-      alert('End date and time must be after start date and time');
-      return;
-    }
-
-    try {
-      await addDoc(collection(db, 'planInvitations'), {
-        fromUserId: user.uid,
-        fromUsername: userProfile.username,
-        toUserId: selectedPal.id,
-        toUsername: selectedPal.username,
-        title: inviteData.title,
-        description: inviteData.description,
-        meetingLocation: inviteData.meetingLocation,
-        startDate: new Date(inviteData.startDate),
-        startTime: inviteData.startTime,
-        endDate: new Date(inviteData.endDate),
-        endTime: inviteData.endTime,
-        price: parseFloat(inviteData.price),
-        status: 'pending',
-        createdAt: new Date()
-      });
-
-      alert('Invite sent successfully!');
-      setShowInviteModal(false);
-      setInviteData({
-        title: '',
-        description: '',
-        meetingLocation: '',
-        startDate: '',
-        startTime: '',
-        endDate: '',
-        endTime: '',
-        price: ''
-      });
-    } catch (error) {
-      console.error('Error sending invite:', error);
-      alert('Failed to send invite');
-    }
-  };
+  
 
   const handleSendInvite = (pal) => {
     setSelectedPal(pal);
@@ -434,135 +374,13 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
         onFavoriteChange={refreshUserProfile}
       />
 
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowInviteModal(false)}>×</button>
-            <div className="invite-form-header">
-              <h3>Invite {selectedPal?.username}</h3>
-              <p className="invite-form-subtitle">Create a hangout plan and set your incentive</p>
-            </div>
-
-            <div className="invite-form">
-              <div className="form-row">
-                <div className="form-group full-width">
-                  <label>Event Title *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Coffee & Chat, Movie Night, Gym Session"
-                    value={inviteData.title}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, title: e.target.value }))}
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group full-width">
-                  <label>Description *</label>
-                  <textarea
-                    placeholder="Describe what you'd like to do together..."
-                    value={inviteData.description}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, description: e.target.value }))}
-                    className="form-textarea"
-                    rows="3"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group full-width">
-                  <label>Meeting Location *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Central Park, Starbucks on 5th Ave"
-                    value={inviteData.meetingLocation}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, meetingLocation: e.target.value }))}
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="datetime-section">
-                <h4>📅 Event Schedule</h4>
-
-                <div className="form-row">
-                  <div className="form-group half-width">
-                    <label>Start Date *</label>
-                    <input
-                      type="date"
-                      value={inviteData.startDate}
-                      onChange={(e) => setInviteData(prev => ({ ...prev, startDate: e.target.value }))}
-                      className="form-input"
-                      min={new Date().toISOString().split('T')[0]}
-                      required
-                    />
-                  </div>
-                  <div className="form-group half-width">
-                    <label>Start Time *</label>
-                    <input
-                      type="time"
-                      value={inviteData.startTime}
-                      onChange={(e) => setInviteData(prev => ({ ...prev, startTime: e.target.value }))}
-                      className="form-input"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group half-width">
-                    <label>End Date *</label>
-                    <input
-                      type="date"
-                      value={inviteData.endDate}
-                      onChange={(e) => setInviteData(prev => ({ ...prev, endDate: e.target.value }))}
-                      className="form-input"
-                      min={inviteData.startDate || new Date().toISOString().split('T')[0]}
-                      required
-                    />
-                  </div>
-                  <div className="form-group half-width">
-                    <label>End Time *</label>
-                    <input
-                      type="time"
-                      value={inviteData.endTime}
-                      onChange={(e) => setInviteData(prev => ({ ...prev, endTime: e.target.value }))}
-                      className="form-input"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group full-width">
-                  <label>💰 Your Incentive ($) *</label>
-                  <input
-                    type="number"
-                    placeholder="How much are you offering?"
-                    value={inviteData.price}
-                    onChange={(e) => setInviteData(prev => ({ ...prev, price: e.target.value }))}
-                    className="form-input"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                  <small className="form-hint">This is what you're willing to pay for their time</small>
-                </div>
-              </div>
-
-              <button onClick={sendInvite} className="send-invite-btn">
-                🚀 Send Invite
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <InviteModal
+        showModal={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        selectedPal={selectedPal}
+        user={user}
+        userProfile={userProfile}
+      />
     </div>
   );
 };
