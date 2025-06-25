@@ -318,8 +318,8 @@ const Profile = ({ user, userProfile }) => {
         });
       });
 
-      // Calculate total earnings dynamically from actual received payments
-      const totalEarnings = receivedPaymentsForInvitesRelatedToMe + receivedPaymentsForCancelledInvitesRelatedToMe;
+      // Calculate total earnings dynamically from both received and pending payments owed to user
+      const totalEarnings = receivedPaymentsForInvitesRelatedToMe + receivedPaymentsForCancelledInvitesRelatedToMe + paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
 
       setBalanceData({
         totalOwed,
