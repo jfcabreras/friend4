@@ -227,14 +227,12 @@ const InviteModal = ({
 
     const incentiveAmount = parseFloat(inviteData.price);
     const totalOwed = pendingPaymentsData?.totalOwed || 0;
-    const totalPayment = incentiveAmount + totalOwed;
 
     // Warn user about pending fees if any exist
     if (totalOwed > 0) {
       let confirmMessage = `⚠️ OUTSTANDING FEES NOTICE\n\n`;
-      confirmMessage += `Current Invite: $${incentiveAmount.toFixed(2)}\n`;
-      confirmMessage += `Outstanding Fees: $${totalOwed.toFixed(2)}\n`;
-      confirmMessage += `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n`;
+      confirmMessage += `This Invite Amount: $${incentiveAmount.toFixed(2)}\n`;
+      confirmMessage += `Outstanding Fees: $${totalOwed.toFixed(2)}\n\n`;
 
       confirmMessage += `BREAKDOWN OF OUTSTANDING FEES:\n`;
       if (pendingPaymentsData.incentivePaymentsOwed > 0) {
@@ -257,8 +255,9 @@ const InviteModal = ({
         }
       }
 
-      confirmMessage += `\n💡 Important: Your outstanding fees will be automatically included in this payment.\n\n`;
-      confirmMessage += `Do you want to continue?`;
+      confirmMessage += `\n💡 Important: When you make the payment for this invite, your outstanding fees of $${totalOwed.toFixed(2)} will be automatically added to the payment.\n`;
+      confirmMessage += `Total you'll pay: $${incentiveAmount.toFixed(2)} (invite) + $${totalOwed.toFixed(2)} (fees) = $${(incentiveAmount + totalOwed).toFixed(2)}\n\n`;
+      confirmMessage += `Do you want to continue creating this invite?`;
 
       const confirmed = window.confirm(confirmMessage);
 
@@ -282,8 +281,6 @@ const InviteModal = ({
         endTime: inviteData.endTime,
         price: parseFloat(inviteData.price),
         incentiveAmount: parseFloat(inviteData.price),
-        pendingFeesIncluded: totalOwed,
-        totalPaymentAmount: totalPayment,
         status: 'pending',
         createdAt: new Date()
       });
@@ -388,7 +385,7 @@ const InviteModal = ({
               )}
 
               <p className="warning-note">
-                💡 Your total payment will be: <strong>Invite Amount + ${pendingPaymentsData.totalOwed.toFixed(2)} outstanding fees</strong>
+                💡 Note: When you pay for this invite, your outstanding fees of <strong>${pendingPaymentsData.totalOwed.toFixed(2)}</strong> will be automatically added to the payment.
               </p>
             </div>
           </div>
