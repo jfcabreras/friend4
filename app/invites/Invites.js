@@ -626,8 +626,10 @@ const Invites = ({ user, userProfile }) => {
 
     // Check if this payment included pending fees and show warning
     if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
-      // Calculate base amount correctly
-      invite.calculatedBaseAmount = invite.totalPaidAmount - invite.pendingFeesIncluded;
+      // Calculate the base incentive amount (what the pal should actually receive)
+      const baseIncentiveAmount = invite.incentiveAmount || invite.price;
+      invite.calculatedBaseAmount = baseIncentiveAmount;
+      invite.calculatedTotalReceived = invite.totalPaidAmount || (baseIncentiveAmount + invite.pendingFeesIncluded);
       setPaymentToConfirm(invite);
       setShowPaymentConfirmModal(true);
     } else {
@@ -1326,8 +1328,8 @@ const Invites = ({ user, userProfile }) => {
                   <span>${(paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)}</span>
                 </div>
                 <div className="breakdown-total">
-                  <span>Total Payment Amount:</span>
-                  <span>${(paymentToConfirm.totalPaidAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</span>
+                  <span>Total Payment Received:</span>
+                  <span>${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)}</span>
                 </div>
               </div>
               
@@ -1335,6 +1337,7 @@ const Invites = ({ user, userProfile }) => {
                   
                 <div className="important-notice">
                   <p><strong>💡 Important:</strong> The outstanding fees (${(paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)}) are debts that {paymentToConfirm.fromUsername} owed to the platform administration, not to you. You should only receive the incentive amount (${(paymentToConfirm.calculatedBaseAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}) for your time.</p>
+                  <p><strong>📋 Confirm Receipt:</strong> By clicking "Yes", you confirm that you received the full payment of ${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)} in cash, which includes both your incentive and {paymentToConfirm.fromUsername}'s outstanding platform fees.</p>
                 </div>
               
                 </div>
@@ -1343,10 +1346,10 @@ const Invites = ({ user, userProfile }) => {
               <div className="confirmation-instructions">
                 <h4>✅ Confirmation Instructions:</h4>
                 <ul>
-                  <li>Verify you received the correct cash amount: <strong>${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</strong></li>
-                  <li>The additional fees shown above are administrative and don't affect your payment</li>
-                  <li>Only confirm if you have physically received your incentive payment</li>
-                  <li>This action will mark the invite as completed</li>
+                  <li>Verify you received the correct total cash amount: <strong>${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)}</strong></li>
+                  <li>This includes your incentive (${(paymentToConfirm.calculatedBaseAmount || paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}) + outstanding fees (${(paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)})</li>
+                  <li>Only confirm if you have physically received the full payment amount</li>
+                  <li>This action will mark the invite as completed and clear the outstanding fees</li>
                 </ul>
               </div>
             </div>
@@ -1356,7 +1359,7 @@ const Invites = ({ user, userProfile }) => {
                 onClick={() => processPaymentConfirmation(paymentToConfirm.id)}
                 className="confirm-received-btn"
               >
-                ✅ Yes, I Received ${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}
+                ✅ Yes, I Received ${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)}
               </button>
               <button 
                 onClick={() => setShowPaymentConfirmModal(false)}
