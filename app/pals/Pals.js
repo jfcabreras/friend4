@@ -26,6 +26,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     endTime: '',
     price: ''
   });
+    const [pendingBalance, setPendingBalance] = useState(0); // Added state for pending balance
 
   useEffect(() => {
     if (user?.uid && userProfile) {
@@ -34,7 +35,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   }, [user?.uid, userProfile]);
 
-  
+
 
   const loadPals = async () => {
     if (!user?.uid) return;
@@ -103,7 +104,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   };
 
-  
+
 
   const loadPalPosts = async (palId) => {
     if (!palId) return;
@@ -114,7 +115,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         collection(db, 'posts'),
         where('authorId', '==', palId)
       );
-      
+
       const postsSnapshot = await getDocs(postsQuery);
       const posts = postsSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -126,7 +127,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
         return bTime - aTime;
       });
-      
+
       setSelectedPalPosts(posts);
     } catch (error) {
       console.error('Error loading pal posts:', error);
@@ -135,6 +136,46 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       setLoadingPalPosts(false);
     }
   };
+
+    const calculatePendingBalance = async () => {
+        if (!user?.uid) return 0;
+
+        let totalUnpaid = 0;
+
+        // Fetch plan invitations where the current user is the "toUser" and status is "pending" or "accepted"
+        const planInvitationsToQuery = query(
+            collection(db, 'planInvitations'),
+            where('toUserId', '==', user.uid),
+            where('status', 'in', ['pending', 'accepted'])
+        );
+
+        const planInvitationsToSnapshot = await getDocs(planInvitationsToQuery);
+        const planInvitationsTo = planInvitationsToSnapshot.docs.map(doc => doc.data());
+
+        // Calculate the total incentive amount for pending/accepted invitations where the user is the receiver
+        planInvitationsTo.forEach(invitation => {
+            totalUnpaid += invitation.incentiveAmount || 0;
+        });
+
+        // Fetch payment requests where the current user is the "fromUser" and status is "pending"
+        const paymentRequestsFromQuery = query(
+            collection(db, 'paymentRequests'),
+            where('fromUserId', '==', user.uid),
+            where('status', '==', 'pending')
+        );
+
+        const paymentRequestsFromSnapshot = await getDocs(paymentRequestsFromQuery);
+        const paymentRequestsFrom = paymentRequestsFromSnapshot.docs.map(doc => doc.data());
+
+        // Subtract the requested amounts from the total unpaid amount
+        paymentRequestsFrom.forEach(request => {
+            totalUnpaid -= request.requestedAmount || 0;
+        });
+
+        setPendingBalance(totalUnpaid);
+        return totalUnpaid;
+    };
+
 
   const sendInvite = async () => {
     if (!inviteData.title || !inviteData.description || !inviteData.meetingLocation || 
@@ -154,7 +195,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
 
     // Calculate pending fees from user profile
-    const pendingBalance = userProfile.pendingBalance || 0;
+    // const pendingBalance = userProfile.pendingBalance || 0;
     const totalPayment = parseFloat(inviteData.price) + pendingBalance;
 
     // Warn user about pending fees if any exist
@@ -167,7 +208,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         `Your pending fees will be added to this payment.\n\n` +
         `Do you want to continue?`
       );
-      
+
       if (!confirmed) {
         return;
       }
@@ -206,6 +247,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         endTime: '',
         price: ''
       });
+            setPendingBalance(0); // Clear pending balance after sending invite
     } catch (error) {
       console.error('Error sending invite:', error);
       alert('Failed to send invite');
@@ -218,23 +260,23 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     setShowInviteModal(true);
   };
 
-  
+
 
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return 'Just now';
     const now = new Date();
     const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
+
     return postTime.toLocaleDateString();
   };
 
@@ -356,8 +398,9 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
                   </button>
                 </div>
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     setSelectedPal(pal);
+                    await calculatePendingBalance();
                     setShowInviteModal(true);
                   }}
                   className="invite-btn"
@@ -372,9 +415,20 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
+        <div className="modal-overlay" onClick={() => {
+            setShowInviteModal(false);
+            setPendingBalance(0);
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowInviteModal(false)}>×</button>
+            <button className="modal-close" onClick={() => {
+                setShowInviteModal(false);
+                setPendingBalance(0);
+            }}>×</button>
+              {pendingBalance > 0 && (
+                  <div className="pending-balance-warning">
+                      ⚠️ You have pending fees of ${pendingBalance.toFixed(2)} that will be added to this payment.
+                  </div>
+              )}
             <div className="invite-form-header">
               <h3>Invite {selectedPal?.username}</h3>
               <p className="invite-form-subtitle">Create a hangout plan and set your incentive</p>
@@ -518,7 +572,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         onFavoriteChange={refreshUserProfile}
       />
 
-      
+
     </div>
   );
 };
