@@ -170,6 +170,21 @@ const Invites = ({ user, userProfile }) => {
             totalEarnings: currentPalEarnings + (palCompensation - palPlatformFee),
             pendingBalance: currentPalPendingBalance + palPlatformFee
           });
+
+          // Create platform fee record for cancellation compensation
+          await addDoc(collection(db, 'platformFees'), {
+            userId: invite.toUserId,
+            username: invite.toUsername,
+            inviteId: inviteId,
+            inviteTitle: invite.title,
+            feeType: 'cancellation_compensation',
+            amount: palPlatformFee,
+            status: 'issued',
+            issuedAt: new Date(),
+            paidAt: null,
+            receivedByPlatform: false,
+            description: `5% platform fee for cancellation compensation on "${invite.title}"`
+          });
         }
       }
 
@@ -583,7 +598,7 @@ const Invites = ({ user, userProfile }) => {
                 incentivePaymentAmountPaid: paymentAmount
               });
             } else if (payment.type === 'platform_fee') {
-              // Mark platform fee as paid
+              // Mark platform fee as paid in the invite
               await updateDoc(doc(db, 'planInvitations', payment.inviteId), {
                 platformFeePaid: true,
                 platformFeePaidAt: new Date(),
@@ -592,6 +607,26 @@ const Invites = ({ user, userProfile }) => {
                 platformFeePaymentReceived: true, // Platform fees are automatically confirmed
                 platformFeeAmountPaid: paymentAmount
               });
+
+              // Update platform fee record as paid and received
+              const platformFeesQuery = query(
+                collection(db, 'platformFees'),
+                where('inviteId', '==', payment.inviteId),
+                where('userId', '==', user.uid),
+                where('status', '==', 'issued')
+              );
+              const platformFeesSnapshot = await getDocs(platformFeesQuery);
+              
+              if (!platformFeesSnapshot.empty) {
+                const platformFeeDoc = platformFeesSnapshot.docs[0];
+                await updateDoc(doc(db, 'platformFees', platformFeeDoc.id), {
+                  status: 'paid_and_received',
+                  paidAt: new Date(),
+                  receivedByPlatform: true,
+                  paymentMethod: 'cash_through_invite',
+                  paidInInviteId: selectedInvite.id
+                });
+              }
             }
 
             remainingPaymentAmount -= paymentAmount;
@@ -652,7 +687,7 @@ const Invites = ({ user, userProfile }) => {
         paymentConfirmed: true
       });
 
-      // Add platform fee to pal's pending balance
+      // Add platform fee to pal's pending balance and create platform fee record
       const palRef = doc(db, 'users', invite.toUserId);
       const palDoc = await getDoc(palRef);
       const currentPendingBalance = palDoc.data()?.pendingBalance || 0;
@@ -660,6 +695,21 @@ const Invites = ({ user, userProfile }) => {
       await updateDoc(palRef, {
         pendingBalance: currentPendingBalance + platformFee,
         totalEarnings: (palDoc.data()?.totalEarnings || 0) + (invite.netAmountToPal || (invite.incentiveAmount || invite.price) - platformFee)
+      });
+
+      // Create platform fee record for admin tracking
+      await addDoc(collection(db, 'platformFees'), {
+        userId: invite.toUserId,
+        username: invite.toUsername,
+        inviteId: inviteId,
+        inviteTitle: invite.title,
+        feeType: 'incentive_completion',
+        amount: platformFee,
+        status: 'issued',
+        issuedAt: new Date(),
+        paidAt: null,
+        receivedByPlatform: false,
+        description: `5% platform fee for completed invite "${invite.title}"`
       });
 
       // Mark any fee payments that were paid through this invite as received
@@ -691,6 +741,23 @@ const Invites = ({ user, userProfile }) => {
         if (Object.keys(updateData).length > 0) {
           await updateDoc(doc(db, 'planInvitations', otherInvite.id), updateData);
         }
+      }
+
+      // Update platform fee records for this invite as received by platform
+      const platformFeesQuery = query(
+        collection(db, 'platformFees'),
+        where('inviteId', '==', inviteId),
+        where('status', '==', 'issued')
+      );
+      const platformFeesSnapshot = await getDocs(platformFeesQuery);
+      
+      for (const platformFeeDoc of platformFeesSnapshot.docs) {
+        await updateDoc(doc(db, 'platformFees', platformFeeDoc.id), {
+          status: 'received_by_platform',
+          receivedByPlatform: true,
+          receivedAt: new Date(),
+          receivedThroughInviteId: inviteId
+        });
       }
 
       setShowPaymentConfirmModal(false);
