@@ -26,7 +26,6 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     endTime: '',
     price: ''
   });
-    const [pendingBalance, setPendingBalance] = useState(0); // Added state for pending balance
 
   useEffect(() => {
     if (user?.uid && userProfile) {
@@ -35,7 +34,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   }, [user?.uid, userProfile]);
 
-
+  
 
   const loadPals = async () => {
     if (!user?.uid) return;
@@ -104,7 +103,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     }
   };
 
-
+  
 
   const loadPalPosts = async (palId) => {
     if (!palId) return;
@@ -115,7 +114,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         collection(db, 'posts'),
         where('authorId', '==', palId)
       );
-
+      
       const postsSnapshot = await getDocs(postsQuery);
       const posts = postsSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -127,7 +126,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
         return bTime - aTime;
       });
-
+      
       setSelectedPalPosts(posts);
     } catch (error) {
       console.error('Error loading pal posts:', error);
@@ -136,46 +135,6 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       setLoadingPalPosts(false);
     }
   };
-
-    const calculatePendingBalance = async () => {
-        if (!user?.uid) return 0;
-
-        let totalUnpaid = 0;
-
-        // Fetch plan invitations where the current user is the "toUser" and status is "pending" or "accepted"
-        const planInvitationsToQuery = query(
-            collection(db, 'planInvitations'),
-            where('toUserId', '==', user.uid),
-            where('status', 'in', ['pending', 'accepted'])
-        );
-
-        const planInvitationsToSnapshot = await getDocs(planInvitationsToQuery);
-        const planInvitationsTo = planInvitationsToSnapshot.docs.map(doc => doc.data());
-
-        // Calculate the total incentive amount for pending/accepted invitations where the user is the receiver
-        planInvitationsTo.forEach(invitation => {
-            totalUnpaid += invitation.incentiveAmount || 0;
-        });
-
-        // Fetch payment requests where the current user is the "fromUser" and status is "pending"
-        const paymentRequestsFromQuery = query(
-            collection(db, 'paymentRequests'),
-            where('fromUserId', '==', user.uid),
-            where('status', '==', 'pending')
-        );
-
-        const paymentRequestsFromSnapshot = await getDocs(paymentRequestsFromQuery);
-        const paymentRequestsFrom = paymentRequestsFromSnapshot.docs.map(doc => doc.data());
-
-        // Subtract the requested amounts from the total unpaid amount
-        paymentRequestsFrom.forEach(request => {
-            totalUnpaid -= request.requestedAmount || 0;
-        });
-
-        setPendingBalance(totalUnpaid);
-        return totalUnpaid;
-    };
-
 
   const sendInvite = async () => {
     if (!inviteData.title || !inviteData.description || !inviteData.meetingLocation || 
@@ -194,21 +153,178 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
       return;
     }
 
-    // Calculate pending fees from user profile
-    // const pendingBalance = userProfile.pendingBalance || 0;
-    const totalPayment = parseFloat(inviteData.price) + pendingBalance;
+    // Calculate detailed pending balance the same way as in Profile.js
+    let totalOwed = 0;
+    let incentivePaymentsOwed = 0;
+    let cancellationFeesOwed = 0;
+    let platformFeesOwed = 0;
+    let pendingPayments = [];
+
+    try {
+      // Get sent invites to calculate what user owes
+      const sentInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('fromUserId', '==', user.uid)
+      );
+      const sentInvitesSnapshot = await getDocs(sentInvitesQuery);
+      const sentInvites = sentInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'sent',
+        ...doc.data()
+      }));
+
+      // Get received invites to calculate platform fees owed (for public profiles)
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'received',
+        ...doc.data()
+      }));
+
+      // Calculate platform fees owed (for public profiles only)
+      if (userProfile.profileType === 'public') {
+        // Completed invites where user was the pal
+        const completedAsPal = receivedInvites.filter(invite => 
+          invite.status === 'completed' && invite.paymentConfirmed === true
+        );
+
+        // Cancelled invites where user received compensation as pal
+        const cancelledAsPal = receivedInvites.filter(invite => 
+          invite.status === 'cancelled' && 
+          invite.palCompensation && invite.palCompensation > 0
+        );
+
+        const allEarningInvites = [...completedAsPal, ...cancelledAsPal];
+
+        allEarningInvites.forEach(invite => {
+          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
+          const platformFee = invite.platformFee || (amount * 0.05);
+          // Only add to owed if not already paid to platform
+          if (!invite.platformFeePaid) {
+            platformFeesOwed += platformFee;
+          }
+        });
+      }
+
+      // Calculate outstanding amounts for sent invites
+      // 1. Total issued by completed invites (finished, payment_done, completed status)
+      const completedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done', 'completed'].includes(invite.status)
+      );
+      const totalIssuedByCompletedInvites = completedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      // 2. Total paid by completed invites (only those confirmed by pal)
+      const paidCompletedInvites = sentInvites.filter(invite => 
+        invite.status === 'completed' && invite.paymentConfirmed === true
+      );
+      const totalPaidByCompletedInvites = paidCompletedInvites.reduce((total, invite) => {
+        return total + (invite.price || 0);
+      }, 0);
+
+      // 3. Total issued by cancellation fees
+      const cancelledInvitesWithFees = sentInvites.filter(invite => 
+        invite.status === 'cancelled' && 
+        invite.cancellationFee && invite.cancellationFee > 0
+      );
+      const totalIssuedByCancellationFees = cancelledInvitesWithFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // 4. Total paid by cancellation fees (marked as paid)
+      const paidCancellationFees = cancelledInvitesWithFees.filter(invite => 
+        invite.cancellationFeePaid === true
+      );
+      const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
+        return total + (invite.cancellationFee || 0);
+      }, 0);
+
+      // Calculate outstanding amounts
+      incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
+      cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
+
+      // Total amount user owes (from sent invites + platform fees from received invites)
+      totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
+
+      // Build pending payments list
+      // Add unpaid incentive payments (completed but not confirmed by pal)
+      const unpaidCompletedInvites = sentInvites.filter(invite => 
+        ['finished', 'payment_done'].includes(invite.status) && 
+        invite.status !== 'completed'
+      );
+      unpaidCompletedInvites.forEach(invite => {
+        pendingPayments.push({
+          id: invite.id,
+          type: 'incentive_payment',
+          amount: invite.price || 0,
+          description: `Incentive payment for "${invite.title}" to ${invite.toUsername}`,
+          date: invite.finishedAt?.toDate?.() || invite.paymentDoneAt?.toDate?.() || new Date(),
+          status: invite.status
+        });
+      });
+
+      // Add unpaid cancellation fees
+      const unpaidCancellationFees = cancelledInvitesWithFees.filter(invite => 
+        !invite.cancellationFeePaid
+      );
+      unpaidCancellationFees.forEach(cancelledInvite => {
+        pendingPayments.push({
+          id: `cancel_fee_${cancelledInvite.id}`,
+          type: 'cancellation_fee',
+          amount: cancelledInvite.cancellationFee,
+          description: `Unpaid cancellation fee for "${cancelledInvite.title}" to ${cancelledInvite.toUsername}`,
+          date: cancelledInvite.cancelledAt?.toDate?.() || new Date(),
+          inviteId: cancelledInvite.id
+        });
+      });
+
+    } catch (error) {
+      console.error('Error calculating pending balance:', error);
+      // Fallback to simple calculation
+      totalOwed = userProfile.pendingBalance || 0;
+    }
+
+    const incentiveAmount = parseFloat(inviteData.price);
+    const totalPayment = incentiveAmount + totalOwed;
 
     // Warn user about pending fees if any exist
-    if (pendingBalance > 0) {
-      const confirmed = window.confirm(
-        `⚠️ PENDING FEES NOTICE\n\n` +
-        `Incentive Amount: $${parseFloat(inviteData.price).toFixed(2)}\n` +
-        `Pending Fees: $${pendingBalance.toFixed(2)}\n` +
-        `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n` +
-        `Your pending fees will be added to this payment.\n\n` +
-        `Do you want to continue?`
-      );
+    if (totalOwed > 0) {
+      let confirmMessage = `⚠️ OUTSTANDING FEES NOTICE\n\n`;
+      confirmMessage += `Current Invite: $${incentiveAmount.toFixed(2)}\n`;
+      confirmMessage += `Outstanding Fees: $${totalOwed.toFixed(2)}\n`;
+      confirmMessage += `TOTAL TO PAY: $${totalPayment.toFixed(2)}\n\n`;
+      
+      confirmMessage += `BREAKDOWN OF OUTSTANDING FEES:\n`;
+      if (incentivePaymentsOwed > 0) {
+        confirmMessage += `• Unpaid Incentive Payments: $${incentivePaymentsOwed.toFixed(2)}\n`;
+      }
+      if (cancellationFeesOwed > 0) {
+        confirmMessage += `• Unpaid Cancellation Fees: $${cancellationFeesOwed.toFixed(2)}\n`;
+      }
+      if (platformFeesOwed > 0) {
+        confirmMessage += `• Platform Fees Owed: $${platformFeesOwed.toFixed(2)}\n`;
+      }
+      
+      if (pendingPayments.length > 0) {
+        confirmMessage += `\nDETAILED PENDING PAYMENTS:\n`;
+        pendingPayments.sort((a, b) => b.date - a.date).slice(0, 3).forEach(payment => {
+          confirmMessage += `• ${payment.description}: $${payment.amount.toFixed(2)}\n`;
+        });
+        if (pendingPayments.length > 3) {
+          confirmMessage += `... and ${pendingPayments.length - 3} more items\n`;
+        }
+      }
+      
+      confirmMessage += `\n💡 Important: Your outstanding fees will be automatically included in this payment.\n\n`;
+      confirmMessage += `Do you want to continue?`;
 
+      const confirmed = window.confirm(confirmMessage);
+      
       if (!confirmed) {
         return;
       }
@@ -229,7 +345,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         endTime: inviteData.endTime,
         price: parseFloat(inviteData.price),
         incentiveAmount: parseFloat(inviteData.price),
-        pendingFeesIncluded: pendingBalance,
+        pendingFeesIncluded: totalOwed,
         totalPaymentAmount: totalPayment,
         status: 'pending',
         createdAt: new Date()
@@ -247,7 +363,6 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         endTime: '',
         price: ''
       });
-            setPendingBalance(0); // Clear pending balance after sending invite
     } catch (error) {
       console.error('Error sending invite:', error);
       alert('Failed to send invite');
@@ -260,23 +375,23 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
     setShowInviteModal(true);
   };
 
-
+  
 
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return 'Just now';
     const now = new Date();
     const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
-
+    
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-
+    
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-
+    
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-
+    
     return postTime.toLocaleDateString();
   };
 
@@ -398,9 +513,8 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
                   </button>
                 </div>
                 <button 
-                  onClick={async () => {
+                  onClick={() => {
                     setSelectedPal(pal);
-                    await calculatePendingBalance();
                     setShowInviteModal(true);
                   }}
                   className="invite-btn"
@@ -415,20 +529,9 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="modal-overlay" onClick={() => {
-            setShowInviteModal(false);
-            setPendingBalance(0);
-        }}>
+        <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => {
-                setShowInviteModal(false);
-                setPendingBalance(0);
-            }}>×</button>
-              {pendingBalance > 0 && (
-                  <div className="pending-balance-warning">
-                      ⚠️ You have pending fees of ${pendingBalance.toFixed(2)} that will be added to this payment.
-                  </div>
-              )}
+            <button className="modal-close" onClick={() => setShowInviteModal(false)}>×</button>
             <div className="invite-form-header">
               <h3>Invite {selectedPal?.username}</h3>
               <p className="invite-form-subtitle">Create a hangout plan and set your incentive</p>
@@ -572,7 +675,7 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
         onFavoriteChange={refreshUserProfile}
       />
 
-
+      
     </div>
   );
 };
