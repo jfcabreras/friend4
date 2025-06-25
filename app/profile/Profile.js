@@ -242,7 +242,9 @@ const Profile = ({ user, userProfile }) => {
       }, 0);
 
       const paidCancelledReceivedInvites = cancelledReceivedInvites.filter(invite => 
-        invite.cancellationFeePaid === true && invite.palCompensation > 0
+        invite.status === 'cancelled' && 
+        invite.palCompensation && invite.palCompensation > 0 &&
+        invite.cancellationFeePaid === true
       );
       const receivedPaymentsForCancelledInvitesRelatedToMe = paidCancelledReceivedInvites.reduce((total, invite) => {
         return total + (invite.palCompensation || 0);
@@ -287,17 +289,20 @@ const Profile = ({ user, userProfile }) => {
           }
         });
 
-        // Platform fees on cancellation compensation
-        paidCancelledReceivedInvites.forEach(invite => {
-          const compensation = invite.palCompensation || 0;
-          const platformFee = compensation * 0.05;
-          issuedFeesForCancellationsRelatedToMe += platformFee;
-          
-          const netCompensation = compensation - platformFee;
-          totalEarnings += netCompensation;
-          
-          if (!invite.platformFeePaid) {
-            platformFeesOwed += platformFee;
+        // Platform fees on cancellation compensation - CORRECTED LOGIC
+        cancelledReceivedInvites.forEach(invite => {
+          if (invite.palCompensation && invite.palCompensation > 0) {
+            const compensation = invite.palCompensation;
+            const platformFee = invite.platformFee || (compensation * 0.05);
+            issuedFeesForCancellationsRelatedToMe += platformFee;
+            
+            const netCompensation = compensation - platformFee;
+            totalEarnings += netCompensation;
+            
+            // For cancellation compensation, if payment was made but platform fee not settled
+            if (invite.cancellationFeePaid && !invite.platformFeePaid) {
+              platformFeesOwed += platformFee;
+            }
           }
         });
       }
@@ -306,8 +311,11 @@ const Profile = ({ user, userProfile }) => {
       const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + platformFeesOwed;
       const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
       
-      const pendingBalanceToPayToPlatform = Math.max(0, totalOwed);
-      const balanceInFavor = Math.max(0, totalToReceive - totalOwed);
+      // Calculate the net balance
+      const netBalance = totalToReceive - totalOwed;
+      
+      const pendingBalanceToPayToPlatform = Math.max(0, -netBalance); // What I owe to platform
+      const balanceInFavor = Math.max(0, netBalance); // What platform owes me
 
       // Update user's pendingBalance field in database if it differs from calculated amount
       const userRef = doc(db, 'users', user.uid);
