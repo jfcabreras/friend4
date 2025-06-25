@@ -263,9 +263,6 @@ const Profile = ({ user, userProfile }) => {
       const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + platformFeesOwed;
       const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
 
-      // Use stored total earnings directly (platform fees already accounted for in stored values)
-      const totalEarnings = userProfile.totalEarnings || 0;
-
       // Calculate the net balance dynamically
       const netBalance = totalToReceive - totalOwed;
 
