@@ -865,7 +865,7 @@ const Invites = ({ user, userProfile }) => {
         invite.cancellationFeePaid === true
       );
       const totalPaidByCancellationFees = paidCancellationFees.reduce((total, invite) => {
-        return total + (invite.cancellationFee || 0);
+        return total + (invite.cancellationFeeAmountPaid || invite.cancellationFee || 0);
       }, 0);
 
       // Calculate outstanding amounts
@@ -1327,9 +1327,9 @@ const Invites = ({ user, userProfile }) => {
                       {invite.cancellationFeePaid ? ' (Paid)' : ' (Unpaid)'}
                     </span>
                   )}
-                  {invite.status === 'payment_done' && invite.pendingFeesIncluded > 0 && (
+                  {invite.status === 'payment_done' && invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0 && (
                     <span className="pending-fees-included">
-                      ⚠️ Includes ${(invite.pendingFeesIncluded || 0).toFixed(2)} outstanding fees
+                      ⚠️ Includes ${invite.pendingFeesIncluded.toFixed(2)} outstanding fees
                     </span>
                   )}
                   {invite.status === 'finished' && (
