@@ -998,8 +998,46 @@ const Invites = ({ user, userProfile }) => {
                       ⚠️ Includes ${invite.pendingFeesIncluded.toFixed(2)} outstanding fees
                     </span>
                   )}
+                  {invite.status === 'finished' && (
+                    <span className="finished-status">
+                      🏁 Ready for payment
+                    </span>
+                  )}
                 </div>
               </div>
+
+              {/* Outstanding fees notice for finished invites */}
+              {invite.status === 'finished' && (
+                <div className="outstanding-fees-notice">
+                  {invite.type === 'sent' ? (
+                    pendingFeesBreakdown && pendingFeesBreakdown.totalAmount > 0 ? (
+                      <div className="fees-warning sender">
+                        <span className="fees-icon">⚠️</span>
+                        <div className="fees-text">
+                          <strong>Payment will include outstanding fees:</strong>
+                          <br />
+                          Invite: ${invite.price?.toFixed(2)} + Outstanding: ${pendingFeesBreakdown.totalAmount.toFixed(2)} = Total: ${(invite.price + pendingFeesBreakdown.totalAmount).toFixed(2)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="fees-notice sender">
+                        <span className="fees-icon">✅</span>
+                        <span className="fees-text">No outstanding fees - payment will be ${invite.price?.toFixed(2)}</span>
+                      </div>
+                    )
+                  ) : (
+                    // For receivers - check if sender has outstanding fees by looking at current pending payments
+                    <div className="fees-notice receiver">
+                      <span className="fees-icon">💰</span>
+                      <span className="fees-text">
+                        You will receive ${invite.price?.toFixed(2)} for this invite
+                        <br />
+                        <small>Payment may include sender's outstanding platform fees</small>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="invite-actions">
                 <button 
