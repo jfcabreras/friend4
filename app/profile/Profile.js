@@ -37,6 +37,7 @@ const Profile = ({ user, userProfile }) => {
     totalEarnings: 0,
     cancellationFeesOwed: 0,
     incentivePaymentsOwed: 0,
+    platformFeesOwed: 0,
     totalIssuedByCompletedInvites: 0,
     totalPaidByCompletedInvites: 0,
     totalIssuedByCancellationFees: 0,
@@ -76,6 +77,7 @@ const Profile = ({ user, userProfile }) => {
         totalEarnings: 0,
         cancellationFeesOwed: 0,
         incentivePaymentsOwed: 0,
+        platformFeesOwed: 0,
         totalIssuedByCompletedInvites: 0,
         totalPaidByCompletedInvites: 0,
         totalIssuedByCancellationFees: 0,
@@ -135,9 +137,65 @@ const Profile = ({ user, userProfile }) => {
         ...doc.data()
       }));
 
-      // Only show total earnings for public users (pals)
-      const totalEarnings = userProfile.profileType === 'public' ? (userProfile.totalEarnings || 0) : 0;
+      // Get received invites to calculate what user earned as a pal
+      const receivedInvitesQuery = query(
+        collection(db, 'planInvitations'),
+        where('toUserId', '==', user.uid)
+      );
+      const receivedInvitesSnapshot = await getDocs(receivedInvitesQuery);
+      const receivedInvites = receivedInvitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        type: 'received',
+        ...doc.data()
+      }));
 
+      // Calculate earnings from received invites (as a pal)
+      let totalEarnings = 0;
+      let platformFeesOwed = 0;
+
+      if (userProfile.profileType === 'public') {
+        // Completed invites where user was the pal
+        const completedAspal = receivedInvites.filter(invite => 
+          invite.status === 'completed' && invite.paymentConfirmed === true
+        );
+        
+        completedAspal.forEach(invite => {
+          const incentiveAmount = invite.incentiveAmount || invite.price || 0;
+          const platformFee = invite.platformFee || (incentiveAmount * 0.05);
+          const netEarning = incentiveAmount - platformFee;
+          totalEarnings += netEarning;
+        });
+
+        // Cancelled invites where user received compensation as pal
+        const cancelledAsPal = receivedInvites.filter(invite => 
+          invite.status === 'cancelled' && 
+          invite.palCompensation && invite.palCompensation > 0
+        );
+        
+        cancelledAsPal.forEach(invite => {
+          const compensation = invite.palCompensation || 0;
+          const platformFee = compensation * 0.05;
+          const netCompensation = compensation - platformFee;
+          totalEarnings += netCompensation;
+        });
+
+        // Calculate platform fees owed (5% on earnings)
+        const allEarningInvites = [
+          ...completedAspal,
+          ...cancelledAsPal
+        ];
+        
+        allEarningInvites.forEach(invite => {
+          const amount = invite.incentiveAmount || invite.palCompensation || invite.price || 0;
+          const platformFee = invite.platformFee || (amount * 0.05);
+          // Only add to owed if not already paid to platform
+          if (!invite.platformFeePaid) {
+            platformFeesOwed += platformFee;
+          }
+        });
+      }
+
+      // Calculate what user owes from sent invites
       // 1. Total issued by completed invites (finished, payment_done, completed status)
       const completedInvites = sentInvites.filter(invite => 
         ['finished', 'payment_done', 'completed'].includes(invite.status)
@@ -171,12 +229,12 @@ const Profile = ({ user, userProfile }) => {
         return total + (invite.cancellationFee || 0);
       }, 0);
 
-      // Calculate outstanding amounts
+      // Calculate outstanding amounts for sent invites
       const incentivePaymentsOwed = totalIssuedByCompletedInvites - totalPaidByCompletedInvites;
       const cancellationFeesOwed = totalIssuedByCancellationFees - totalPaidByCancellationFees;
 
-      // Total amount user owes
-      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed;
+      // Total amount user owes (from sent invites + platform fees from received invites)
+      const totalOwed = incentivePaymentsOwed + cancellationFeesOwed + platformFeesOwed;
 
       // Build pending payments list
       const pendingPayments = [];
@@ -217,6 +275,7 @@ const Profile = ({ user, userProfile }) => {
         totalEarnings,
         cancellationFeesOwed,
         incentivePaymentsOwed,
+        platformFeesOwed,
         // Four specific balances
         totalIssuedByCompletedInvites,
         totalPaidByCompletedInvites,
@@ -627,10 +686,16 @@ const Profile = ({ user, userProfile }) => {
               <span className="balance-value cancellation">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
             </div>
             {userProfile.profileType === 'public' && (
-              <div className="balance-detail">
-                <span className="balance-type">Your Earnings:</span>
-                <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
-              </div>
+              <>
+                <div className="balance-detail">
+                  <span className="balance-type">Platform Fees Owed:</span>
+                  <span className="balance-value cancellation">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
+                </div>
+                <div className="balance-detail">
+                  <span className="balance-type">Your Earnings:</span>
+                  <span className="balance-value earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
+                </div>
+              </>
             )}
           </div>
 
