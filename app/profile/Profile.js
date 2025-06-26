@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -17,11 +18,13 @@ const Profile = ({ user, userProfile }) => {
   const [newActivity, setNewActivity] = useState('');
   const [languagePreferences, setLanguagePreferences] = useState([]);
   const [newLanguage, setNewLanguage] = useState('');
+  const [aboutMe, setAboutMe] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [activeTab, setActiveTab] = useState('posts');
 
   const [userStats, setUserStats] = useState({
     sentInvites: 0,
@@ -83,6 +86,7 @@ const Profile = ({ user, userProfile }) => {
       setProfilePicture(userProfile.profilePicture || null);
       setActivityPreferences(userProfile.activityPreferences || []);
       setLanguagePreferences(userProfile.languagePreferences || []);
+      setAboutMe(userProfile.aboutMe || '');
 
       loadUserStats();
     } else if (!user) {
@@ -94,6 +98,7 @@ const Profile = ({ user, userProfile }) => {
       setProfilePicture(null);
       setActivityPreferences([]);
       setLanguagePreferences([]);
+      setAboutMe('');
       setUserStats({
         sentInvites: 0,
         receivedInvites: 0,
@@ -497,8 +502,6 @@ const Profile = ({ user, userProfile }) => {
     setLanguagePreferences(prev => prev.filter(pref => pref !== language));
   };
 
-
-
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -534,6 +537,7 @@ const Profile = ({ user, userProfile }) => {
         profileType: profileType,
         activityPreferences: activityPreferences,
         languagePreferences: languagePreferences,
+        aboutMe: aboutMe.trim(),
         updatedAt: new Date()
       };
 
@@ -576,451 +580,422 @@ const Profile = ({ user, userProfile }) => {
     );
   }
 
-
-
   return (
     <div className="profile-section">
-      <div className="profile-header">
-        <div className="profile-avatar">
-          {profilePicture ? (
-            <img src={profilePicture} alt="Profile" className="profile-picture" />
-          ) : (
-            <div className="avatar-placeholder">
-              {userProfile.username?.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </div>
-        <div className="profile-info">
-          {isEditing ? (
-            <div className="edit-form">
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                required
-              />
-              <input
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="Country"
-                required
-              />
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="City"
-                required
-              />
-              <select
-                value={profileType}
-                onChange={(e) => setProfileType(e.target.value)}
-              >
-                <option value="public">Public Profile (Visible for receiving invites)</option>
-                <option value="private">Private Profile (Not discoverable)</option>
-              </select>
-
-              <div className="profile-picture-upload">
-                <label htmlFor="profile-picture-input">Profile Picture:</label>
-                <input
-                  id="profile-picture-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfilePictureChange}
-                />
-                {profilePictureFile && (
-                  <p className="file-selected">Selected: {profilePictureFile.name}</p>
-                )}
-                {uploadingPicture && <p>Uploading profile picture...</p>}
-              </div>
-
-              <div className="activity-preferences-section">
-                <label>Activity Preferences:</label>
-                <div className="activity-input">
-                  <input
-                    type="text"
-                    value={newActivity}
-                    onChange={(e) => setNewActivity(e.target.value)}
-                    placeholder="Add an activity (e.g., hiking, coffee, movies)"
-                    onKeyPress={(e) => e.key === 'Enter' && addActivity()}
-                  />
-                  <button type="button" onClick={addActivity} className="add-activity-btn">
-                    Add
-                  </button>
-                </div>
-                <div className="activity-tags">
-                  {activityPreferences.map((activity, index) => (
-                    <span key={index} className="activity-tag">
-                      {activity}
-                      <button 
-                        type="button" 
-                        onClick={() => removeActivity(activity)}
-                        className="remove-activity"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="activity-preferences-section">
-                <label>Languages:</label>
-                <div className="activity-input">
-                  <input
-                    type="text"
-                    value={newLanguage}
-                    onChange={(e) => setNewLanguage(e.target.value)}
-                    placeholder="Add a language (e.g., English, Spanish, French)"
-                    onKeyPress={(e) => e.key === 'Enter' && addLanguage()}
-                  />
-                  <button type="button" onClick={addLanguage} className="add-activity-btn">
-                    Add
-                  </button>
-                </div>
-                <div className="activity-tags">
-                  {languagePreferences.map((language, index) => (
-                    <span key={index} className="activity-tag">
-                      {language}
-                      <button 
-                        type="button" 
-                        onClick={() => removeLanguage(language)}
-                        className="remove-activity"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="edit-actions">
-                <button onClick={handleUpdateProfile} disabled={loading}>
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-                <button onClick={() => {
-                  setIsEditing(false);
-                  setErrorMessage('');
-                  setSuccessMessage('');
-                  // Reset form values
-                  setUsername(userProfile.username || '');
-                  setCountry(userProfile.country || '');
-                  setCity(userProfile.city || '');
-                  setProfileType(userProfile.profileType || 'public');
-                  setActivityPreferences(userProfile.activityPreferences || []);
-                  setLanguagePreferences(userProfile.languagePreferences || []);
-                }}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="profile-display">
-              <h2>{userProfile.username}</h2>
-              <p className="profile-email">{user.email}</p>
-              <p className="profile-location">📍 {userProfile.city}, {userProfile.country}</p>
-              <div className="profile-type">
-                <span className={`type-badge ${userProfile.profileType}`}>
-                  {userProfile.profileType === 'private' ? '🔒 Private Profile' : '🌍 Public Profile'}
-                </span>
-              </div>
-              <button onClick={() => setIsEditing(true)} className="edit-btn">
-                ✏️ Edit Profile
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {!isEditing && (
-        <div className="activity-preferences-display">
-          <h3>Activity Preferences</h3>
-          {activityPreferences.length > 0 ? (
-            <div className="activity-tags-display">
-              {activityPreferences.map((activity, index) => (
-                <span key={index} className="activity-tag-display">
-                  {activity}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="no-activities">No activity preferences set.</p>
-          )}
-        </div>
-      )}
-
-      {!isEditing && (
-        <div className="activity-preferences-display">
-          <h3>Languages</h3>
-          {languagePreferences.length > 0 ? (
-            <div className="activity-tags-display">
-              {languagePreferences.map((language, index) => (
-                <span key={index} className="activity-tag-display">
-                  {language}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="no-activities">No languages set.</p>
-          )}
-        </div>
-      )}
-
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-
-      <div className="profile-stats">
-        <div className="stat-item">
-          <span className="stat-number">{userStats.sentInvites}</span>
-          <span className="stat-label">Sent Invites</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.receivedInvites}</span>
-          <span className="stat-label">Received Invites</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.acceptedInvites}</span>
-          <span className="stat-label">Accepted</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.cancelledInvites}</span>
-          <span className="stat-label">Cancelled</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{userStats.favoriteCount}</span>
-          <span className="stat-label">Favorites</span>
-        </div>
-      </div>
-
-      <div className="balance-section">
-        <h3>Financial Summary</h3>
-
-        {/* Main Balance Overview */}
-        <div className="balance-summary">
-          <div className="balance-grid">
-            <div className="balance-item total-owed">
-              <span className="balance-amount">${(balanceData.pendingBalanceToPayToPlatform || 0).toFixed(2)}</span>
-              <span className="balance-label">Pending Balance to Pay to Platform</span>
-            </div>
-            <div className="balance-item balance-favor">
-              <span className="balance-amount earnings">${(balanceData.balanceInFavor || 0).toFixed(2)}</span>
-              <span className="balance-label">Balance in Favor</span>
-            </div>
-            {userProfile.profileType === 'public' && (
-              <div className="balance-item total-earned">
-                <span className="balance-amount earnings">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
-                <span className="balance-label">Total Earned</span>
+      {/* Profile Header - Instagram Style */}
+      <div className="profile-header-modern">
+        <div className="profile-picture-container">
+          <div className="profile-avatar-large">
+            {profilePicture ? (
+              <img src={profilePicture} alt="Profile" className="profile-picture-modern" />
+            ) : (
+              <div className="avatar-placeholder-modern">
+                {userProfile.username?.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
         </div>
 
-        {/* Comprehensive Financial Tracking */}
-        <div className="comprehensive-financial-tracking">
-          <h4>📊 Comprehensive Financial Tracking</h4>
+        <div className="profile-info-modern">
+          <div className="profile-name-row">
+            <h1 className="profile-username">{userProfile.username}</h1>
+            {!isEditing && (
+              <button onClick={() => setIsEditing(true)} className="edit-profile-btn">
+                Edit Profile
+              </button>
+            )}
+          </div>
 
-          {/* Payments I Issue (What I owe to others) */}
-          <div className="financial-category">
-            <h5>💸 Payments I Issue (What I owe to others)</h5>
-            <div className="financial-grid">
-              <div className="financial-item">
-                <span className="financial-label">Issued for Incentive Payments:</span>
-                <span className="financial-value">${(balanceData.issuedForIncentivePayments || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item">
-                <span className="financial-label">Issued for Cancelled Invites:</span>
-                <span className="financial-value">${(balanceData.issuedForCancelledInvites || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item success">
-                <span className="financial-label">Paid for Incentive Payments:</span>
-                <span className="financial-value">${(balanceData.paidForIncentivePayments || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item success">
-                <span className="financial-label">Paid for Cancelled Invites:</span>
-                <span className="financial-value">${(balanceData.paidForCancelledInvites || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item pending">
-                <span className="financial-label">Pending Payments for Incentives:</span>
-                <span className="financial-value">${(balanceData.pendingPaymentsForIncentives || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item pending">
-                <span className="financial-label">Pending Payments for Cancelled:</span>
-                <span className="financial-value">${(balanceData.pendingPaymentsForCancelled || 0).toFixed(2)}</span>
-              </div>
+          {/* Stats Row - Instagram Style */}
+          <div className="profile-stats-modern">
+            <div className="stat-item-modern">
+              <span className="stat-number-modern">{userStats.sentInvites}</span>
+              <span className="stat-label-modern">Sent</span>
+            </div>
+            <div className="stat-item-modern">
+              <span className="stat-number-modern">{userStats.receivedInvites}</span>
+              <span className="stat-label-modern">Received</span>
+            </div>
+            <div className="stat-item-modern">
+              <span className="stat-number-modern">{userStats.acceptedInvites}</span>
+              <span className="stat-label-modern">Accepted</span>
+            </div>
+            <div className="stat-item-modern">
+              <span className="stat-number-modern">{userStats.favoriteCount}</span>
+              <span className="stat-label-modern">Favorites</span>
             </div>
           </div>
 
-          {/* Payments Related to Me (As recipient) */}
-          <div className="financial-category">
-            <h5>💰 Payments Related to Me (As recipient)</h5>
-            <div className="financial-grid">
-              <div className="financial-item">
-                <span className="financial-label">Issued Payments for Invites Related to Me:</span>
-                <span className="financial-value">${(balanceData.issuedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
+          {/* Profile Info */}
+          <div className="profile-details-modern">
+            <div className="profile-location-modern">
+              📍 {userProfile.city}, {userProfile.country}
+            </div>
+            
+            {userProfile.aboutMe && (
+              <div className="profile-bio-modern">
+                {userProfile.aboutMe}
               </div>
-              <div className="financial-item">
-                <span className="financial-label">Issued Payments for Cancelled Invites Related to Me:</span>
-                <span className="financial-value">${(balanceData.issuedPaymentsForCancelledInvitesRelatedToMe || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item success">
-                <span className="financial-label">Received Payments for Invites Related to Me:</span>
-                <span className="financial-value">${(balanceData.receivedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item success">
-                <span className="financial-label">Received Payments for Cancelled Invites Related to Me:</span>
-                <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesRelatedToMe || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item pending">
-                <span className="financial-label">Payments for Invites Pending to Receive:</span>
-                <span className="financial-value">${(balanceData.paymentsForInvitesPendingToReceive || 0).toFixed(2)}</span>
-              </div>
-              <div className="financial-item pending">
-                <span className="financial-label">Payments for Cancelled Invites Pending to Receive:</span>
-                <span className="financial-value">${(balanceData.paymentsForCancelledInvitesPendingToReceive || 0).toFixed(2)}</span>
-              </div>
+            )}
+
+            <div className="profile-badges-modern">
+              <span className={`profile-type-badge ${userProfile.profileType}`}>
+                {userProfile.profileType === 'private' ? '🔒 Private' : '🌍 Public'}
+              </span>
+              <span className="member-since-badge">
+                Member since {userProfile.createdAt?.toDate?.()?.getFullYear() || 'Recently'}
+              </span>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Payments Not Related to Me (Outstanding fees from others) */}
-          <div className="financial-category">
-            <h5>🔄 Payments Not Related to Me (Outstanding fees from others)</h5>
-            <div className="financial-grid">
-              <div className="financial-item special">
-                <span className="financial-label">Received Payments for Invites Not Related to Me:</span>
-                <span className="financial-value">${(balanceData.receivedPaymentsForInvitesNotRelatedToMe || 0).toFixed(2)}</span>
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="edit-profile-modal">
+          <div className="edit-modal-content">
+            <div className="edit-modal-header">
+              <h2>Edit Profile</h2>
+              <button onClick={() => setIsEditing(false)} className="close-edit-btn">×</button>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="edit-form-modern">
+              <div className="form-section">
+                <h3>Basic Information</h3>
+                <div className="form-group">
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
+                    required
+                  />
+                </div>
+                <div className="form-row">
+                  <input
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="Country"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <textarea
+                    value={aboutMe}
+                    onChange={(e) => setAboutMe(e.target.value)}
+                    placeholder="Tell people about yourself..."
+                    rows="4"
+                    maxLength="300"
+                    className="about-me-textarea"
+                  />
+                  <span className="char-count">{aboutMe.length}/300</span>
+                </div>
               </div>
-              <div className="financial-item special">
-                <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me:</span>
-                <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMe || 0).toFixed(2)}</span>
+
+              <div className="form-section">
+                <h3>Privacy Settings</h3>
+                <select
+                  value={profileType}
+                  onChange={(e) => setProfileType(e.target.value)}
+                  className="profile-type-select"
+                >
+                  <option value="public">Public Profile (Visible for receiving invites)</option>
+                  <option value="private">Private Profile (Not discoverable)</option>
+                </select>
               </div>
-              <div className="financial-item success">
-                <span className="financial-label">Received Payments for Invites Not Related to Me Paid to Platform:</span>
-                <span className="financial-value">${(balanceData.receivedPaymentsForInvitesNotRelatedToMePaidToPlatform || 0).toFixed(2)}</span>
+
+              <div className="form-section">
+                <h3>Profile Picture</h3>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                  className="file-input-modern"
+                />
+                {profilePictureFile && (
+                  <p className="file-selected">Selected: {profilePictureFile.name}</p>
+                )}
               </div>
-              <div className="financial-item success">
-                <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me Paid to Platform:</span>
-                <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform || 0).toFixed(2)}</span>
+
+              <div className="form-section">
+                <h3>Activity Preferences</h3>
+                <div className="tags-input-container">
+                  <div className="tag-input-row">
+                    <input
+                      type="text"
+                      value={newActivity}
+                      onChange={(e) => setNewActivity(e.target.value)}
+                      placeholder="Add an activity"
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addActivity())}
+                    />
+                    <button type="button" onClick={addActivity} className="add-tag-btn">
+                      Add
+                    </button>
+                  </div>
+                  <div className="tags-display">
+                    {activityPreferences.map((activity, index) => (
+                      <span key={index} className="tag-modern">
+                        {activity}
+                        <button 
+                          type="button" 
+                          onClick={() => removeActivity(activity)}
+                          className="remove-tag"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <h3>Languages</h3>
+                <div className="tags-input-container">
+                  <div className="tag-input-row">
+                    <input
+                      type="text"
+                      value={newLanguage}
+                      onChange={(e) => setNewLanguage(e.target.value)}
+                      placeholder="Add a language"
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLanguage())}
+                    />
+                    <button type="button" onClick={addLanguage} className="add-tag-btn">
+                      Add
+                    </button>
+                  </div>
+                  <div className="tags-display">
+                    {languagePreferences.map((language, index) => (
+                      <span key={index} className="tag-modern">
+                        {language}
+                        <button 
+                          type="button" 
+                          onClick={() => removeLanguage(language)}
+                          className="remove-tag"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="edit-actions-modern">
+                <button type="submit" disabled={loading} className="save-btn-modern">
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn-modern">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Activity and Language Tags Display */}
+      {!isEditing && (activityPreferences.length > 0 || languagePreferences.length > 0) && (
+        <div className="profile-tags-section">
+          {activityPreferences.length > 0 && (
+            <div className="tags-group">
+              <h4>Activities</h4>
+              <div className="tags-display-modern">
+                {activityPreferences.map((activity, index) => (
+                  <span key={index} className="tag-display-modern activity-tag">
+                    {activity}
+                  </span>
+                ))}
               </div>
             </div>
-            <p className="financial-note">
-              💡 These represent outstanding fees from other users that were included in payments made to you. The "Paid to Platform" amounts show how much of these fees have been explicitly confirmed as paid to the platform administration through separate platform payments.
-            </p>
-          </div>
-
-          {/*Platform Fees */}
-          {userProfile.profileType === 'public' && (
-            <div className="financial-category">
-              <h5>🏛️ Platform Fees</h5>
-              <div className="financial-grid">
-                <div className="financial-item">
-                  <span className="financial-label">Issued Fees for Invites Related to Me:</span>
-                  <span className="financial-value">${(balanceData.issuedFeesForInvitesRelatedToMe || 0).toFixed(2)}</span>
-                </div>
-                <div className="financial-item">
-                  <span className="financial-label">Issued Fees for Cancellations Related to Me:</span>
-                  <span className="financial-value">${(balanceData.issuedFeesForCancellationsRelatedToMe || 0).toFixed(2)}</span>
-                </div>
-                <div className="financial-item pending">
-                  <span className="financial-label">Platform Fees Owed:</span>
-                  <span className="financial-value">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
-                </div>
+          )}
+          
+          {languagePreferences.length > 0 && (
+            <div className="tags-group">
+              <h4>Languages</h4>
+              <div className="tags-display-modern">
+                {languagePreferences.map((language, index) => (
+                  <span key={index} className="tag-display-modern language-tag">
+                    {language}
+                  </span>
+                ))}
               </div>
             </div>
           )}
         </div>
+      )}
 
-        {balanceData.pendingPayments.length > 0 && (
-          <div className="pending-payments">
-            <h4>Pending Payments</h4>
-            <div className="payments-list">
-              {balanceData.pendingPayments.map(payment => (
-                <div key={`${payment.type}-${payment.id}`} className={`payment-item ${payment.type}`}>
-                  <div className="payment-info">
-                    <span className="payment-description">{payment.description}</span>
-                    <span className="payment-date">{payment.date.toLocaleDateString()}</span>
-                  </div>
-                  <span className={`payment-amount ${payment.type}`}>
-                    ${(payment.amount || 0).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+      {/* Tab Navigation */}
+      <div className="profile-tabs-modern">
+        <button 
+          className={`tab-btn-modern ${activeTab === 'posts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('posts')}
+        >
+          📝 Posts
+        </button>
+        <button 
+          className={`tab-btn-modern ${activeTab === 'financial' ? 'active' : ''}`}
+          onClick={() => setActiveTab('financial')}
+        >
+          💰 Financial
+        </button>
+        <button 
+          className={`tab-btn-modern ${activeTab === 'account' ? 'active' : ''}`}
+          onClick={() => setActiveTab('account')}
+        >
+          ⚙️ Account
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="tab-content-modern">
+        {activeTab === 'posts' && (
+          <div className="posts-tab">
+            <UserPosts userId={user?.uid} />
+            
+            <div className="share-profile-section">
+              <h4>Share Your Profile</h4>
+              <p className="share-description">
+                {userProfile.profileType === 'public' 
+                  ? 'Share this link to let others view your public profile'
+                  : 'Your profile is private - others will see a private profile message'
+                }
+              </p>
+              <div className="share-link-container-modern">
+                <input
+                  type="text"
+                  value={`${window.location.origin}/profile/${userProfile.username}`}
+                  readOnly
+                  className="share-link-input-modern"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/profile/${userProfile.username}`);
+                    const btn = event.target;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => {
+                      btn.textContent = 'Copy';
+                    }, 2000);
+                  }}
+                  className="copy-link-btn-modern"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {balanceData.pendingPayments.length === 0 && (
-          <p className="no-pending">No pending payments</p>
+        {activeTab === 'financial' && (
+          <div className="financial-tab">
+            <div className="balance-section-modern">
+              <h3>Financial Overview</h3>
+
+              <div className="balance-cards">
+                <div className="balance-card earnings">
+                  <div className="balance-icon">💰</div>
+                  <div className="balance-info">
+                    <span className="balance-amount">${(balanceData.balanceInFavor || 0).toFixed(2)}</span>
+                    <span className="balance-label">Balance in Favor</span>
+                  </div>
+                </div>
+                
+                <div className="balance-card pending">
+                  <div className="balance-icon">⏳</div>
+                  <div className="balance-info">
+                    <span className="balance-amount">${(balanceData.pendingBalanceToPayToPlatform || 0).toFixed(2)}</span>
+                    <span className="balance-label">Pending to Pay</span>
+                  </div>
+                </div>
+
+                {userProfile.profileType === 'public' && (
+                  <div className="balance-card total">
+                    <div className="balance-icon">📊</div>
+                    <div className="balance-info">
+                      <span className="balance-amount">${(balanceData.totalEarnings || 0).toFixed(2)}</span>
+                      <span className="balance-label">Total Earned</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {balanceData.pendingPayments.length > 0 && (
+                <div className="pending-payments-modern">
+                  <h4>Pending Payments</h4>
+                  <div className="payments-list-modern">
+                    {balanceData.pendingPayments.slice(0, 5).map(payment => (
+                      <div key={`${payment.type}-${payment.id}`} className={`payment-item-modern ${payment.type}`}>
+                        <div className="payment-info-modern">
+                          <span className="payment-description-modern">{payment.description}</span>
+                          <span className="payment-date-modern">{payment.date.toLocaleDateString()}</span>
+                        </div>
+                        <span className={`payment-amount-modern ${payment.type}`}>
+                          ${(payment.amount || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                    {balanceData.pendingPayments.length > 5 && (
+                      <div className="more-payments">
+                        +{balanceData.pendingPayments.length - 5} more payments
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'account' && (
+          <div className="account-tab">
+            <div className="account-info-section">
+              <h3>Account Information</h3>
+              
+              <div className="account-details-grid">
+                <div className="account-detail">
+                  <span className="detail-label">Email</span>
+                  <span className="detail-value">{user.email}</span>
+                </div>
+                
+                <div className="account-detail">
+                  <span className="detail-label">Email Status</span>
+                  <span className={`detail-value ${user.emailVerified ? 'verified' : 'unverified'}`}>
+                    {user.emailVerified ? '✅ Verified' : '❌ Not Verified'}
+                  </span>
+                </div>
+                
+                <div className="account-detail">
+                  <span className="detail-label">Profile Type</span>
+                  <span className="detail-value">
+                    {userProfile.profileType === 'private' 
+                      ? 'Private (Not discoverable)'
+                      : 'Public (Visible for invites)'
+                    }
+                  </span>
+                </div>
+                
+                <div className="account-detail">
+                  <span className="detail-label">Member Since</span>
+                  <span className="detail-value">
+                    {userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="profile-details">
-        <div className="detail-section">
-          <h3>Account Information</h3>
-          <div className="detail-item">
-            <label>Email:</label>
-            <span>{user.email}</span>
-          </div>
-          <div className="detail-item">
-            <label>Profile Type:</label>
-            <span>
-              {userProfile.profileType === 'private' 
-                ? 'Private (Not discoverable by others)'
-                : 'Public (Visible for receiving invites)'
-              }
-            </span>
-          </div>
-          <div className="detail-item">
-            <label>Member Since:</label>
-            <span>{userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}</span>
-          </div>
-          <div className="detail-item">
-            <label>Email Verified:</label>
-            <span className={user.emailVerified ? 'verified' : 'unverified'}>
-              {user.emailVerified ? '✅ Verified' : '❌ Not Verified'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="share-link-container">
-        <h4>Share Your Profile</h4>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 12px 0' }}>
-          {userProfile.profileType === 'public' 
-            ? 'Share this link to let others view your public profile'
-            : 'Your profile is private - others will see a private profile message'
-          }
-        </p>
-        <div className="share-link-input-container">
-          <input
-            type="text"
-            value={`${window.location.origin}/profile/${userProfile.username}`}
-            readOnly
-            className="share-link-input"
-          />
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/profile/${userProfile.username}`);
-              const btn = document.querySelector('.copy-link-btn');
-              btn.textContent = 'Copied!';
-              btn.classList.add('copied');
-              setTimeout(() => {
-                btn.textContent = 'Copy Link';
-                btn.classList.remove('copied');
-              }, 2000);
-            }}
-            className="copy-link-btn"
-          >
-            Copy Link
-          </button>
-        </div>
-      </div>
-
-      <div className="user-posts-section">
-        <h3>My Posts</h3>
-        <UserPosts userId={user?.uid} />
-      </div>
+      {errorMessage && <div className="error-message-modern">{errorMessage}</div>}
+      {successMessage && <div className="success-message-modern">{successMessage}</div>}
     </div>
   );
 };
