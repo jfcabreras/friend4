@@ -157,7 +157,7 @@ body {
 .main {
   flex: 1;
   padding-top: max(60px, calc(60px + env(safe-area-inset-top)));
-  padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
+  padding-bottom: max(70px, calc(70px + env(safe-area-inset-bottom)));
   height: 100vh;
   overflow: hidden;
 }
@@ -185,7 +185,6 @@ body {
   overscroll-behavior: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  background: var(--background);
 }
 
 .report-feed::-webkit-scrollbar {
@@ -5951,8 +5950,8 @@ textarea {
 
 /* Main layout adjustments */
 .main {
-  padding-top: 80px;
-  padding-bottom: 80px;
+  padding-top: 65px;
+  padding-bottom: 70px;
 }
 
 /* Empty states */
