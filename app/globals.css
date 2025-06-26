@@ -1506,16 +1506,100 @@ body {
 /* Touch-friendly button sizing */
 button,
 .btn {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 40px;
+  min-width: 40px;
 }
 
 /* Improve touch targets */
 .feed-action-btn,
 .comment-submit,
 .favorite-btn {
-  min-height: 48px;
-  padding: 12px 16px;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 480px) {
+  .pals-section,
+  .new-section,
+  .invites-section,
+  .profile-section {
+    padding: 12px;
+  }
+
+  .pals-header h2,
+  .new-header h2,
+  .invites-header h2 {
+    font-size: 18px;
+  }
+
+  .pal-card,
+  .new-post-form,
+  .invite-item {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .pal-card-header,
+  .profile-header {
+    gap: 8px;
+  }
+
+  .pal-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .pal-info h3 {
+    font-size: 15px;
+  }
+
+  .pal-location {
+    font-size: 12px;
+  }
+
+  .invite-actions {
+    flex-direction: column;
+  }
+
+  .invite-actions button {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .profile-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .profile-stats .stat-item {
+    padding: 8px 4px;
+  }
+
+  .profile-stats .stat-number {
+    font-size: 16px;
+  }
+
+  .profile-stats .stat-label {
+    font-size: 10px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+
+  .filter-controls {
+    padding: 6px 12px;
+    gap: 4px;
+  }
+
+  .filter-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
 }
 
 /* Safe area handling for notched devices */
@@ -1804,17 +1888,21 @@ textarea {
 
 /* Profile Styles */
 .profile-section {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 16px;
+  max-width: 100%;
+  margin: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--background);
 }
 
 .profile-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 30px;
-  padding: 20px;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
   background: var(--surface);
   border-radius: 16px;
   border: 1px solid var(--border);
@@ -1823,13 +1911,16 @@ textarea {
 .profile-info {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
+  align-items: center;
+  text-align: center;
 }
 
 .profile-avatar {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
+  align-self: center;
 }
 
 .profile-picture {
@@ -1863,13 +1954,34 @@ textarea {
 }
 
 .profile-stats {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+  width: 100%;
 }
 
-.profile-stats span {
-  font-size: 14px;
+.profile-stats .stat-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.profile-stats .stat-number {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--cyber-purple);
+  margin-bottom: 4px;
+}
+
+.profile-stats .stat-label {
+  font-size: 11px;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 500;
 }
 
 .message-btn {
@@ -2621,42 +2733,48 @@ textarea {
 
 /* Pals Section Styles */
 .pals-section {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 16px;
+  max-width: 100%;
+  margin: 0;
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  background: var(--background);
 }
 
 .pals-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 0 4px;
 }
 
 .pals-header h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
+  text-align: center;
 }
 
 .pals-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  padding: 0 4px;
 }
 
 .pal-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pal-card:hover {
@@ -2668,28 +2786,28 @@ textarea {
 
 .pal-card-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .pal-card-info {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex: 1;
+  gap: 12px;
+  width: 100%;
 }
 
 .pal-avatar {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--cyber-purple), #6366f1);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   flex-shrink: 0;
 }
@@ -2698,27 +2816,30 @@ textarea {
   margin: 0 0 4px 0;
   color: var(--text-primary);
   font-weight: 600;
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1.2;
 }
 
 .pal-location {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 4px;
+  line-height: 1.2;
 }
 
 .pal-type {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 8px;
   background: var(--surface-elevated);
   color: var(--text-secondary);
   text-transform: uppercase;
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  align-self: flex-end;
 }
 
 .pal-activity-preview {
@@ -2763,28 +2884,30 @@ textarea {
 
 .pal-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 12px;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
 }
 
 .pal-actions-left {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
 }
 
 .favorite-btn {
-  padding: 8px 12px;
+  padding: 8px;
   background: transparent;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text-secondary);
-  min-width: 44px;
+  min-width: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2803,17 +2926,19 @@ textarea {
 }
 
 .invite-btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: var(--cyber-purple);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   transition: all 0.2s ease;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  flex: 1;
+  max-width: 120px;
 }
 
 .invite-btn:hover {
@@ -3191,23 +3316,46 @@ textarea {
 
 /* Invites Section Styles */
 .invites-section {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 16px;
+  max-width: 100%;
+  margin: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--background);
+}
+
+.invites-header {
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.invites-header h2 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .invite-tabs {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-top: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .invite-tabs button {
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .invite-tabs button.active {
@@ -3216,15 +3364,18 @@ textarea {
 }
 
 .invites-list {
-  margin-top: 20px;
+  margin-top: 16px;
+  padding: 0 4px;
 }
 
 .invite-item {
   background: var(--surface);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
   border: 1px solid var(--border);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .invite-item.sent {
@@ -3235,35 +3386,84 @@ textarea {
   border-left: 4px solid #3b82f6;
 }
 
+.invite-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.invite-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
 .invite-type {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 8px;
   background: var(--surface-elevated);
+  align-self: flex-start;
+}
+
+.invite-details {
+  margin-bottom: 12px;
+}
+
+.invite-details p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.invite-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.invite-meta span {
+  font-size: 12px;
+  padding: 2px 6px;
+  background: var(--surface-elevated);
+  border-radius: 6px;
+  color: var(--text-secondary);
 }
 
 .invite-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 12px;
+}
+
+.invite-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 80px;
 }
 
 .accept-btn {
   background: #10b981;
   color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 .decline-btn {
   background: #ef4444;
   color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+}
+
+.view-details-btn {
+  background: var(--cyber-purple);
+  color: white;
 }
 
 .cancel-btn {
@@ -3416,64 +3616,80 @@ textarea {
 
 /* New Section Styles */
 .new-section {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--background);
 }
 
 .new-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 24px;
+  padding: 0 4px;
 }
 
 .new-header h2 {
-  color: #333;
-  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .new-header p {
-  color: #666;
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .new-post-form {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
+  font-size: 14px;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 16px;
+  background: var(--background);
+  color: var(--text-primary);
   transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #007bff;
+  border-color: var(--cyber-purple);
   outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
 }
 
 .form-group small {
-  color: #666;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
   display: block;
 }
 
