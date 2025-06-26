@@ -2788,8 +2788,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 0 16px 0;
-  align-items: center;
+  padding: 0 20px 16px 20px;
+  align-items: stretch;
 }
 
 .pal-card {
@@ -2802,9 +2802,8 @@ textarea {
   transition: all 0.2s ease;
   position: relative;
   width: 100%;
-  max-width: 600px;
   box-sizing: border-box;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .pal-card:hover {
@@ -3494,10 +3493,10 @@ textarea {
 
 .invites-list {
   margin-top: 16px;
-  padding: 0 0 16px 0;
+  padding: 0 20px 16px 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
 .invite-item {
@@ -3509,7 +3508,6 @@ textarea {
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: relative;
-  max-width: 600px;
   width: 100%;
   box-sizing: border-box;
 }
