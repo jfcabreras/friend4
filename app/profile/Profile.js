@@ -239,14 +239,18 @@ const Profile = ({ user, userProfile }) => {
           // Use only the new discriminated fee fields
           if (invite.pendingInviteFeesIncluded && invite.pendingInviteFeesIncluded > 0) {
             receivedPaymentsForInvitesNotRelatedToMe += invite.pendingInviteFeesIncluded;
-            // These fees are automatically considered paid to platform when the invite is completed
-            receivedPaymentsForInvitesNotRelatedToMePaidToPlatform += invite.pendingInviteFeesIncluded;
+            // Only count as paid to platform if explicitly confirmed by platform
+            if (invite.platformFeesPaidToPlatformConfirmed) {
+              receivedPaymentsForInvitesNotRelatedToMePaidToPlatform += invite.pendingInviteFeesIncluded;
+            }
           }
           
           if (invite.pendingCancelledInviteFeesIncluded && invite.pendingCancelledInviteFeesIncluded > 0) {
             receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.pendingCancelledInviteFeesIncluded;
-            // These fees are automatically considered paid to platform when the invite is completed
-            receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform += invite.pendingCancelledInviteFeesIncluded;
+            // Only count as paid to platform if explicitly confirmed by platform
+            if (invite.platformFeesPaidToPlatformConfirmed) {
+              receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform += invite.pendingCancelledInviteFeesIncluded;
+            }
           }
         }
       });
@@ -262,8 +266,10 @@ const Profile = ({ user, userProfile }) => {
         )
         .forEach(invite => {
           receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.cancellationFeeAmountPaid || 0;
-          // These fees are automatically considered paid to platform when the invite is completed
-          receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform += invite.cancellationFeeAmountPaid || 0;
+          // Only count as paid to platform if explicitly confirmed by platform
+          if (invite.platformFeesPaidToPlatformConfirmed) {
+            receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform += invite.cancellationFeeAmountPaid || 0;
+          }
         });
 
       // 8. PLATFORM FEES - from database stored values
@@ -891,7 +897,7 @@ const Profile = ({ user, userProfile }) => {
               </div>
             </div>
             <p className="financial-note">
-              💡 These represent outstanding fees from other users that were included in payments made to you. The "Paid to Platform" amounts show how much of these fees have been automatically forwarded to the platform administration.
+              💡 These represent outstanding fees from other users that were included in payments made to you. The "Paid to Platform" amounts show how much of these fees have been explicitly confirmed as paid to the platform administration through separate platform payments.
             </p>
           </div>
 
