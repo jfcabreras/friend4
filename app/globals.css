@@ -156,14 +156,14 @@ body {
 /* Main Content */
 .main {
   flex: 1;
-  padding-top: max(65px, calc(65px + env(safe-area-inset-top)));
+  padding-top: max(60px, calc(60px + env(safe-area-inset-top)));
   padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
   height: 100vh;
   overflow: hidden;
 }
 
 .main-section {
-  height: calc(100vh - max(145px, calc(145px + env(safe-area-inset-top) + env(safe-area-inset-bottom))));
+  height: calc(100vh - max(140px, calc(140px + env(safe-area-inset-top) + env(safe-area-inset-bottom))));
   display: flex;
   flex-direction: column;
   background: var(--foreground);
@@ -1910,6 +1910,7 @@ textarea {
   -webkit-overflow-scrolling: touch;
   background: var(--background);
   margin: 0 auto;
+  padding-top: 0;
 }
 
 /* Profile Header - Modern Layout */
@@ -3407,6 +3408,7 @@ textarea {
   -webkit-overflow-scrolling: touch;
   background: var(--background);
   margin: 0 auto;
+  padding-top: 0;
 }
 
 .welcome-message {
@@ -3848,6 +3850,7 @@ textarea {
   background: var(--background);
   margin: 0 auto;
   max-width: 600px;
+  padding-top: 0;
 }
 
 .pals-header {
@@ -4499,6 +4502,7 @@ textarea {
   -webkit-overflow-scrolling: touch;
   background: var(--background);
   margin: 0 auto;
+  padding-top: 0;
 }
 
 .invites-header {
@@ -5017,6 +5021,7 @@ textarea {
   -webkit-overflow-scrolling: touch;
   background: var(--background);
   margin: 0 auto;
+  padding-top: 0;
 }
 
 .new-header {
