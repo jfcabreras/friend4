@@ -1901,7 +1901,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin: 16px 16px 20px 16px;
+  margin: 16px 0 20px 0;
   padding: 16px;
   background: var(--surface);
   border-radius: 16px;
@@ -2299,9 +2299,13 @@ textarea {
 
 /* Home Section Styles */
 .home-section {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 0;
+  margin: 8px 12px;
+  max-width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--background);
 }
 
 .welcome-message {
@@ -2310,6 +2314,7 @@ textarea {
   background: var(--surface);
   border-radius: 16px;
   border: 1px solid var(--border);
+  margin: 20px 0;
 }
 
 .feed-header {
@@ -2747,7 +2752,7 @@ textarea {
   flex-direction: column;
   gap: 16px;
   margin-bottom: 20px;
-  padding: 16px 16px 0 16px;
+  padding: 16px 0 0 0;
 }
 
 .pals-header h2 {
@@ -2762,7 +2767,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 16px 16px 16px;
+  padding: 0 0 16px 0;
 }
 
 .pal-card {
@@ -3327,7 +3332,7 @@ textarea {
 
 .invites-header {
   margin-bottom: 20px;
-  padding: 16px 16px 0 16px;
+  padding: 16px 0 0 0;
 }
 
 .invites-header h2 {
@@ -3365,7 +3370,7 @@ textarea {
 
 .invites-list {
   margin-top: 16px;
-  padding: 0 16px 16px 16px;
+  padding: 0 0 16px 0;
 }
 
 .invite-item {
@@ -3628,7 +3633,7 @@ textarea {
 .new-header {
   text-align: center;
   margin-bottom: 24px;
-  padding: 16px 16px 0 16px;
+  padding: 16px 0 0 0;
 }
 
 .new-header h2 {
@@ -3652,7 +3657,7 @@ textarea {
   border: 1px solid var(--border);
   width: 100%;
   box-sizing: border-box;
-  margin: 0 16px 16px 16px;
+  margin: 0 0 16px 0;
 }
 
 .form-group {
@@ -4024,7 +4029,7 @@ textarea {
 
 /* Balance Section Styles */
 .balance-section {
-  margin: 30px 16px;
+  margin: 30px 0;
   padding: 24px;
   background: var(--surface);
   border: 1px solid var(--border);
