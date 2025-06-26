@@ -3352,45 +3352,84 @@ textarea {
 }
 
 .invites-header {
-  margin-bottom: 20px;
-  padding: 16px;
   background: var(--surface);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  margin: 8px 0 20px 0;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0;
+  padding: 20px;
+  margin: 0;
 }
 
-.invites-header h2 {
-  margin: 0 0 16px 0;
+.invites-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.invites-title-row h2 {
+  margin: 0;
   color: var(--text-primary);
   font-size: 20px;
   font-weight: 600;
-  text-align: center;
 }
 
-.invite-tabs {
+.filter-toggle-btn {
   display: flex;
-  gap: 4px;
-  margin-top: 16px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  -webkit-overflow-scrolling: touch;
-}
-
-.invite-tabs button {
-  padding: 6px 12px;
-  background: var(--surface);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 20px;
+  color: var(--text-primary);
   cursor: pointer;
-  font-size: 12px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.invite-tabs button.active {
+.filter-toggle-btn:hover {
   background: var(--cyber-purple);
   color: white;
+  border-color: var(--cyber-purple);
+}
+
+.filter-arrow {
+  transition: transform 0.2s ease;
+  font-size: 12px;
+}
+
+.filter-arrow.open {
+  transform: rotate(180deg);
+}
+
+.filter-controls {
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.filter-controls.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0 16px;
+  border: none;
+}
+
+.filter-controls.expanded {
+  max-height: 200px;
+  opacity: 1;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .invites-list {
