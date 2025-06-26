@@ -113,7 +113,7 @@ body {
 .filter-controls {
   display: flex;
   gap: 6px;
-  padding: 8px 20px;
+  padding: 0px 20px;
   /* background: var(--surface); */
   background: transparent;
   /* border-bottom: 0px solid var(--border); */
@@ -3858,7 +3858,7 @@ textarea {
   flex-direction: column;
   gap: 16px;
   margin-bottom: 0;
-  padding: 20px 20px 16px;
+  padding: 8px 20px;
   background: var(--surface);
   border-radius: 0;
   border: none;
@@ -4510,7 +4510,7 @@ textarea {
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 0;
-  padding: 16px 20px;
+  padding: 8px 20px;
   margin: 0;
 }
 
@@ -4518,7 +4518,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
 }
 
 .invites-title-row h2 {
@@ -4563,7 +4563,7 @@ textarea {
   transition: all 0.3s ease;
   background: var(--surface-elevated);
   border-radius: 8px;
-  margin-top: 8px;
+  margin-top: 0px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
