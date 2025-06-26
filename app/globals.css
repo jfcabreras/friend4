@@ -1894,7 +1894,7 @@ textarea {
 /* Profile Styles */
 .profile-section {
   padding: 0;
-  max-width: 100%;
+  max-width: 600px;
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -2305,7 +2305,7 @@ textarea {
 /* Home Section Styles */
 .home-section {
   padding: 0;
-  max-width: 100%;
+  max-width: 600px;
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -2750,6 +2750,7 @@ textarea {
   -webkit-overflow-scrolling: touch;
   background: var(--background);
   margin: 0 auto;
+  max-width: 600px;
 }
 
 .pals-header {
@@ -3332,7 +3333,7 @@ textarea {
 /* Invites Section Styles */
 .invites-section {
   padding: 0;
-  max-width: 100%;
+  max-width: 600px;
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -3635,7 +3636,7 @@ textarea {
 
 /* New Section Styles */
 .new-section {
-  max-width: 100%;
+  max-width: 600px;
   padding: 0;
   height: 100%;
   overflow-y: auto;
