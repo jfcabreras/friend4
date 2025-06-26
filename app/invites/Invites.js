@@ -1246,7 +1246,6 @@ const Invites = ({ user, userProfile }) => {
     <div className="invites-section">
       <div className="invites-header">
         <div className="invites-title-row">
-          <h2>My Invites</h2>
           <button 
             className="filter-toggle-btn"
             onClick={() => setShowFilters(!showFilters)}

@@ -176,7 +176,6 @@ const Pals = ({ user, userProfile, refreshUserProfile }) => {
   return (
     <div className="pals-section">
       <div className="pals-header">
-        <h2>Explore Pals</h2>
         <div className="filter-controls">
           <button 
             onClick={() => setShowFavoritesOnly(false)}

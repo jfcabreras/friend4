@@ -3,6 +3,25 @@
 import React from "react";
 
 const Nav = ({ selectedSection, setSelectedSection, user, onLogout }) => {
+  const getSectionTitle = (section) => {
+    switch (section) {
+      case "home":
+        return "Home Feed";
+      case "pals":
+        return "Explore Pals";
+      case "invites":
+        return "My Invites";
+      case "profile":
+        return "Profile Settings";
+      case "shareable-profile":
+        return "Shareable Profile";
+      case "newPublication":
+        return "New Post";
+      default:
+        return "Bukier";
+    }
+  };
+
   return (
     <nav className="nav">
       <div className="nav-brand">
@@ -10,11 +29,8 @@ const Nav = ({ selectedSection, setSelectedSection, user, onLogout }) => {
       </div>
 
       <div className="nav-center">
-        {user && selectedSection !== "profile" && (
-          <span className="nav-user">Welcome, {user.email}</span>
-        )}
-        {user && selectedSection === "profile" && (
-          <span className="nav-user">Profile Settings</span>
+        {user && (
+          <span className="nav-user">{getSectionTitle(selectedSection)}</span>
         )}
       </div>
 
