@@ -1527,6 +1527,7 @@ button,
 
 /* Mobile-specific optimizations */
 @media (max-width: 480px) {
+
   .pals-section,
   .new-section,
   .invites-section,
@@ -1781,6 +1782,7 @@ textarea {
 
 /* Desktop and tablet optimizations */
 @media (min-width: 768px) {
+
   .main-section,
   .pals-section,
   .new-section,
@@ -4434,7 +4436,8 @@ textarea {
   padding: 0;
 }
 
-.fees-notice, .fees-warning {
+.fees-notice,
+.fees-warning {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -4446,19 +4449,22 @@ textarea {
   background: linear-gradient(135deg, var(--surface-elevated), var(--surface));
 }
 
-.fees-notice.sender.success, .fees-notice.receiver.success {
+.fees-notice.sender.success,
+.fees-notice.receiver.success {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
   color: #059669;
   border-color: rgba(16, 185, 129, 0.3);
 }
 
-.fees-notice.sender.neutral, .fees-notice.receiver.neutral {
+.fees-notice.sender.neutral,
+.fees-notice.receiver.neutral {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
   color: var(--cyber-purple);
   border-color: rgba(139, 92, 246, 0.3);
 }
 
-.fees-warning.sender, .fees-warning.receiver {
+.fees-warning.sender,
+.fees-warning.receiver {
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
   color: #f59e0b;
   border-color: rgba(251, 191, 36, 0.3);
@@ -4782,22 +4788,26 @@ textarea {
   color: white;
 }
 
-.start-btn, .start-invite-btn {
+.start-btn,
+.start-invite-btn {
   background: #f59e0b;
   color: white;
 }
 
-.finish-btn, .finish-invite-btn {
+.finish-btn,
+.finish-invite-btn {
   background: #8b5cf6;
   color: white;
 }
 
-.payment-btn, .payment-invite-btn {
+.payment-btn,
+.payment-invite-btn {
   background: #10b981;
   color: white;
 }
 
-.receive-payment-btn, .receive-payment-invite-btn {
+.receive-payment-btn,
+.receive-payment-invite-btn {
   background: #059669;
   color: white;
 }
