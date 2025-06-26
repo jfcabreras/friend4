@@ -3877,44 +3877,56 @@ textarea {
 .pals-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   padding: 0 20px 16px 20px;
   align-items: stretch;
 }
 
 .pal-card {
   background: var(--surface);
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0;
-  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  margin: 0;
+  margin: 0 0 8px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .pal-card:hover {
   background: var(--surface-elevated);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(139, 92, 246, 0.1);
-  border-color: rgba(139, 92, 246, 0.2);
+  border-color: var(--cyber-purple);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pal-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--cyber-purple);
+  border-radius: 3px 0 0 3px;
 }
 
 .pal-card-header {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
 }
 
 .pal-card-info {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
+  flex: 1;
+  padding-right: 12px;
 }
 
 .pal-avatar {
@@ -3951,14 +3963,16 @@ textarea {
 
 .pal-type {
   font-size: 10px;
-  padding: 3px 6px;
-  border-radius: 8px;
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.3px;
-  align-self: flex-end;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pal-activity-preview {
@@ -3989,6 +4003,7 @@ textarea {
 .language-label {
   font-size: 12px;
   margin-right: 4px;
+  color: var(--text-secondary);
 }
 
 .pal-language-tag {
@@ -4004,10 +4019,12 @@ textarea {
 .pal-actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
 .pal-actions-left {
@@ -4017,7 +4034,7 @@ textarea {
 }
 
 .favorite-btn {
-  padding: 8px;
+  padding: 6px 12px;
   background: transparent;
   border: 1px solid var(--border-light);
   border-radius: 8px;
@@ -4036,6 +4053,8 @@ textarea {
   background: var(--surface-elevated);
   border-color: #ffd700;
   color: #ffd700;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .favorite-btn.favorited {
@@ -4045,24 +4064,25 @@ textarea {
 }
 
 .invite-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: var(--cyber-purple);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   flex: 1;
-  max-width: 120px;
+  min-width: 80px;
 }
 
 .invite-btn:hover {
   background: var(--cyber-purple-hover);
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Profile Modal Styles */
