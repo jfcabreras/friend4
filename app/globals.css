@@ -4510,7 +4510,7 @@ textarea {
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 0;
-  padding: 20px;
+  padding: 16px 20px;
   margin: 0;
 }
 
@@ -4518,7 +4518,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .invites-title-row h2 {
