@@ -1901,6 +1901,7 @@ textarea {
 /* Profile Styles */
 .profile-section {
   padding: 0;
+  padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   max-width: 600px;
   height: 100%;
   overflow-y: auto;
@@ -2752,6 +2753,7 @@ textarea {
 /* Pals Section Styles */
 .pals-section {
   padding: 0;
+  padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   max-width: 100%;
   height: 100%;
   overflow-y: auto;
@@ -3398,6 +3400,7 @@ textarea {
 /* Invites Section Styles */
 .invites-section {
   padding: 0;
+  padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   max-width: 600px;
   height: 100%;
   overflow-y: auto;
@@ -3907,6 +3910,7 @@ textarea {
 .new-section {
   max-width: 600px;
   padding: 0;
+  padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
