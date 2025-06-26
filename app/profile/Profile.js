@@ -621,6 +621,10 @@ const Profile = ({ user, userProfile }) => {
               <span className="stat-label-modern">Accepted</span>
             </div>
             <div className="stat-item-modern">
+              <span className="stat-number-modern">{userStats.cancelledInvites}</span>
+              <span className="stat-label-modern">Cancelled</span>
+            </div>
+            <div className="stat-item-modern">
               <span className="stat-number-modern">{userStats.favoriteCount}</span>
               <span className="stat-label-modern">Favorites</span>
             </div>
@@ -861,6 +865,57 @@ const Profile = ({ user, userProfile }) => {
           <div className="posts-tab">
             <UserPosts userId={user?.uid} />
             
+            {/* Detailed Activity Statistics */}
+            <div className="detailed-stats-section">
+              <h4>Activity Statistics</h4>
+              <div className="stats-grid-modern">
+                <div className="stat-card-modern">
+                  <div className="stat-icon-modern">📤</div>
+                  <div className="stat-content-modern">
+                    <span className="stat-value-modern">{userStats.sentInvites}</span>
+                    <span className="stat-description-modern">Invites Sent</span>
+                  </div>
+                </div>
+                <div className="stat-card-modern">
+                  <div className="stat-icon-modern">📥</div>
+                  <div className="stat-content-modern">
+                    <span className="stat-value-modern">{userStats.receivedInvites}</span>
+                    <span className="stat-description-modern">Invites Received</span>
+                  </div>
+                </div>
+                <div className="stat-card-modern">
+                  <div className="stat-icon-modern">✅</div>
+                  <div className="stat-content-modern">
+                    <span className="stat-value-modern">{userStats.acceptedInvites}</span>
+                    <span className="stat-description-modern">Successfully Completed</span>
+                  </div>
+                </div>
+                <div className="stat-card-modern">
+                  <div className="stat-icon-modern">❌</div>
+                  <div className="stat-content-modern">
+                    <span className="stat-value-modern">{userStats.cancelledInvites}</span>
+                    <span className="stat-description-modern">Cancelled Events</span>
+                  </div>
+                </div>
+                <div className="stat-card-modern">
+                  <div className="stat-icon-modern">⭐</div>
+                  <div className="stat-content-modern">
+                    <span className="stat-value-modern">{userStats.favoriteCount}</span>
+                    <span className="stat-description-modern">Favorite Pals</span>
+                  </div>
+                </div>
+                <div className="stat-card-modern">
+                  <div className="stat-icon-modern">📊</div>
+                  <div className="stat-content-modern">
+                    <span className="stat-value-modern">
+                      {userStats.sentInvites > 0 ? Math.round((userStats.acceptedInvites / userStats.sentInvites) * 100) : 0}%
+                    </span>
+                    <span className="stat-description-modern">Success Rate</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div className="share-profile-section">
               <h4>Share Your Profile</h4>
               <p className="share-description">
@@ -911,8 +966,8 @@ const Profile = ({ user, userProfile }) => {
                 <div className="balance-card pending">
                   <div className="balance-icon">⏳</div>
                   <div className="balance-info">
-                    <span className="balance-amount">${(balanceData.pendingBalanceToPayToPlatform || 0).toFixed(2)}</span>
-                    <span className="balance-label">Pending to Pay</span>
+                    <span className="balance-amount">${(balanceData.totalOwed || 0).toFixed(2)}</span>
+                    <span className="balance-label">Total Owed</span>
                   </div>
                 </div>
 
@@ -925,6 +980,121 @@ const Profile = ({ user, userProfile }) => {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Detailed Financial Breakdown */}
+              <div className="financial-breakdown-modern">
+                <h4>Payment Breakdown</h4>
+                <div className="breakdown-grid-modern">
+                  <div className="breakdown-item-modern">
+                    <span className="breakdown-label-modern">Incentive Payments Owed</span>
+                    <span className="breakdown-amount-modern">${(balanceData.incentivePaymentsOwed || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="breakdown-item-modern">
+                    <span className="breakdown-label-modern">Cancellation Fees Owed</span>
+                    <span className="breakdown-amount-modern">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
+                  </div>
+                  {userProfile.profileType === 'public' && (
+                    <div className="breakdown-item-modern">
+                      <span className="breakdown-label-modern">Platform Fees Owed</span>
+                      <span className="breakdown-amount-modern">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Comprehensive Financial Statistics */}
+              <div className="financial-stats-modern">
+                <h4>Financial History</h4>
+                <div className="financial-stats-grid">
+                  <div className="financial-stat-card">
+                    <div className="financial-stat-header">
+                      <span className="financial-stat-title">Sent Invites</span>
+                      <span className="financial-stat-icon">📤</span>
+                    </div>
+                    <div className="financial-stat-details">
+                      <div className="financial-stat-row">
+                        <span>Total Issued:</span>
+                        <span>${(balanceData.issuedForIncentivePayments || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="financial-stat-row">
+                        <span>Total Paid:</span>
+                        <span>${(balanceData.paidForIncentivePayments || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="financial-stat-row pending">
+                        <span>Pending:</span>
+                        <span>${(balanceData.pendingPaymentsForIncentives || 0).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="financial-stat-card">
+                    <div className="financial-stat-header">
+                      <span className="financial-stat-title">Cancellation Fees</span>
+                      <span className="financial-stat-icon">❌</span>
+                    </div>
+                    <div className="financial-stat-details">
+                      <div className="financial-stat-row">
+                        <span>Total Issued:</span>
+                        <span>${(balanceData.issuedForCancelledInvites || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="financial-stat-row">
+                        <span>Total Paid:</span>
+                        <span>${(balanceData.paidForCancelledInvites || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="financial-stat-row pending">
+                        <span>Pending:</span>
+                        <span>${(balanceData.pendingPaymentsForCancelled || 0).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {userProfile.profileType === 'public' && (
+                    <div className="financial-stat-card">
+                      <div className="financial-stat-header">
+                        <span className="financial-stat-title">As Pal - Earnings</span>
+                        <span className="financial-stat-icon">💼</span>
+                      </div>
+                      <div className="financial-stat-details">
+                        <div className="financial-stat-row">
+                          <span>Total Issued:</span>
+                          <span>${(balanceData.issuedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="financial-stat-row">
+                          <span>Total Received:</span>
+                          <span>${(balanceData.receivedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="financial-stat-row pending">
+                          <span>Pending to Receive:</span>
+                          <span>${(balanceData.paymentsForInvitesPendingToReceive || 0).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {userProfile.profileType === 'public' && (
+                    <div className="financial-stat-card">
+                      <div className="financial-stat-header">
+                        <span className="financial-stat-title">Platform Fees</span>
+                        <span className="financial-stat-icon">🏢</span>
+                      </div>
+                      <div className="financial-stat-details">
+                        <div className="financial-stat-row">
+                          <span>From Events:</span>
+                          <span>${(balanceData.issuedFeesForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="financial-stat-row">
+                          <span>From Cancellations:</span>
+                          <span>${(balanceData.issuedFeesForCancellationsRelatedToMe || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="financial-stat-row pending">
+                          <span>Pending to Pay:</span>
+                          <span>${(balanceData.pendingBalanceToPayToPlatform || 0).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {balanceData.pendingPayments.length > 0 && (
@@ -973,23 +1143,109 @@ const Profile = ({ user, userProfile }) => {
                 </div>
                 
                 <div className="account-detail">
+                  <span className="detail-label">Username</span>
+                  <span className="detail-value">@{userProfile.username}</span>
+                </div>
+                
+                <div className="account-detail">
                   <span className="detail-label">Profile Type</span>
                   <span className="detail-value">
                     {userProfile.profileType === 'private' 
-                      ? 'Private (Not discoverable)'
-                      : 'Public (Visible for invites)'
+                      ? '🔒 Private (Not discoverable)'
+                      : '🌍 Public (Visible for invites)'
                     }
                   </span>
                 </div>
                 
                 <div className="account-detail">
+                  <span className="detail-label">Location</span>
+                  <span className="detail-value">📍 {userProfile.city}, {userProfile.country}</span>
+                </div>
+                
+                <div className="account-detail">
                   <span className="detail-label">Member Since</span>
                   <span className="detail-value">
-                    {userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
+                    📅 {userProfile.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
                   </span>
+                </div>
+                
+                <div className="account-detail">
+                  <span className="detail-label">Last Updated</span>
+                  <span className="detail-value">
+                    🔄 {userProfile.updatedAt?.toDate?.()?.toLocaleDateString() || 'Never'}
+                  </span>
+                </div>
+                
+                <div className="account-detail">
+                  <span className="detail-label">Account ID</span>
+                  <span className="detail-value account-id">{user.uid}</span>
                 </div>
               </div>
             </div>
+
+            {/* Account Statistics */}
+            <div className="account-stats-section">
+              <h3>Account Statistics</h3>
+              <div className="account-stats-grid">
+                <div className="account-stat-item">
+                  <div className="account-stat-icon">📊</div>
+                  <div className="account-stat-info">
+                    <span className="account-stat-number">{userStats.sentInvites + userStats.receivedInvites}</span>
+                    <span className="account-stat-label">Total Invites</span>
+                  </div>
+                </div>
+                <div className="account-stat-item">
+                  <div className="account-stat-icon">✅</div>
+                  <div className="account-stat-info">
+                    <span className="account-stat-number">{userStats.acceptedInvites}</span>
+                    <span className="account-stat-label">Successful Events</span>
+                  </div>
+                </div>
+                <div className="account-stat-item">
+                  <div className="account-stat-icon">⭐</div>
+                  <div className="account-stat-info">
+                    <span className="account-stat-number">{userStats.favoriteCount}</span>
+                    <span className="account-stat-label">Favorite Pals</span>
+                  </div>
+                </div>
+                <div className="account-stat-item">
+                  <div className="account-stat-icon">🎯</div>
+                  <div className="account-stat-info">
+                    <span className="account-stat-number">
+                      {userStats.sentInvites > 0 ? Math.round((userStats.acceptedInvites / userStats.sentInvites) * 100) : 0}%
+                    </span>
+                    <span className="account-stat-label">Success Rate</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preferences Summary */}
+            {(activityPreferences.length > 0 || languagePreferences.length > 0) && (
+              <div className="preferences-summary-section">
+                <h3>Preferences Summary</h3>
+                <div className="preferences-summary-grid">
+                  {activityPreferences.length > 0 && (
+                    <div className="preference-item">
+                      <span className="preference-label">🎯 Activities</span>
+                      <span className="preference-count">{activityPreferences.length} preferences</span>
+                    </div>
+                  )}
+                  {languagePreferences.length > 0 && (
+                    <div className="preference-item">
+                      <span className="preference-label">🗣️ Languages</span>
+                      <span className="preference-count">{languagePreferences.length} languages</span>
+                    </div>
+                  )}
+                  <div className="preference-item">
+                    <span className="preference-label">📝 About Me</span>
+                    <span className="preference-count">
+                      {aboutMe ? `${aboutMe.length}/300 characters` : 'Not set'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
