@@ -1774,7 +1774,12 @@ textarea {
 
 /* Desktop and tablet optimizations */
 @media (min-width: 768px) {
-  .main-section {
+  .main-section,
+  .pals-section,
+  .new-section,
+  .invites-section,
+  .profile-section,
+  .home-section {
     max-width: 600px;
     margin: 0 auto;
   }
@@ -1894,6 +1899,7 @@ textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--background);
+  margin: 0 auto;
 }
 
 .profile-header {
@@ -2304,6 +2310,7 @@ textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--background);
+  margin: 0 auto;
 }
 
 .welcome-message {
@@ -2742,6 +2749,7 @@ textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--background);
+  margin: 0 auto;
 }
 
 .pals-header {
@@ -3329,6 +3337,7 @@ textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--background);
+  margin: 0 auto;
 }
 
 .invites-header {
@@ -3632,6 +3641,7 @@ textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--background);
+  margin: 0 auto;
 }
 
 .new-header {
