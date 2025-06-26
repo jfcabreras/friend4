@@ -344,6 +344,7 @@ const Invites = ({ user, userProfile }) => {
   });
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [showInviteDetail, setShowInviteDetail] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -399,7 +400,7 @@ const Invites = ({ user, userProfile }) => {
         .sort((a, b) => {
           const aTime = a.createdAt?.toDate?.() || new Date(0);
           const bTime = b.createdAt?.toDate?.() || new Date(0);
-          return bTime - aTime; // Sort descending by creation date
+          return bTime - aTime; // Sort descending by creation date (newest first)
         });
 
       // Group by status
@@ -1244,8 +1245,18 @@ const Invites = ({ user, userProfile }) => {
   return (
     <div className="invites-section">
       <div className="invites-header">
-        <h2>My Invites</h2>
-        <div className="filter-controls">
+        <div className="invites-title-row">
+          <h2>My Invites</h2>
+          <button 
+            className="filter-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <span>Filters</span>
+            <span className={`filter-arrow ${showFilters ? 'open' : ''}`}>▼</span>
+          </button>
+        </div>
+        
+        <div className={`filter-controls ${showFilters ? 'expanded' : 'collapsed'}`}>
           <button 
             onClick={() => setActiveTab('all')}
             className={`filter-btn ${activeTab === 'all' ? 'active' : ''}`}
