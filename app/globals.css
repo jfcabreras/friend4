@@ -4577,9 +4577,9 @@ textarea {
 }
 
 .filter-controls.expanded {
-  max-height: 120px;
+  max-height: 80px;
   opacity: 1;
-  padding: 12px;
+  padding: 8px;
   border: 1px solid var(--border);
 }
 
