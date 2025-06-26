@@ -3915,7 +3915,7 @@ textarea {
 /* New Section Styles */
 .new-section {
   max-width: 600px;
-  padding: 0;
+  padding: 0 20px;
   padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   height: 100%;
   overflow-y: auto;
@@ -3950,7 +3950,7 @@ textarea {
 .new-post-form {
   background: var(--surface);
   border-radius: 0;
-  padding: 24px 20px;
+  padding: 24px;
   box-shadow: none;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
