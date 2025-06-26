@@ -1321,48 +1321,47 @@ const Invites = ({ user, userProfile }) => {
           </div>
         ) : (
           currentInvites.map(invite => (
-            <div key={invite.id} className={`invite-item ${invite.type}`}>
+            <div key={invite.id} className={`invite-item ${invite.type} ${invite.status}`}>
               <div className="invite-header">
                 <h3>{invite.title}</h3>
                 <span className={`invite-type ${invite.type}`}>
-                  {invite.type === 'sent' ? '📤 Sent' : '📥 Received'}
+                  {invite.type === 'sent' ? 'SENT' : 'RECEIVED'}
                 </span>
               </div>
 
-              <div className="invite-details">
-                <p className="invite-partner">
-                  {invite.type === 'sent' 
-                    ? `To: ${invite.toUsername}` 
-                    : `From: ${invite.fromUsername}`
-                  }
-                </p>
-                {invite.description && (
-                  <p className="invite-description">{invite.description}</p>
-                )}
-                <div className="invite-meta">
-                  <span className="invite-date">
-                    📅 {(invite.startDate || invite.date)?.toDate?.()?.toLocaleDateString()}
-                  </span>
-                  <span className="invite-time">🕐 {invite.startTime || invite.time}</span>
-                  <span className="invite-location">📍 {invite.meetingLocation}</span>
-                  <span className="invite-incentive">💰 ${invite.price}</span>
-                  {invite.status === 'cancelled' && invite.cancellationFee && (
-                    <span className="cancellation-fee">
-                      ❌ Fee: ${invite.cancellationFee.toFixed(2)}
-                      {invite.cancellationFeePaid ? ' (Paid)' : ' (Unpaid)'}
-                    </span>
-                  )}
-                  {invite.status === 'payment_done' && ((invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0)) > 0 && (
-                    <span className="pending-fees-included">
-                      ⚠️ Includes ${((invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0)).toFixed(2)} outstanding fees
-                    </span>
-                  )}
-                  {invite.status === 'finished' && (
-                    <span className="finished-status">
-                      🏁 Ready for payment
-                    </span>
-                  )}
+              <div className="invite-main-content">
+                <div className="invite-partner-info">
+                  <p className="invite-partner">
+                    {invite.type === 'sent' 
+                      ? `${invite.toUsername}` 
+                      : `${invite.fromUsername}`
+                    }
+                  </p>
+                  <div className="invite-details-compact">
+                    <span>📅 {(invite.startDate || invite.date)?.toDate?.()?.toLocaleDateString()}</span>
+                    <span>🕐 {invite.startTime || invite.time}</span>
+                    <span>📍 {invite.meetingLocation}</span>
+                  </div>
                 </div>
+                <div className="invite-price">${invite.price}</div>
+              </div>
+
+              <div className="invite-meta-compact">
+                {invite.status === 'cancelled' && invite.cancellationFee && (
+                  <span className="cancellation-fee">
+                    ❌ Fee: ${invite.cancellationFee.toFixed(2)}
+                  </span>
+                )}
+                {invite.status === 'payment_done' && ((invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0)) > 0 && (
+                  <span className="pending-fees-included">
+                    ⚠️ +${((invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0)).toFixed(2)} fees
+                  </span>
+                )}
+                {invite.status === 'finished' && (
+                  <span className="finished-status">
+                    🏁 Ready for payment
+                  </span>
+                )}
               </div>
 
               {/* Outstanding fees notice for in_progress and finished invites */}
@@ -1460,18 +1459,18 @@ const Invites = ({ user, userProfile }) => {
                 )}
               </div>
 
-              <div className="invite-status">
+              <div className="invite-status-row">
                 <span className={`status-badge ${invite.status}`}>
-                  {invite.status === 'pending' && '⏳ Pending'}
-                  {invite.status === 'accepted' && '✅ Accepted'}
-                  {invite.status === 'declined' && '❌ Declined'}
-                  {invite.status === 'cancelled' && '🚫 Cancelled'}
-                  {invite.status === 'in_progress' && '🚀 In Progress'}
-                  {invite.status === 'finished' && '🏁 Finished'}
-                  {invite.status === 'payment_done' && '💰 Payment Done'}
-                  {invite.status === 'completed' && '✅ Completed'}
+                  {invite.status === 'pending' && 'Pending'}
+                  {invite.status === 'accepted' && 'Accepted'}
+                  {invite.status === 'declined' && 'Declined'}
+                  {invite.status === 'cancelled' && 'Cancelled'}
+                  {invite.status === 'in_progress' && 'In Progress'}
+                  {invite.status === 'finished' && 'Finished'}
+                  {invite.status === 'payment_done' && 'Payment Done'}
+                  {invite.status === 'completed' && 'Completed'}
                 </span>
-                <span className="invite-created">
+                <span className="invite-date">
                   {invite.createdAt?.toDate?.()?.toLocaleDateString()}
                 </span>
               </div>
