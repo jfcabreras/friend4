@@ -1888,7 +1888,7 @@ textarea {
 
 /* Profile Styles */
 .profile-section {
-  padding: 16px;
+  padding: 12px;
   max-width: 100%;
   margin: 0;
   height: 100%;
@@ -2733,7 +2733,7 @@ textarea {
 
 /* Pals Section Styles */
 .pals-section {
-  padding: 16px;
+  padding: 12px;
   max-width: 100%;
   margin: 0;
   height: 100%;
@@ -2747,7 +2747,7 @@ textarea {
   flex-direction: column;
   gap: 16px;
   margin-bottom: 20px;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .pals-header h2 {
@@ -2762,7 +2762,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .pal-card {
@@ -3316,7 +3316,7 @@ textarea {
 
 /* Invites Section Styles */
 .invites-section {
-  padding: 16px;
+  padding: 12px;
   max-width: 100%;
   margin: 0;
   height: 100%;
@@ -3327,7 +3327,7 @@ textarea {
 
 .invites-header {
   margin-bottom: 20px;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .invites-header h2 {
@@ -3365,7 +3365,7 @@ textarea {
 
 .invites-list {
   margin-top: 16px;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .invite-item {
@@ -3618,7 +3618,7 @@ textarea {
 .new-section {
   max-width: 100%;
   margin: 0;
-  padding: 16px;
+  padding: 12px;
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -3628,7 +3628,7 @@ textarea {
 .new-header {
   text-align: center;
   margin-bottom: 24px;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .new-header h2 {
