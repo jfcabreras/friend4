@@ -1900,7 +1900,7 @@ textarea {
 
 /* Profile Styles */
 .profile-section {
-  padding: 0;
+  padding: 0 20px;
   padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   max-width: 600px;
   height: 100%;
@@ -1915,7 +1915,7 @@ textarea {
   flex-direction: column;
   gap: 12px;
   margin: 0;
-  padding: 20px 20px 16px;
+  padding: 20px;
   background: var(--surface);
   border-radius: 0;
   border: none;
