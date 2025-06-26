@@ -3415,7 +3415,7 @@ textarea {
   background: var(--surface);
   border-radius: 16px;
   border: 1px solid var(--border);
-  margin: 8px 0;
+  margin: 0 0 8px 0;
 }
 
 .feed-header {
@@ -5026,7 +5026,7 @@ textarea {
   background: var(--surface);
   border-radius: 16px;
   border: 1px solid var(--border);
-  margin: 8px 0 20px 0;
+  margin: 0 0 20px 0;
 }
 
 .new-header h2 {
