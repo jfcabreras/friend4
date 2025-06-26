@@ -232,36 +232,13 @@ const Profile = ({ user, userProfile }) => {
 
       receivedInvites.forEach(invite => {
         if (invite.status === 'completed' && invite.paymentConfirmed === true) {
-          // Use the new discriminated fee fields if available
+          // Use only the new discriminated fee fields
           if (invite.pendingInviteFeesIncluded && invite.pendingInviteFeesIncluded > 0) {
             receivedPaymentsForInvitesNotRelatedToMe += invite.pendingInviteFeesIncluded;
           }
           
           if (invite.pendingCancelledInviteFeesIncluded && invite.pendingCancelledInviteFeesIncluded > 0) {
             receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.pendingCancelledInviteFeesIncluded;
-          }
-          
-          // Fallback for older records that only have pendingFeesIncluded
-          if (!invite.pendingInviteFeesIncluded && !invite.pendingCancelledInviteFeesIncluded && invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
-            // Try to determine what type of outstanding fees were included
-            // Check if there's a breakdown or if we can infer from the amount
-            if (invite.cancellationFeesBreakdown) {
-              // If we have a breakdown, use it
-              receivedPaymentsForInvitesNotRelatedToMe += invite.cancellationFeesBreakdown.incentivePayments || 0;
-              receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.cancellationFeesBreakdown.cancellationFees || 0;
-            } else {
-              // Fallback: try to infer based on the transaction context
-              // If this invite has any cancellation-related fields, assume it's cancellation fees
-              if (invite.cancellationFeeIncluded || 
-                  invite.description?.toLowerCase().includes('cancellation') ||
-                  invite.title?.toLowerCase().includes('cancel')) {
-                receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.pendingFeesIncluded;
-              } else {
-                // For the specific case mentioned in the user's data, if the amount is 50 and matches cancellation patterns
-                // we should categorize it as cancellation fees
-                receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.pendingFeesIncluded;
-              }
-            }
           }
         }
       });

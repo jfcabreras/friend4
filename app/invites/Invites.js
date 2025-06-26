@@ -981,7 +981,6 @@ const Invites = ({ user, userProfile }) => {
         paymentDoneAt: new Date(),
         paymentMethod: 'cash',
         incentiveAmount: incentiveAmount,
-        pendingFeesIncluded: totalPendingFeesIncluded, // Keep for backward compatibility
         pendingInviteFeesIncluded: pendingInviteFeesIncluded,
         pendingCancelledInviteFeesIncluded: pendingCancelledInviteFeesIncluded,
         platformFee: platformFee,
@@ -1099,10 +1098,11 @@ const Invites = ({ user, userProfile }) => {
     if (!invite) return;
 
     // Check if this payment included pending fees and show warning
-    if (invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0) {
+    const totalPendingFeesIncluded = (invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0);
+    if (totalPendingFeesIncluded > 0) {
       // Calculate the base incentive amount (what the pal should actually receive)
       const baseIncentiveAmount = invite.incentiveAmount || invite.price;
-      const actualOutstandingFees = invite.pendingFeesIncluded;
+      const actualOutstandingFees = totalPendingFeesIncluded;
       const totalReceived = invite.totalPaidAmount || (baseIncentiveAmount + actualOutstandingFees);
       
       invite.calculatedBaseAmount = baseIncentiveAmount;
@@ -1341,9 +1341,9 @@ const Invites = ({ user, userProfile }) => {
                       {invite.cancellationFeePaid ? ' (Paid)' : ' (Unpaid)'}
                     </span>
                   )}
-                  {invite.status === 'payment_done' && invite.pendingFeesIncluded && invite.pendingFeesIncluded > 0 && (
+                  {invite.status === 'payment_done' && ((invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0)) > 0 && (
                     <span className="pending-fees-included">
-                      ⚠️ Includes ${(invite.pendingFeesIncluded || 0).toFixed(2)} outstanding fees
+                      ⚠️ Includes ${((invite.pendingInviteFeesIncluded || 0) + (invite.pendingCancelledInviteFeesIncluded || 0)).toFixed(2)} outstanding fees
                     </span>
                   )}
                   {invite.status === 'finished' && (
@@ -1884,10 +1884,10 @@ const Invites = ({ user, userProfile }) => {
                 <p><strong>Base Incentive:</strong> ${(paymentToConfirm.incentiveAmount || paymentToConfirm.price).toFixed(2)}</p>
               </div>
 
-              {paymentToConfirm.pendingFeesIncluded > 0 && (
+              {((paymentToConfirm.pendingInviteFeesIncluded || 0) + (paymentToConfirm.pendingCancelledInviteFeesIncluded || 0)) > 0 && (
                 <div className="pending-fees-notice">
                   <h4>⚠️ Outstanding Fees Included:</h4>
-                  <p>This payment includes <strong>${(paymentToConfirm.calculatedOutstandingFees || paymentToConfirm.pendingFeesIncluded || 0).toFixed(2)}</strong> in outstanding fees that {paymentToConfirm.fromUsername} owed to the platform.</p>
+                  <p>This payment includes <strong>${(paymentToConfirm.calculatedOutstandingFees || (paymentToConfirm.pendingInviteFeesIncluded || 0) + (paymentToConfirm.pendingCancelledInviteFeesIncluded || 0)).toFixed(2)}</strong> in outstanding fees that {paymentToConfirm.fromUsername} owed to the platform.</p>
 
                 <div className="payment-breakdown-confirm">
                 <div className="breakdown-row">
@@ -1928,7 +1928,7 @@ const Invites = ({ user, userProfile }) => {
                 onClick={() => processPaymentConfirmation(paymentToConfirm.id)}
                 className="confirm-received-btn"
               >
-                ✅ Yes, I Received ${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingFeesIncluded || 0))).toFixed(2)}
+                ✅ Yes, I Received ${(paymentToConfirm.calculatedTotalReceived || paymentToConfirm.totalPaidAmount || ((paymentToConfirm.incentiveAmount || paymentToConfirm.price) + (paymentToConfirm.pendingInviteFeesIncluded || 0) + (paymentToConfirm.pendingCancelledInviteFeesIncluded || 0))).toFixed(2)}
               </button>
               <button 
                 onClick={() => setShowPaymentConfirmModal(false)}
