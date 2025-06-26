@@ -982,25 +982,114 @@ const Profile = ({ user, userProfile }) => {
                 )}
               </div>
 
-              {/* Detailed Financial Breakdown */}
-              <div className="financial-breakdown-modern">
-                <h4>Payment Breakdown</h4>
-                <div className="breakdown-grid-modern">
-                  <div className="breakdown-item-modern">
-                    <span className="breakdown-label-modern">Incentive Payments Owed</span>
-                    <span className="breakdown-amount-modern">${(balanceData.incentivePaymentsOwed || 0).toFixed(2)}</span>
-                  </div>
-                  <div className="breakdown-item-modern">
-                    <span className="breakdown-label-modern">Cancellation Fees Owed</span>
-                    <span className="breakdown-amount-modern">${(balanceData.cancellationFeesOwed || 0).toFixed(2)}</span>
-                  </div>
-                  {userProfile.profileType === 'public' && (
-                    <div className="breakdown-item-modern">
-                      <span className="breakdown-label-modern">Platform Fees Owed</span>
-                      <span className="breakdown-amount-modern">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
+              {/* Comprehensive Financial Tracking */}
+              <div className="comprehensive-financial-tracking">
+                <h4>📊 Comprehensive Financial Tracking</h4>
+                
+                <div className="financial-category">
+                  <h5>💸 Payments I Issue (What I owe to others)</h5>
+                  <div className="financial-grid">
+                    <div className="financial-item">
+                      <span className="financial-label">Issued for Incentive Payments:</span>
+                      <span className="financial-value">${(balanceData.issuedForIncentivePayments || 0).toFixed(2)}</span>
                     </div>
-                  )}
+                    <div className="financial-item">
+                      <span className="financial-label">Issued for Cancelled Invites:</span>
+                      <span className="financial-value">${(balanceData.issuedForCancelledInvites || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item success">
+                      <span className="financial-label">Paid for Incentive Payments:</span>
+                      <span className="financial-value">${(balanceData.paidForIncentivePayments || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item success">
+                      <span className="financial-label">Paid for Cancelled Invites:</span>
+                      <span className="financial-value">${(balanceData.paidForCancelledInvites || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item pending">
+                      <span className="financial-label">Pending Payments for Incentives:</span>
+                      <span className="financial-value">${(balanceData.pendingPaymentsForIncentives || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item pending">
+                      <span className="financial-label">Pending Payments for Cancelled:</span>
+                      <span className="financial-value">${(balanceData.pendingPaymentsForCancelled || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
+
+                <div className="financial-category">
+                  <h5>💰 Payments Related to Me (As recipient)</h5>
+                  <div className="financial-grid">
+                    <div className="financial-item">
+                      <span className="financial-label">Issued Payments for Invites Related to Me:</span>
+                      <span className="financial-value">${(balanceData.issuedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item">
+                      <span className="financial-label">Issued Payments for Cancelled Invites Related to Me:</span>
+                      <span className="financial-value">${(balanceData.issuedPaymentsForCancelledInvitesRelatedToMe || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item success">
+                      <span className="financial-label">Received Payments for Invites Related to Me:</span>
+                      <span className="financial-value">${(balanceData.receivedPaymentsForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item success">
+                      <span className="financial-label">Received Payments for Cancelled Invites Related to Me:</span>
+                      <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesRelatedToMe || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item pending">
+                      <span className="financial-label">Payments for Invites Pending to Receive:</span>
+                      <span className="financial-value">${(balanceData.paymentsForInvitesPendingToReceive || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item pending">
+                      <span className="financial-label">Payments for Cancelled Invites Pending to Receive:</span>
+                      <span className="financial-value">${(balanceData.paymentsForCancelledInvitesPendingToReceive || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="financial-category">
+                  <h5>🔄 Payments Not Related to Me (Outstanding fees from others)</h5>
+                  <div className="financial-grid">
+                    <div className="financial-item special">
+                      <span className="financial-label">Received Payments for Invites Not Related to Me:</span>
+                      <span className="financial-value">${(balanceData.receivedPaymentsForInvitesNotRelatedToMe || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item special">
+                      <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me:</span>
+                      <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMe || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item">
+                      <span className="financial-label">Received Payments for Invites Not Related to Me Paid to Platform:</span>
+                      <span className="financial-value">${(balanceData.receivedPaymentsForInvitesNotRelatedToMePaidToPlatform || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="financial-item">
+                      <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me Paid to Platform:</span>
+                      <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="financial-note">
+                    💡 These represent outstanding fees from other users that were included in payments made to you. The "Paid to Platform" amounts show how much of these fees have been explicitly confirmed as paid to the platform administration through separate platform payments.
+                  </div>
+                </div>
+
+                {userProfile.profileType === 'public' && (
+                  <div className="financial-category">
+                    <h5>🏛️ Platform Fees</h5>
+                    <div className="financial-grid">
+                      <div className="financial-item">
+                        <span className="financial-label">Issued Fees for Invites Related to Me:</span>
+                        <span className="financial-value">${(balanceData.issuedFeesForInvitesRelatedToMe || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="financial-item">
+                        <span className="financial-label">Issued Fees for Cancellations Related to Me:</span>
+                        <span className="financial-value">${(balanceData.issuedFeesForCancellationsRelatedToMe || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="financial-item pending">
+                        <span className="financial-label">Platform Fees Owed:</span>
+                        <span className="financial-value">${(balanceData.platformFeesOwed || 0).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Comprehensive Financial Statistics */}
