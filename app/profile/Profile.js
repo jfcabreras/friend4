@@ -298,9 +298,9 @@ const Profile = ({ user, userProfile }) => {
       }
 
       // 9. FINAL BALANCE CALCULATIONS - only calculate dynamic balances
-      // Adjust platform fees by subtracting fees already collected from other users
-      const totalOutstandingFeesCollected = receivedPaymentsForInvitesNotRelatedToMe + receivedPaymentsForCancelledInvitesNotRelatedToMe;
-      const adjustedPlatformFeesOwed = Math.max(0, platformFeesOwed - totalOutstandingFeesCollected);
+      // Adjust platform fees by subtracting only fees actually confirmed as paid to platform
+      const totalOutstandingFeesPaidToPlatform = receivedPaymentsForInvitesNotRelatedToMePaidToPlatform + receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform;
+      const adjustedPlatformFeesOwed = Math.max(0, platformFeesOwed - totalOutstandingFeesPaidToPlatform);
       
       const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + adjustedPlatformFeesOwed;
       const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
