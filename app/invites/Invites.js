@@ -1341,9 +1341,9 @@ const Invites = ({ user, userProfile }) => {
                 )}
                 <div className="invite-meta">
                   <span className="invite-date">
-                    📅 {invite.date?.toDate?.()?.toLocaleDateString()}
+                    📅 {(invite.startDate || invite.date)?.toDate?.()?.toLocaleDateString()}
                   </span>
-                  <span className="invite-time">🕐 {invite.time}</span>
+                  <span className="invite-time">🕐 {invite.startTime || invite.time}</span>
                   <span className="invite-location">📍 {invite.meetingLocation}</span>
                   <span className="invite-incentive">💰 ${invite.price}</span>
                   {invite.status === 'cancelled' && invite.cancellationFee && (
