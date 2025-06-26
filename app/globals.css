@@ -3340,6 +3340,61 @@ textarea {
   font-weight: 500;
 }
 
+/* Outstanding Fees Notice Styles */
+.outstanding-fees-notice {
+  margin: 12px 0;
+  padding: 0;
+}
+
+.fees-notice, .fees-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  border: 1px solid;
+  background: linear-gradient(135deg, var(--surface-elevated), var(--surface));
+}
+
+.fees-notice.sender.success, .fees-notice.receiver.success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.fees-notice.sender.neutral, .fees-notice.receiver.neutral {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+  color: var(--cyber-purple);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.fees-warning.sender, .fees-warning.receiver {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+  color: #f59e0b;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.fees-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.fees-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+.breakdown-detail {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
 /* Invites Section Styles */
 .invites-section {
   padding: 0;
@@ -3439,158 +3494,439 @@ textarea {
 
 .invite-item {
   background: var(--surface);
-  border-radius: 0;
-  padding: 20px;
-  margin: 0;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  width: 100%;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 0 16px 16px 16px;
+  border: 1px solid var(--border);
+  width: calc(100% - 32px);
   box-sizing: border-box;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.invite-item.sent {
-  border-left: 4px solid #10b981;
+.invite-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: var(--cyber-purple);
 }
 
-.invite-item.received {
-  border-left: 4px solid #3b82f6;
+.invite-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981, #059669);
+  transition: all 0.3s ease;
+}
+
+.invite-item.sent::before {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.invite-item.received::before {
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+}
+
+.invite-item.cancelled::before {
+  background: linear-gradient(180deg, #6b7280, #4b5563);
+}
+
+.invite-item.in_progress::before {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.invite-item.finished::before {
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+}
+
+.invite-item.payment_done::before {
+  background: linear-gradient(180deg, #06b6d4, #0891b2);
+}
+
+.invite-item.completed::before {
+  background: linear-gradient(180deg, #10b981, #047857);
 }
 
 .invite-header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .invite-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 200px;
 }
 
 .invite-type {
-  font-size: 10px;
-  padding: 3px 6px;
-  border-radius: 8px;
-  background: var(--surface-elevated);
-  align-self: flex-start;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.invite-type.sent {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.invite-type.received {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .invite-details {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
-.invite-details p {
-  margin: 0 0 8px 0;
+.invite-details .invite-partner {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cyber-purple);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.invite-details .invite-partner::before {
+  content: '👤';
   font-size: 14px;
-  line-height: 1.3;
+}
+
+.invite-details .invite-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  background: var(--surface-elevated);
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid var(--cyber-purple);
 }
 
 .invite-meta {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .invite-meta span {
   font-size: 12px;
-  padding: 2px 6px;
+  padding: 8px 12px;
   background: var(--surface-elevated);
-  border-radius: 6px;
-  color: var(--text-secondary);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.invite-meta span:hover {
+  background: var(--surface);
+  border-color: var(--cyber-purple);
+}
+
+.invite-meta .invite-incentive {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+  color: var(--cyber-purple);
+  font-weight: 700;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.invite-meta .cancellation-fee {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.05));
+  color: #f97316;
+  font-weight: 700;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.invite-meta .pending-fees-included {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+  color: #f59e0b;
+  font-weight: 700;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.invite-meta .finished-status {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+  color: var(--cyber-purple);
+  font-weight: 700;
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
 .invite-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .invite-actions button {
-  padding: 8px 12px;
+  padding: 12px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   flex: 1;
-  min-width: 80px;
+  min-width: 120px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.invite-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.invite-actions button:active {
+  transform: translateY(0);
 }
 
 .accept-btn {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
+  border: 1px solid #059669;
+}
+
+.accept-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 .decline-btn {
-  background: #ef4444;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
+  border: 1px solid #dc2626;
+}
+
+.decline-btn:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .view-details-btn {
-  background: var(--cyber-purple);
+  background: linear-gradient(135deg, var(--cyber-purple), #8b5cf6);
   color: white;
+  border: 1px solid var(--cyber-purple);
+}
+
+.view-details-btn:hover {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+  border: 1px solid #0891b2;
+}
+
+.edit-btn:hover {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
 }
 
 .cancel-btn {
-  background: #f97316;
+  background: linear-gradient(135deg, #f97316, #ea580c);
   color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  border: 1px solid #ea580c;
+  padding: 12px 16px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .cancel-btn:hover {
-  background: #ea580c;
+  background: linear-gradient(135deg, #ea580c, #c2410c);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+  transform: translateY(-1px);
+}
+
+.start-btn, .start-invite-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: 1px solid #d97706;
+}
+
+.start-btn:hover, .start-invite-btn:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.finish-btn, .finish-invite-btn {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: 1px solid #7c3aed;
+}
+
+.finish-btn:hover, .finish-invite-btn:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.payment-btn, .payment-invite-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: 1px solid #059669;
+}
+
+.payment-btn:hover, .payment-invite-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.receive-payment-btn, .receive-payment-invite-btn {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  border: 1px solid #047857;
+}
+
+.receive-payment-btn:hover, .receive-payment-invite-btn:hover {
+  background: linear-gradient(135deg, #047857, #065f46);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+
+.invite-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+  background: linear-gradient(135deg, var(--surface-elevated), var(--surface));
+}
+
+.status-badge.pending {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+  color: #f59e0b;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.status-badge.accepted {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.status-badge.declined {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.status-badge.cancelled {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.2), rgba(107, 114, 128, 0.1));
+  color: #6b7280;
+  border-color: rgba(107, 114, 128, 0.4);
+}
+
+.status-badge.in_progress {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.status-badge.finished {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+  color: var(--cyber-purple);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.status-badge.payment_done {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.1));
+  color: #06b6d4;
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.status-badge.completed {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.2), rgba(5, 150, 105, 0.1));
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.4);
+}
+
+.invite-created {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .cancellation-fee {
   color: #f97316;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 12px;
 }
 
 .cancellation-fee-detail {
   color: #f97316;
-  font-weight: 600;
-}
-
-.status-badge.cancelled {
-  background: #fed7aa;
-  color: #ea580c;
+  font-weight: 700;
 }
 
 .invite-item.cancelled {
-  border-left-color: #6b7280;
-  opacity: 0.8;
+  opacity: 0.85;
+  background: rgba(107, 114, 128, 0.05);
 }
 
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: bold;
+.invite-item.in_progress {
+  background: rgba(245, 158, 11, 0.02);
+  border-color: rgba(245, 158, 11, 0.2);
 }
 
-.status-badge.pending {
-  background: #fbbf24;
-  color: #92400e;
+.invite-item.finished {
+  background: rgba(139, 92, 246, 0.02);
+  border-color: rgba(139, 92, 246, 0.2);
 }
 
-.status-badge.accepted {
-  background: #10b981;
-  color: white;
+.invite-item.payment_done {
+  background: rgba(6, 182, 212, 0.02);
+  border-color: rgba(6, 182, 212, 0.2);
 }
 
-.status-badge.declined {
-  background: #ef4444;
-  color: white;
+.invite-item.completed {
+  background: rgba(5, 150, 105, 0.02);
+  border-color: rgba(5, 150, 105, 0.2);
 }
 
 /* Profile Section Updates */
