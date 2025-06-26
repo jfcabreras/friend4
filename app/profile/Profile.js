@@ -62,6 +62,8 @@ const Profile = ({ user, userProfile }) => {
     // Payments not related to me (outstanding fees from others)
     receivedPaymentsForInvitesNotRelatedToMe: 0,
     receivedPaymentsForCancelledInvitesNotRelatedToMe: 0,
+    receivedPaymentsForInvitesNotRelatedToMePaidToPlatform: 0,
+    receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform: 0,
 
     // Platform fees
     issuedFeesForCancellationsRelatedToMe: 0,
@@ -229,16 +231,22 @@ const Profile = ({ user, userProfile }) => {
       // These are fees collected from other users that were included in payments to me
       let receivedPaymentsForInvitesNotRelatedToMe = 0;
       let receivedPaymentsForCancelledInvitesNotRelatedToMe = 0;
+      let receivedPaymentsForInvitesNotRelatedToMePaidToPlatform = 0;
+      let receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform = 0;
 
       receivedInvites.forEach(invite => {
         if (invite.status === 'completed' && invite.paymentConfirmed === true) {
           // Use only the new discriminated fee fields
           if (invite.pendingInviteFeesIncluded && invite.pendingInviteFeesIncluded > 0) {
             receivedPaymentsForInvitesNotRelatedToMe += invite.pendingInviteFeesIncluded;
+            // These fees are automatically considered paid to platform when the invite is completed
+            receivedPaymentsForInvitesNotRelatedToMePaidToPlatform += invite.pendingInviteFeesIncluded;
           }
           
           if (invite.pendingCancelledInviteFeesIncluded && invite.pendingCancelledInviteFeesIncluded > 0) {
             receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.pendingCancelledInviteFeesIncluded;
+            // These fees are automatically considered paid to platform when the invite is completed
+            receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform += invite.pendingCancelledInviteFeesIncluded;
           }
         }
       });
@@ -254,6 +262,8 @@ const Profile = ({ user, userProfile }) => {
         )
         .forEach(invite => {
           receivedPaymentsForCancelledInvitesNotRelatedToMe += invite.cancellationFeeAmountPaid || 0;
+          // These fees are automatically considered paid to platform when the invite is completed
+          receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform += invite.cancellationFeeAmountPaid || 0;
         });
 
       // 8. PLATFORM FEES - from database stored values
@@ -381,6 +391,8 @@ const Profile = ({ user, userProfile }) => {
         // Payments not related to me (outstanding fees from others)
         receivedPaymentsForInvitesNotRelatedToMe,
         receivedPaymentsForCancelledInvitesNotRelatedToMe,
+        receivedPaymentsForInvitesNotRelatedToMePaidToPlatform,
+        receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform,
 
         // Platform fees
         issuedFeesForCancellationsRelatedToMe,
@@ -869,9 +881,17 @@ const Profile = ({ user, userProfile }) => {
                 <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me:</span>
                 <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMe || 0).toFixed(2)}</span>
               </div>
+              <div className="financial-item success">
+                <span className="financial-label">Received Payments for Invites Not Related to Me Paid to Platform:</span>
+                <span className="financial-value">${(balanceData.receivedPaymentsForInvitesNotRelatedToMePaidToPlatform || 0).toFixed(2)}</span>
+              </div>
+              <div className="financial-item success">
+                <span className="financial-label">Received Payments for Cancelled Invites Not Related to Me Paid to Platform:</span>
+                <span className="financial-value">${(balanceData.receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform || 0).toFixed(2)}</span>
+              </div>
             </div>
             <p className="financial-note">
-              💡 These represent outstanding fees from other users that were included in payments made to you.
+              💡 These represent outstanding fees from other users that were included in payments made to you. The "Paid to Platform" amounts show how much of these fees have been automatically forwarded to the platform administration.
             </p>
           </div>
 
