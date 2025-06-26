@@ -1,12 +1,24 @@
+"use client";
 
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit, getDoc, doc, updateDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
-import ProfileModal from '../components/ProfileModal';
-import InviteModal from '../components/InviteModal';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { db } from "../../lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  getDoc,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  addDoc,
+} from "firebase/firestore";
+import ProfileModal from "../components/ProfileModal";
+import InviteModal from "../components/InviteModal";
 
 const Home = ({ user, userProfile, refreshUserProfile }) => {
   const router = useRouter();
@@ -28,11 +40,9 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
     }
   }, [user, userProfile]);
 
-  
-
   const loadFeed = async () => {
     if (!user?.uid || !userProfile) return;
-    
+
     try {
       setLoading(true);
       let feedPosts = [];
@@ -40,66 +50,82 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
       // Load actual posts from the posts collection
       try {
         const postsQuery = query(
-          collection(db, 'posts'),
-          orderBy('createdAt', 'desc'),
-          limit(50)
+          collection(db, "posts"),
+          orderBy("createdAt", "desc"),
+          limit(50),
         );
         const postsSnapshot = await getDocs(postsQuery);
-        const posts = await Promise.all(postsSnapshot.docs.map(async (postDoc) => {
-          const postData = postDoc.data();
-          let authorProfilePicture = null;
-          let authorUsername = postData.creatorUsername || postData.authorUsername || 'Anonymous';
-          let isPublicProfile = false;
-          
-          // Fetch the author's profile picture and check if profile is public
-          if (postData.authorId) {
-            try {
-              const authorDoc = await getDoc(doc(db, 'users', postData.authorId));
-              if (authorDoc.exists()) {
-                const authorData = authorDoc.data();
-                authorProfilePicture = authorData.profilePicture;
-                authorUsername = authorData.username || authorUsername;
-                isPublicProfile = authorData.profileType === 'public';
-              } else {
-                console.log('Author document does not exist for:', postData.authorId);
+        const posts = await Promise.all(
+          postsSnapshot.docs.map(async (postDoc) => {
+            const postData = postDoc.data();
+            let authorProfilePicture = null;
+            let authorUsername =
+              postData.creatorUsername ||
+              postData.authorUsername ||
+              "Anonymous";
+            let isPublicProfile = false;
+
+            // Fetch the author's profile picture and check if profile is public
+            if (postData.authorId) {
+              try {
+                const authorDoc = await getDoc(
+                  doc(db, "users", postData.authorId),
+                );
+                if (authorDoc.exists()) {
+                  const authorData = authorDoc.data();
+                  authorProfilePicture = authorData.profilePicture;
+                  authorUsername = authorData.username || authorUsername;
+                  isPublicProfile = authorData.profileType === "public";
+                } else {
+                  console.log(
+                    "Author document does not exist for:",
+                    postData.authorId,
+                  );
+                }
+              } catch (error) {
+                console.log("Could not load author profile:", error);
               }
-            } catch (error) {
-              console.log('Could not load author profile:', error);
             }
-          }
-          
-          return {
-            id: postDoc.id,
-            type: 'post',
-            ...postData,
-            authorProfilePicture,
-            authorUsername,
-            isPublicProfile
-          };
-        }));
+
+            return {
+              id: postDoc.id,
+              type: "post",
+              ...postData,
+              authorProfilePicture,
+              authorUsername,
+              isPublicProfile,
+            };
+          }),
+        );
 
         // Filter to only show posts from public users
-        const publicPosts = posts.filter(post => post.isPublicProfile === true);
+        const publicPosts = posts.filter(
+          (post) => post.isPublicProfile === true,
+        );
         feedPosts = [...publicPosts];
-        console.log('Loaded posts:', posts.length);
-        console.log('Public posts:', publicPosts.length);
+        console.log("Loaded posts:", posts.length);
+        console.log("Public posts:", publicPosts.length);
       } catch (postsError) {
-        console.log('Could not load posts:', postsError.message);
+        console.log("Could not load posts:", postsError.message);
       }
 
-      console.log('Posts loaded from posts collection:', feedPosts.length);
+      console.log("Posts loaded from posts collection:", feedPosts.length);
 
       // Sort by creation date
-      feedPosts = feedPosts.sort((a, b) => {
-        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
-        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
-        return bTime - aTime;
-      }).slice(0, 50);
+      feedPosts = feedPosts
+        .sort((a, b) => {
+          const aTime =
+            a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+          const bTime =
+            b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+          return bTime - aTime;
+        })
+        .slice(0, 50);
 
-      console.log('Final feed posts:', feedPosts.length);
+      console.log("Final feed posts:", feedPosts.length);
       setFeed(feedPosts);
     } catch (error) {
-      console.error('Error loading feed:', error);
+      console.error("Error loading feed:", error);
       // Set empty array on error
       setFeed([]);
     } finally {
@@ -109,34 +135,37 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
 
   const handleLike = async (postId) => {
     // TODO: Implement like functionality
-    console.log('Like post:', postId);
+    console.log("Like post:", postId);
   };
 
   const handleComment = (postId) => {
     // TODO: Implement comment functionality
-    console.log('Comment on post:', postId);
+    console.log("Comment on post:", postId);
   };
 
   const handleShare = (postId) => {
     const shareUrl = `${window.location.origin}/post/${postId}`;
     if (navigator.share) {
       navigator.share({
-        title: 'Check out this post',
-        url: shareUrl
+        title: "Check out this post",
+        url: shareUrl,
       });
     } else {
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        alert('Post link copied to clipboard!');
-      }).catch(() => {
-        // Fallback: show the URL in a prompt
-        prompt('Copy this link to share:', shareUrl);
-      });
+      navigator.clipboard
+        .writeText(shareUrl)
+        .then(() => {
+          alert("Post link copied to clipboard!");
+        })
+        .catch(() => {
+          // Fallback: show the URL in a prompt
+          prompt("Copy this link to share:", shareUrl);
+        });
     }
   };
 
   const handlePostClick = (postId, event) => {
     // Don't navigate if clicking on buttons or interactive elements
-    if (event.target.closest('button') || event.target.closest('.clickable')) {
+    if (event.target.closest("button") || event.target.closest(".clickable")) {
       return;
     }
     router.push(`/post/${postId}`);
@@ -148,32 +177,33 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
     setLoadingPalPosts(true);
     try {
       const postsQuery = query(
-        collection(db, 'posts'),
-        where('authorId', '==', palId)
+        collection(db, "posts"),
+        where("authorId", "==", palId),
       );
-      
+
       const postsSnapshot = await getDocs(postsQuery);
-      const posts = postsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-      // Sort in JavaScript to avoid composite index requirement
-      .sort((a, b) => {
-        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
-        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
-        return bTime - aTime;
-      });
-      
+      const posts = postsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        // Sort in JavaScript to avoid composite index requirement
+        .sort((a, b) => {
+          const aTime =
+            a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+          const bTime =
+            b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+          return bTime - aTime;
+        });
+
       setSelectedPalPosts(posts);
     } catch (error) {
-      console.error('Error loading pal posts:', error);
+      console.error("Error loading pal posts:", error);
       setSelectedPalPosts([]);
     } finally {
       setLoadingPalPosts(false);
     }
   };
-
-  
 
   const handleSendInvite = (pal) => {
     setSelectedPal(pal);
@@ -183,48 +213,54 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
 
   const handleUsernameClick = async (authorId, post) => {
     if (!authorId || authorId === user?.uid) return; // Don't open modal for current user
-    
+
     try {
-      const userDoc = await getDoc(doc(db, 'users', authorId));
+      const userDoc = await getDoc(doc(db, "users", authorId));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         setSelectedPal({
           id: authorId,
-          ...userData
+          ...userData,
         });
         setShowProfileModal(true);
         loadPalPosts(authorId);
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error("Error loading user profile:", error);
     }
   };
 
   const formatTimeAgo = (timestamp) => {
-    if (!timestamp) return 'Just now';
+    if (!timestamp) return "Just now";
     const now = new Date();
-    const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const postTime = timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp);
     const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
+
+    if (diffInMinutes < 1) return "Just now";
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
+
     return postTime.toLocaleDateString();
   };
 
   if (!user) {
     return (
-      <div className="home-section">
-        <div className="welcome-message">
-          <h2>Welcome to Social Task & Event Platform</h2>
-          <p>Connect with others, create invites, and explore opportunities!</p>
-          <p>Please login or register to get started.</p>
+      <div className="main-section">
+        <div className="report-feed">
+          <div className="welcome-message">
+            <h2>Welcome to Social Task & Event Platform</h2>
+            <p>
+              Connect with others, create invites, and explore opportunities!
+            </p>
+            <p>Please login or register to get started.</p>
+          </div>
         </div>
       </div>
     );
@@ -233,7 +269,9 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
   if (loading) {
     return (
       <div className="main-section">
-        <div className="loading-feed">Loading feed...</div>
+        <div className="report-feed">
+          <div className="loading-feed">Loading feed...</div>
+        </div>
       </div>
     );
   }
@@ -245,14 +283,17 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
           <div className="empty-feed">
             <div className="empty-feed-content">
               <h3>No posts yet</h3>
-              <p>No posts available at the moment. Be the first to share something!</p>
+              <p>
+                No posts available at the moment. Be the first to share
+                something!
+              </p>
             </div>
           </div>
         ) : (
-          feed.map(item => (
-            <div 
-              key={item.id} 
-              className="feed-item clickable-post" 
+          feed.map((item) => (
+            <div
+              key={item.id}
+              className="feed-item clickable-post"
               onClick={(e) => handlePostClick(item.id, e)}
             >
               {/* Post Header */}
@@ -260,56 +301,54 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
                 <div className="feed-author">
                   <div className="author-avatar">
                     {item.authorProfilePicture ? (
-                      <img 
-                        src={item.authorProfilePicture} 
+                      <img
+                        src={item.authorProfilePicture}
                         alt="Author"
                         style={{
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: '50%',
-                          objectFit: 'cover'
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: "50%",
+                          objectFit: "cover",
                         }}
                       />
                     ) : (
-                      item.authorUsername?.charAt(0).toUpperCase() || '?'
+                      item.authorUsername?.charAt(0).toUpperCase() || "?"
                     )}
                   </div>
                   <div className="author-info">
-                    <span 
-                      className="author-name clickable" 
+                    <span
+                      className="author-name clickable"
                       onClick={() => handleUsernameClick(item.authorId, item)}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                     >
-                      {item.authorUsername || 'Anonymous'}
+                      {item.authorUsername || "Anonymous"}
                     </span>
-                    <span className="post-location">{item.city}, {item.country}</span>
+                    <span className="post-location">
+                      {item.city}, {item.country}
+                    </span>
                   </div>
                 </div>
-                <div className="feed-time">
-                  {formatTimeAgo(item.createdAt)}
-                </div>
+                <div className="feed-time">{formatTimeAgo(item.createdAt)}</div>
               </div>
 
               {/* Post Image/Media */}
               <div className="feed-image-container">
                 {item.imageUrl ? (
-                  item.mediaType === 'video' ? (
+                  item.mediaType === "video" ? (
                     <video controls className="feed-image">
                       <source src={item.imageUrl} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
                   ) : (
-                    <img 
-                      src={item.imageUrl} 
-                      alt="Post content" 
+                    <img
+                      src={item.imageUrl}
+                      alt="Post content"
                       className="feed-image"
                     />
                   )
                 ) : (
                   <div className="feed-placeholder">
-                    <div className="placeholder-icon">
-                      📝
-                    </div>
+                    <div className="placeholder-icon">📝</div>
                   </div>
                 )}
               </div>
@@ -317,19 +356,19 @@ const Home = ({ user, userProfile, refreshUserProfile }) => {
               {/* Post Content */}
               <div className="feed-content">
                 <div className="feed-actions">
-                  <button 
+                  <button
                     className="feed-action-btn"
                     onClick={() => handleLike(item.id)}
                   >
                     ❤️ {item.likes || 0}
                   </button>
-                  <button 
+                  <button
                     className="feed-action-btn"
                     onClick={() => handleComment(item.id)}
                   >
                     💬 {item.comments || 0}
                   </button>
-                  <button 
+                  <button
                     className="feed-action-btn"
                     onClick={() => handleShare(item.id)}
                   >
