@@ -4562,28 +4562,25 @@ textarea {
   overflow: hidden;
   transition: all 0.3s ease;
   background: var(--surface-elevated);
-  border-radius: 12px;
-  margin-top: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .filter-controls.collapsed {
   max-height: 0;
   opacity: 0;
-  padding: 0 16px;
+  padding: 0 12px;
   border: none;
 }
 
 .filter-controls.expanded {
-  max-height: 200px;
+  max-height: 120px;
   opacity: 1;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--border);
-}
-
-.filter-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .invites-list {
