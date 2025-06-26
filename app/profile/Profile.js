@@ -302,10 +302,13 @@ const Profile = ({ user, userProfile }) => {
       const platformFeesOwedToPlatform = platformFeesOwed;
       
       // Outstanding fees collected from others that need to be paid to platform
-      const outstandingFeesCollectedNotPaidToPlatform = receivedPaymentsForInvitesNotRelatedToMe + receivedPaymentsForCancelledInvitesNotRelatedToMe - receivedPaymentsForInvitesNotRelatedToMePaidToPlatform - receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform;
+      // This includes both invite fees and cancelled invite fees that were received but not yet paid to platform
+      const outstandingInviteFeesNotPaidToPlatform = receivedPaymentsForInvitesNotRelatedToMe - receivedPaymentsForInvitesNotRelatedToMePaidToPlatform;
+      const outstandingCancelledInviteFeesNotPaidToPlatform = receivedPaymentsForCancelledInvitesNotRelatedToMe - receivedPaymentsForCancelledInvitesNotRelatedToMePaidToPlatform;
+      const outstandingFeesCollectedNotPaidToPlatform = outstandingInviteFeesNotPaidToPlatform + outstandingCancelledInviteFeesNotPaidToPlatform;
       
-      // Total amount owed to platform
-      const totalOwedToPlatform = platformFeesOwedToPlatform + outstandingFeesCollectedNotPaidToPlatform;
+      // Total amount owed to platform (own platform fees + outstanding fees collected from others)
+      const totalOwedToPlatform = platformFeesOwedToPlatform + Math.max(0, outstandingFeesCollectedNotPaidToPlatform);
       
       const totalOwed = pendingPaymentsForIncentives + pendingPaymentsForCancelled + totalOwedToPlatform;
       const totalToReceive = paymentsForInvitesPendingToReceive + paymentsForCancelledInvitesPendingToReceive;
