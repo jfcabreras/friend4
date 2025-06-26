@@ -54,12 +54,12 @@ body {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: var(--background);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
   color: var(--text-primary);
   padding: 16px 20px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -103,9 +103,10 @@ body {
 }
 
 .navigation-options button:hover {
-  background: var(--cyber-purple);
+  background: linear-gradient(135deg, var(--cyber-purple), #a855f7);
   border-color: var(--cyber-purple);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
 }
 
 /* Filter Controls */
@@ -145,10 +146,11 @@ body {
 }
 
 .filter-btn.active {
-  background: var(--cyber-purple);
+  background: linear-gradient(135deg, var(--cyber-purple), #a855f7);
   border-color: var(--cyber-purple);
   color: white;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Main Content */
@@ -181,27 +183,33 @@ body {
   padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.report-feed::-webkit-scrollbar {
+  display: none;
 }
 
 .feed-item {
   background: var(--background);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 24px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: all 0.2s ease;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 60vh;
-  /* Nearly full screen height */
   scroll-snap-align: start;
-  /* snaps each item to top */
   flex-shrink: 0;
-  /* 👈 prevents it from shrinking */
+  margin: 8px 12px;
 }
 
 .feed-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2), 0 8px 16px rgba(0, 0, 0, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
 .feed-image-container {
@@ -2653,8 +2661,9 @@ textarea {
 
 .pal-card:hover {
   background: var(--surface-elevated);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.2);
 }
 
 .pal-card-header {
